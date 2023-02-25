@@ -101,6 +101,11 @@ class MastodonLoginViewController: UIViewController, NeedsDependency {
 
     title = L10n.Scene.Login.title
     navigationItem.hidesBackButton = true
+      
+      DispatchQueue.main.async {
+          self.textfieldDidChange(self.searchTextField)
+      }
+      
   }
 
   override func viewWillAppear(_ animated: Bool) {
