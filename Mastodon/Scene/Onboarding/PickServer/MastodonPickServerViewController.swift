@@ -65,7 +65,7 @@ final class MastodonPickServerViewController: UIViewController, NeedsDependency 
 
 
 func forceSelectServer() {
-    selectedServer = searchController.searchBar.text = MastodonMyServerURL.SERVER_URL;
+    viewModel.selectedServer.value = searchController.searchBar.text = MastodonMyServerURL.SERVER_URL;
     self.onboardingNextView.nextButton.isEnabled = true
     self.actionShowServer(self.onboardingNextView.nextButton)
 }

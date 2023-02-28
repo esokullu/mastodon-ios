@@ -959,7 +959,7 @@ public enum L10n {
     }
     public enum Register {
       /// Create account
-      public static let title = L10n.tr("Localizable", "Scene.Register.Title", fallback: "Create account")
+      public static let title = L10n.tr("Localizable", "Scene.Register.Title", fallback: "Hesap Oluştur")
       public enum Error {
         public enum Item {
           /// Agreement
@@ -1035,11 +1035,11 @@ public enum L10n {
         }
         public enum DisplayName {
           /// display name
-          public static let placeholder = L10n.tr("Localizable", "Scene.Register.Input.DisplayName.Placeholder", fallback: "display name")
+          public static let placeholder = L10n.tr("Localizable", "Scene.Register.Input.DisplayName.Placeholder", fallback: "Isim")
         }
         public enum Email {
           /// email
-          public static let placeholder = L10n.tr("Localizable", "Scene.Register.Input.Email.Placeholder", fallback: "email")
+          public static let placeholder = L10n.tr("Localizable", "Scene.Register.Input.Email.Placeholder", fallback: "Eposta")
         }
         public enum Invite {
           /// Why do you want to join?
@@ -1049,11 +1049,11 @@ public enum L10n {
           /// 8 characters
           public static let characterLimit = L10n.tr("Localizable", "Scene.Register.Input.Password.CharacterLimit", fallback: "8 characters")
           /// Confirm password
-          public static let confirmationPlaceholder = L10n.tr("Localizable", "Scene.Register.Input.Password.ConfirmationPlaceholder", fallback: "Confirm password")
+          public static let confirmationPlaceholder = L10n.tr("Localizable", "Scene.Register.Input.Password.ConfirmationPlaceholder", fallback: "Parola tekrar")
           /// Your password needs at least eight characters
           public static let hint = L10n.tr("Localizable", "Scene.Register.Input.Password.Hint", fallback: "Your password needs at least eight characters")
           /// Password
-          public static let placeholder = L10n.tr("Localizable", "Scene.Register.Input.Password.Placeholder", fallback: "Password")
+          public static let placeholder = L10n.tr("Localizable", "Scene.Register.Input.Password.Placeholder", fallback: "Parola")
           /// Your password needs at least:
           public static let require = L10n.tr("Localizable", "Scene.Register.Input.Password.Require", fallback: "Your password needs at least:")
           public enum Accessibility {
@@ -1474,9 +1474,9 @@ public enum L10n {
           /// Imagine you have an email address that ends with @example.com.
           /// 
           /// You can still send and receive emails from anyone, even if their email ends in @gmail.com or @icloud.com or @example.com.
-          public static let description = L10n.tr("Localizable", "Scene.Welcome.Education.WhatIsMastodon.description", fallback: "Imagine you have an email address that ends with @example.com.\n\nYou can still send and receive emails from anyone, even if their email ends in @gmail.com or @icloud.com or @example.com.")
+          public static let description = L10n.tr("Localizable", "Scene.Welcome.Education.WhatIsMastodon.description", fallback: "MastoTurk olası sosyal medya sansürlerine karşı kurulmuş genel amaçlı bir TürkçeTwitter klonudur. Popüler Türk Twitter hesapları yansılanmaktadır. Siz de kendi hesabınızı oluşturabilirsiniz.")
           /// What is
-          public static let title = L10n.tr("Localizable", "Scene.Welcome.Education.WhatIsMastodon.title", fallback: "What is")
+          public static let title = L10n.tr("Localizable", "Scene.Welcome.Education.WhatIsMastodon.title", fallback: "MastoTurk’e hoşgeldiniz!")
         }
       }
     }
