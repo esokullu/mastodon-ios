@@ -10,33 +10,40 @@
 
 set -e
 
+echo "Beginning..."
 # https://github.com/mastodon/mastodon-ios/blob/develop/Documentation/Setup.md
 
 # install the rbenv
 brew install rbenv
+echo "brew install rbenv [done] ..."
 
-# configure the terminal
-which ruby
-# > /usr/bin/ruby
+
 echo 'eval "$(rbenv init -)"' >> ~/.zprofile
-source ~/.zprofile
-which ruby
-# > /Users/mainasuk/.rbenv/shims/ruby
+echo "rbenv INIT [done] ..."
 
-# restart the terminal
+source ~/.zprofile
+echo "source zprofile [done] ..."
+
 
 # install ruby (we use the version defined in .ruby-version)
 rbenv install
-
+echo "rbenv install [done] ..."
 
 ## Bootstrap
 
 bundle install
+echo "bundle install [done] ..."
+
 bundle exec pod clean
+echo "bundle exec pod clean [done] ..."
+
 bundle exec arkana -e ./env/.env
+echo "bundle exec arkana [done] ..."
 
 # clean pods
 bundle exec pod clean
+echo "bundle exec pod clean [done] ..."
 
 # make install
 bundle exec pod install --repo-update
+echo "bundle exec pod install [done] ..."

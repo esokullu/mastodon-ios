@@ -5,7 +5,7 @@
       location = "container:"
       name = "ci_scripts">
       <FileRef
-         location = "group:ci_pre_xcodebuild.sh">
+         location = "group:/Users/emresokullu/Code4/mastodon-ios/ci_post_clone.sh">
       </FileRef>
    </Group>
    <FileRef
