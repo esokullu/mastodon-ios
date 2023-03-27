@@ -103,7 +103,7 @@ class MastodonLoginViewController: UIViewController, NeedsDependency {
     navigationItem.hidesBackButton = true
       
       DispatchQueue.main.async {
-          self.textfieldDidChange(self.searchTextField)
+          self.textfieldDidChange(self.contentView.searchTextField)
       }
       
   }
