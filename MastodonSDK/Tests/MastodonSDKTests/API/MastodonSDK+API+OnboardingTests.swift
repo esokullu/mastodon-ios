@@ -14,7 +14,7 @@ extension MastodonSDKTests {
     
     func testServers() throws {
         try _testServers(query: Mastodon.API.Onboarding.ServersQuery(language: nil, category: nil))
-        try _testServers(query: Mastodon.API.Onboarding.ServersQuery(language: "en", category: "tech"))
+        try _testServers(query: Mastodon.API.Onboarding.ServersQuery(language: "tr", category: "tech"))
     }
     
     func _testServers(query: Mastodon.API.Onboarding.ServersQuery) throws {

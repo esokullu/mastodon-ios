@@ -63,7 +63,7 @@ class MastodonLoginViewController: UIViewController, NeedsDependency {
     loginView.tableView.delegate = self
     loginView.tableView.register(MastodonLoginServerTableViewCell.self, forCellReuseIdentifier: MastodonLoginServerTableViewCell.reuseIdentifier)
     
-    loginView.navigationActionView.nextButton.isEnabled = true
+      loginView.navigationActionView.nextButton.isEnabled = false;
 
       
     view = loginView

@@ -72,7 +72,8 @@
     }
   ],
   "defaultOptions" : {
-
+    "language" : "tr",
+    "region" : "TR"
   },
   "testTargets" : [
     {

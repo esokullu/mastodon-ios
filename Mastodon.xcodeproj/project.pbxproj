@@ -4199,7 +4199,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OpenInActionExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Open using Mastodon";
@@ -4211,7 +4211,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.OpenInActionExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.OpenInActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4229,7 +4229,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OpenInActionExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Open using Mastodon";
@@ -4241,7 +4241,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.OpenInActionExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.OpenInActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4259,7 +4259,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OpenInActionExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Open using Mastodon";
@@ -4271,7 +4271,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.OpenInActionExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.OpenInActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4289,7 +4289,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OpenInActionExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Open using Mastodon";
@@ -4301,7 +4301,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.OpenInActionExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.OpenInActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4321,7 +4321,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WidgetExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetExtension;
@@ -4333,7 +4333,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.WidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.WidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4352,7 +4352,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WidgetExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetExtension;
@@ -4364,7 +4364,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.WidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.WidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4383,7 +4383,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WidgetExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetExtension;
@@ -4395,7 +4395,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.WidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.WidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4414,7 +4414,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WidgetExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetExtension;
@@ -4426,7 +4426,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.WidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.WidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4569,15 +4569,16 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "Mastodon/Resources/Preview\\ Assets.xcassets";
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = Mastodon/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MastoTurk;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.4.12;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Mastodon/Vender/Mastodon-Bridging-Header.h";
@@ -4600,16 +4601,17 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "Mastodon/Resources/Preview\\ Assets.xcassets";
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				EXCLUDED_SOURCE_FILE_NAMES = "Mastodon/Resources/Preview\\ Assets.xcassets";
 				INFOPLIST_FILE = Mastodon/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MastoTurk;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.4.12;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Mastodon/Vender/Mastodon-Bridging-Header.h";
@@ -4625,7 +4627,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4649,7 +4651,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4672,7 +4674,7 @@
 			baseConfigurationReference = 459EA4F43058CAB47719E963 /* Pods-Mastodon-MastodonUITests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4695,7 +4697,7 @@
 			baseConfigurationReference = BB482D32A7B9825BF5327C4F /* Pods-Mastodon-MastodonUITests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4788,15 +4790,16 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "Mastodon/Resources/Preview\\ Assets.xcassets";
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = Mastodon/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MastoTurk;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.4.12;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Mastodon/Vender/Mastodon-Bridging-Header.h";
@@ -4813,7 +4816,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4836,7 +4839,7 @@
 			baseConfigurationReference = 728DE51ADA27C395C6E1BAB5 /* Pods-Mastodon-MastodonUITests.profile.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4860,14 +4863,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NotificationService/NotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = NotificationService/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.NotificationService;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.NotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -4881,14 +4884,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareActionExtension/ShareActionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = ShareActionExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.ShareActionExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.ShareActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -4903,14 +4906,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MastodonIntent/MastodonIntent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonIntent/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.MastodonIntent;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.MastodonIntent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -4925,14 +4928,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MastodonIntent/MastodonIntent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonIntent/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.MastodonIntent;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.MastodonIntent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -4947,14 +4950,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MastodonIntent/MastodonIntent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonIntent/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.MastodonIntent;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.MastodonIntent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -4969,14 +4972,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareActionExtension/ShareActionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = ShareActionExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.ShareActionExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.ShareActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -4991,14 +4994,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareActionExtension/ShareActionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = ShareActionExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.ShareActionExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.ShareActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -5079,15 +5082,16 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "Mastodon/Resources/Preview\\ Assets.xcassets";
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = Mastodon/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MastoTurk;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.4.12;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Mastodon/Vender/Mastodon-Bridging-Header.h";
@@ -5103,7 +5107,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -5126,7 +5130,7 @@
 			baseConfigurationReference = 0827D1674B2523503E8605F6 /* Pods-Mastodon-MastodonUITests.release snapshot.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -5150,14 +5154,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NotificationService/NotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = NotificationService/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.NotificationService;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.NotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -5171,14 +5175,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareActionExtension/ShareActionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = ShareActionExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.ShareActionExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.ShareActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -5193,14 +5197,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MastodonIntent/MastodonIntent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonIntent/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.MastodonIntent;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.MastodonIntent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -5216,14 +5220,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NotificationService/NotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = NotificationService/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.NotificationService;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.NotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -5238,14 +5242,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NotificationService/NotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = NotificationService/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.NotificationService;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.NotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;

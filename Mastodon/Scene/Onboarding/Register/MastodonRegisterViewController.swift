@@ -149,11 +149,11 @@ extension MastodonRegisterViewController {
                 let localCode = try? JSONDecoder().decode(MastodonLocalCode.self, from: data)
             else {
                 assertionFailure()
-                return "en"
+                return "tr"
             }
             let fallbackLanguageCode: String = {
-                let code = Locale.current.languageCode ?? "en"
-                guard localCode[code] != nil else { return "en" }
+                let code = Locale.current.languageCode ?? "tr"
+                guard localCode[code] != nil else { return "tr" }
                 return code
             }()
 

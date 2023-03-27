@@ -16,7 +16,7 @@ let publicLibraryTargets = [
 
 let package = Package(
     name: "MastodonSDK",
-    defaultLocalization: "en",
+    defaultLocalization: "tr",
     platforms: [
         .iOS(.v15),
     ],
