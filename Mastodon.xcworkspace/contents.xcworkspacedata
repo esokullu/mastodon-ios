@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Workspace
    version = "1.0">
+   <Group
+      location = "container:"
+      name = "ci_scripts">
+      <FileRef
+         location = "group:ci_pre_xcodebuild.sh">
+      </FileRef>
+   </Group>
    <FileRef
       location = "group:Mastodon.xcodeproj">
    </FileRef>
