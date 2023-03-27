@@ -83,8 +83,8 @@ extension MastodonPickServerViewController {
         
         searchController.searchBar.text = MastodonMyServerURL.SERVER_URL;
         searchController.searchBar.isUserInteractionEnabled = false
-        tableView.isUserInteractionEnabled = false
-        tableView.isHidden = true
+        tableView.isUserInteractionEnabled = true
+        tableView.isHidden = false
 
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)

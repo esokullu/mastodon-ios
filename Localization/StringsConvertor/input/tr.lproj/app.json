@@ -235,7 +235,21 @@
         "welcome": {
             "slogan": "Sosyal ağ,\ntekrardan ellerinizde.",
             "get_started": "Başlayın",
-            "log_in": "Oturum Aç"
+            "log_in": "Oturum Aç",
+            "education": {
+              "what_is_mastodon": {
+                "title": "Nedir",
+                "description": "Eposta nasil isliyor?\n\n@ornek.com ile biten epostanla  @gmail.com ya da @icloud.com hesapli herhangi biriyle mesajlasabiliyorsun.",
+              },
+              "mastodon_is_like_that": {
+                "title": "Mastodon da iste oyle isliyor",
+                "description": "Yani @cilgin_kiz@ornek.com, ile @cilgin_cocuk@baska_sunucu.com adresindeki kisiyi takip edebilirsin",
+              },
+              "how_do_i_pick_a_server": {
+                "title": "Nasil sunucu secerim?",
+                "description": "Her dile her tercihe gore bir sunucu mastodon'da mevcut.",
+              },
+            }
         },
         "login": {
             "title": "Tekrar hoş geldin",
