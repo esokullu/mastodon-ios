@@ -296,8 +296,8 @@
             }
         },
         "register": {
-            "title": "%s için kurulumunuzu yapalım",
-            "lets_get_you_set_up_on_domain": "%s için kurulumunuzu yapalım",
+            "title": "Kurulumunuzu yapalım",
+            "lets_get_you_set_up_on_domain": "Kurulumunuzu yapalım",
             "input": {
                 "avatar": {
                     "delete": "Sil"
