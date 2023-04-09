@@ -41,22 +41,22 @@ enum WelcomeContentPage: CaseIterable {
           
             attributedString.append(NSAttributedString(attachment: attachment))
             attributedString.append(NSAttributedString(string: " ?"))
-            return attributedString
+            return NSAttributedString("") // attributedString
         case .mastodonIsLikeThat:
-            return NSAttributedString(string: L10n.Scene.Welcome.Education.MastodonIsLikeThat.title)
+            return NSAttributedString("")  // NSAttributedString(string: L10n.Scene.Welcome.Education.MastodonIsLikeThat.title)
         case .howDoIPickAServer:
-            return NSAttributedString(string: L10n.Scene.Welcome.Education.HowDoIPickAServer.title)
+            return NSAttributedString("")  // NSAttributedString(string: L10n.Scene.Welcome.Education.HowDoIPickAServer.title)
         }
     }
     
     var content: String {
         switch self {
         case .whatIsMastodon:
-            return L10n.Scene.Welcome.Education.WhatIsMastodon.description
+            return "MastoTurk genel amaçlı bir Türkçe Mastodon sunucusudur. Popüler Türk Twitter hesapları yansılanmaktadır. Siz de kendi hesabınızı oluşturabilirsiniz." // L10n.Scene.Welcome.Education.WhatIsMastodon.description
         case .mastodonIsLikeThat:
-            return L10n.Scene.Welcome.Education.MastodonIsLikeThat.description
+            return "MastoTurk genel amaçlı bir Türkçe Mastodon sunucusudur. Popüler Türk Twitter hesapları yansılanmaktadır. Siz de kendi hesabınızı oluşturabilirsiniz." // L10n.Scene.Welcome.Education.MastodonIsLikeThat.description
         case .howDoIPickAServer:
-            return L10n.Scene.Welcome.Education.HowDoIPickAServer.description
+            return "MastoTurk genel amaçlı bir Türkçe Mastodon sunucusudur. Popüler Türk Twitter hesapları yansılanmaktadır. Siz de kendi hesabınızı oluşturabilirsiniz." // L10n.Scene.Welcome.Education.HowDoIPickAServer.description
         }
         
     }
