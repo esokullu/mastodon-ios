@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Workspace
    version = "1.0">
+   <Group
+      location = "container:"
+      name = "ci_scripts">
+      <FileRef
+         location = "group:/Users/emresokullu/Code4/mastodon-ios/ci_post_clone.sh">
+      </FileRef>
+   </Group>
    <FileRef
       location = "group:Mastodon.xcodeproj">
    </FileRef>

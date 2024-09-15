@@ -20,7 +20,6 @@
 		0FB3D31E25E534C700AAD544 /* PickServerCategoryCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FB3D31D25E534C700AAD544 /* PickServerCategoryCollectionViewCell.swift */; };
 		0FB3D33825E6401400AAD544 /* PickServerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FB3D33725E6401400AAD544 /* PickServerCell.swift */; };
 		164F0EBC267D4FE400249499 /* BoopSound.caf in Resources */ = {isa = PBXBuildFile; fileRef = 164F0EBB267D4FE400249499 /* BoopSound.caf */; };
-		18BC7629F65E6DB12CB8416D /* Pods_Mastodon_MastodonUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C030226D3C73DCC23D67452 /* Pods_Mastodon_MastodonUITests.framework */; };
 		27D701F5292FC2D60031BCBB /* DataSourceFacade+URL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D701F4292FC2D60031BCBB /* DataSourceFacade+URL.swift */; };
 		2A1FE47C2938BB2600784BF1 /* FollowedTagsViewModel+DiffableDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A1FE47B2938BB2600784BF1 /* FollowedTagsViewModel+DiffableDataSource.swift */; };
 		2A1FE47E2938C11200784BF1 /* Collection+IsNotEmpty.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A1FE47D2938C11200784BF1 /* Collection+IsNotEmpty.swift */; };
@@ -104,6 +103,8 @@
 		357FEEB229523D510021C9DC /* MastodonSDKDynamic in Frameworks */ = {isa = PBXBuildFile; productRef = 357FEEB129523D510021C9DC /* MastodonSDKDynamic */; };
 		357FEEB629523D5C0021C9DC /* MastodonSDKDynamic in Frameworks */ = {isa = PBXBuildFile; productRef = 357FEEB529523D5C0021C9DC /* MastodonSDKDynamic */; };
 		357FEEBA29523D660021C9DC /* MastodonSDKDynamic in Frameworks */ = {isa = PBXBuildFile; productRef = 357FEEB929523D660021C9DC /* MastodonSDKDynamic */; };
+		4D64F658C72728EF1177C7C8 /* Pods_Mastodon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6680D28D537D289A2928E568 /* Pods_Mastodon.framework */; };
+		5948BE0238DF5B39692A090D /* Pods_Mastodon_MastodonUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80A66778C82763EB45D51455 /* Pods_Mastodon_MastodonUITests.framework */; };
 		5B24BBDA262DB14800A9381B /* ReportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B24BBD7262DB14800A9381B /* ReportViewModel.swift */; };
 		5B24BBDB262DB14800A9381B /* ReportStatusViewModel+Diffable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B24BBD8262DB14800A9381B /* ReportStatusViewModel+Diffable.swift */; };
 		5B90C45E262599800002E742 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B90C456262599800002E742 /* SettingsViewModel.swift */; };
@@ -117,8 +118,6 @@
 		5D0393962612D266007FE196 /* WebViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D0393952612D266007FE196 /* WebViewModel.swift */; };
 		5DA732CC2629CEF500A92342 /* UIView+Remove.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DA732CB2629CEF500A92342 /* UIView+Remove.swift */; };
 		5DF1056425F887CB00D6C0D4 /* AVPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DF1056325F887CB00D6C0D4 /* AVPlayer.swift */; };
-		5E0DEC05797A7E6933788DDB /* Pods_MastodonTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 452147B2903DF38070FE56A2 /* Pods_MastodonTests.framework */; };
-		5E44BF88AD33646E64727BCF /* Pods_MastodonTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD92E0F10BDE4FE7C4B999F2 /* Pods_MastodonTests.framework */; };
 		6213AF5A28939C8400BCADB6 /* BookmarkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6213AF5928939C8400BCADB6 /* BookmarkViewModel.swift */; };
 		6213AF5C28939C8A00BCADB6 /* BookmarkViewModel+State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6213AF5B28939C8A00BCADB6 /* BookmarkViewModel+State.swift */; };
 		6213AF5E2893A8B200BCADB6 /* DataSourceFacade+Bookmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6213AF5D2893A8B200BCADB6 /* DataSourceFacade+Bookmark.swift */; };
@@ -130,7 +129,6 @@
 		85904C02293BC0EB0011C817 /* ImageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85904C01293BC0EB0011C817 /* ImageProvider.swift */; };
 		85904C04293BC1940011C817 /* URLActivityItemWithMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85904C03293BC1940011C817 /* URLActivityItemWithMetadata.swift */; };
 		85BC11B32932414900E191CD /* AltViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BC11B22932414900E191CD /* AltViewController.swift */; };
-		87FFDA5D898A5C42ADCB35E7 /* Pods_Mastodon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4ABE34829701A4496C5BB64 /* Pods_Mastodon.framework */; };
 		9E44C7202967AD17004B2A72 /* MastodonSDKDynamic in Frameworks */ = {isa = PBXBuildFile; productRef = 9E44C71F2967AD17004B2A72 /* MastodonSDKDynamic */; };
 		9E44C7222967AD17004B2A72 /* MastodonSDKDynamic in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 9E44C71F2967AD17004B2A72 /* MastodonSDKDynamic */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		C24C97032922F30500BAE8CB /* RefreshControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = C24C97022922F30500BAE8CB /* RefreshControl.swift */; };
@@ -478,6 +476,8 @@
 		DBFEEC99279BDCDE004F81DD /* ProfileAboutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBFEEC98279BDCDE004F81DD /* ProfileAboutViewModel.swift */; };
 		DBFEEC9B279BDDD9004F81DD /* ProfileAboutViewModel+Diffable.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBFEEC9A279BDDD9004F81DD /* ProfileAboutViewModel+Diffable.swift */; };
 		DBFEEC9D279C12C1004F81DD /* ProfileFieldEditCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBFEEC9C279C12C1004F81DD /* ProfileFieldEditCollectionViewCell.swift */; };
+		FB0812D507A67BAF8D216FF2 /* Pods_MastodonTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD1EFF72748E306183C4D8B0 /* Pods_MastodonTests.framework */; };
+		FBDC145029A5405700405037 /* MastodonMyServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBDC144F29A5405700405037 /* MastodonMyServer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -593,8 +593,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0655B257371274BEB7EB1C19 /* Pods-Mastodon.release snapshot.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon.release snapshot.xcconfig"; path = "Target Support Files/Pods-Mastodon/Pods-Mastodon.release snapshot.xcconfig"; sourceTree = "<group>"; };
-		0827D1674B2523503E8605F6 /* Pods-Mastodon-MastodonUITests.release snapshot.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-MastodonUITests.release snapshot.xcconfig"; path = "Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests.release snapshot.xcconfig"; sourceTree = "<group>"; };
 		0F1E2D0A2615C39400C38565 /* DoubleTitleLabelNavigationBarTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoubleTitleLabelNavigationBarTitleView.swift; sourceTree = "<group>"; };
 		0F2021FA2613262F000C64BF /* HashtagTimelineViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HashtagTimelineViewController.swift; sourceTree = "<group>"; };
 		0F202200261326E6000C64BF /* HashtagTimelineViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HashtagTimelineViewModel.swift; sourceTree = "<group>"; };
@@ -608,7 +606,7 @@
 		0FB3D31D25E534C700AAD544 /* PickServerCategoryCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickServerCategoryCollectionViewCell.swift; sourceTree = "<group>"; };
 		0FB3D33725E6401400AAD544 /* PickServerCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickServerCell.swift; sourceTree = "<group>"; };
 		164F0EBB267D4FE400249499 /* BoopSound.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = BoopSound.caf; sourceTree = "<group>"; };
-		1D6D967E77A5357E2C6110D9 /* Pods-Mastodon.asdk - debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon.asdk - debug.xcconfig"; path = "Target Support Files/Pods-Mastodon/Pods-Mastodon.asdk - debug.xcconfig"; sourceTree = "<group>"; };
+		25A84B41760D0E941C3CB731 /* Pods-Mastodon-MastodonUITests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-MastodonUITests.profile.xcconfig"; path = "Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests.profile.xcconfig"; sourceTree = "<group>"; };
 		27D701F4292FC2D60031BCBB /* DataSourceFacade+URL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataSourceFacade+URL.swift"; sourceTree = "<group>"; };
 		2A1FE47B2938BB2600784BF1 /* FollowedTagsViewModel+DiffableDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FollowedTagsViewModel+DiffableDataSource.swift"; sourceTree = "<group>"; };
 		2A1FE47D2938C11200784BF1 /* Collection+IsNotEmpty.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Collection+IsNotEmpty.swift"; sourceTree = "<group>"; };
@@ -712,13 +710,8 @@
 		2DAC9E45262FC9FD0062E1A6 /* SuggestionAccountTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionAccountTableViewCell.swift; sourceTree = "<group>"; };
 		2DCB73FC2615C13900EC03D4 /* SearchRecommendCollectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchRecommendCollectionHeader.swift; sourceTree = "<group>"; };
 		2DE0FACD2615F7AD00CDF649 /* RecommendAccountSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendAccountSection.swift; sourceTree = "<group>"; };
-		2E1F6A67FDF9771D3E064FDC /* Pods-Mastodon.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon.debug.xcconfig"; path = "Target Support Files/Pods-Mastodon/Pods-Mastodon.debug.xcconfig"; sourceTree = "<group>"; };
-		3B7FD8F28DDA8FBCE5562B78 /* Pods-NotificationService.asdk - debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NotificationService.asdk - debug.xcconfig"; path = "Target Support Files/Pods-NotificationService/Pods-NotificationService.asdk - debug.xcconfig"; sourceTree = "<group>"; };
-		3C030226D3C73DCC23D67452 /* Pods_Mastodon_MastodonUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Mastodon_MastodonUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		3E08A432F40BA7B9CAA9DB68 /* Pods-AppShared.release snapshot.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AppShared.release snapshot.xcconfig"; path = "Target Support Files/Pods-AppShared/Pods-AppShared.release snapshot.xcconfig"; sourceTree = "<group>"; };
-		452147B2903DF38070FE56A2 /* Pods_MastodonTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MastodonTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		459EA4F43058CAB47719E963 /* Pods-Mastodon-MastodonUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-MastodonUITests.debug.xcconfig"; path = "Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests.debug.xcconfig"; sourceTree = "<group>"; };
-		46DAB0EBDDFB678347CD96FF /* Pods-MastodonTests.asdk - release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MastodonTests.asdk - release.xcconfig"; path = "Target Support Files/Pods-MastodonTests/Pods-MastodonTests.asdk - release.xcconfig"; sourceTree = "<group>"; };
+		3FB2DE3A8AA10A30D74F116C /* Pods-Mastodon-MastodonUITests.release snapshot.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-MastodonUITests.release snapshot.xcconfig"; path = "Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests.release snapshot.xcconfig"; sourceTree = "<group>"; };
+		4DA75A436801435A04123191 /* Pods-Mastodon.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon.release.xcconfig"; path = "Target Support Files/Pods-Mastodon/Pods-Mastodon.release.xcconfig"; sourceTree = "<group>"; };
 		5B24BBD7262DB14800A9381B /* ReportViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReportViewModel.swift; sourceTree = "<group>"; };
 		5B24BBD8262DB14800A9381B /* ReportStatusViewModel+Diffable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "ReportStatusViewModel+Diffable.swift"; sourceTree = "<group>"; };
 		5B90C456262599800002E742 /* SettingsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
@@ -728,47 +721,31 @@
 		5B90C45C262599800002E742 /* SettingsSectionHeader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsSectionHeader.swift; sourceTree = "<group>"; };
 		5BB04FD4262E7AFF0043BFF6 /* ReportViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportViewController.swift; sourceTree = "<group>"; };
 		5BB04FF4262F0E6D0043BFF6 /* ReportSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportSection.swift; sourceTree = "<group>"; };
-		5CE45680252519F42FEA2D13 /* Pods-ShareActionExtension.asdk - release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareActionExtension.asdk - release.xcconfig"; path = "Target Support Files/Pods-ShareActionExtension/Pods-ShareActionExtension.asdk - release.xcconfig"; sourceTree = "<group>"; };
 		5D03938F2612D259007FE196 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
 		5D0393952612D266007FE196 /* WebViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewModel.swift; sourceTree = "<group>"; };
 		5DA732CB2629CEF500A92342 /* UIView+Remove.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Remove.swift"; sourceTree = "<group>"; };
-		5DA82A9B4ABDAFA3AB9A49C7 /* Pods-MastodonTests.asdk.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MastodonTests.asdk.xcconfig"; path = "Target Support Files/Pods-MastodonTests/Pods-MastodonTests.asdk.xcconfig"; sourceTree = "<group>"; };
 		5DF1056325F887CB00D6C0D4 /* AVPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVPlayer.swift; sourceTree = "<group>"; };
-		6130CBE4B26E3C976ACC1688 /* Pods-ShareActionExtension.asdk - debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ShareActionExtension.asdk - debug.xcconfig"; path = "Target Support Files/Pods-ShareActionExtension/Pods-ShareActionExtension.asdk - debug.xcconfig"; sourceTree = "<group>"; };
+		5E8E4EC7A256F30DF3CDB93E /* Pods-Mastodon-MastodonUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-MastodonUITests.release.xcconfig"; path = "Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests.release.xcconfig"; sourceTree = "<group>"; };
 		6213AF5928939C8400BCADB6 /* BookmarkViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkViewModel.swift; sourceTree = "<group>"; };
 		6213AF5B28939C8A00BCADB6 /* BookmarkViewModel+State.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "BookmarkViewModel+State.swift"; sourceTree = "<group>"; };
 		6213AF5D2893A8B200BCADB6 /* DataSourceFacade+Bookmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataSourceFacade+Bookmark.swift"; sourceTree = "<group>"; };
 		62FD27D02893707600B205C5 /* BookmarkViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkViewController.swift; sourceTree = "<group>"; };
 		62FD27D22893707B00B205C5 /* BookmarkViewController+DataSourceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BookmarkViewController+DataSourceProvider.swift"; sourceTree = "<group>"; };
 		62FD27D42893708A00B205C5 /* BookmarkViewModel+Diffable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BookmarkViewModel+Diffable.swift"; sourceTree = "<group>"; };
-		63EF9E6E5B575CD2A8B0475D /* Pods-AppShared.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AppShared.profile.xcconfig"; path = "Target Support Files/Pods-AppShared/Pods-AppShared.profile.xcconfig"; sourceTree = "<group>"; };
-		728DE51ADA27C395C6E1BAB5 /* Pods-Mastodon-MastodonUITests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-MastodonUITests.profile.xcconfig"; path = "Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests.profile.xcconfig"; sourceTree = "<group>"; };
-		75E3471C898DDD9631729B6E /* Pods-Mastodon.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon.release.xcconfig"; path = "Target Support Files/Pods-Mastodon/Pods-Mastodon.release.xcconfig"; sourceTree = "<group>"; };
-		7CB58D292DA7ACEF179A9050 /* Pods-Mastodon.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon.profile.xcconfig"; path = "Target Support Files/Pods-Mastodon/Pods-Mastodon.profile.xcconfig"; sourceTree = "<group>"; };
-		7CEFFAE9AF9284B13C0A758D /* Pods-MastodonTests.asdk - debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MastodonTests.asdk - debug.xcconfig"; path = "Target Support Files/Pods-MastodonTests/Pods-MastodonTests.asdk - debug.xcconfig"; sourceTree = "<group>"; };
-		819CEC9DCAD8E8E7BD85A7BB /* Pods-Mastodon.asdk.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon.asdk.xcconfig"; path = "Target Support Files/Pods-Mastodon/Pods-Mastodon.asdk.xcconfig"; sourceTree = "<group>"; };
+		6680D28D537D289A2928E568 /* Pods_Mastodon.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Mastodon.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		7C254CCD427B3747837E3819 /* Pods-Mastodon-MastodonUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-MastodonUITests.debug.xcconfig"; path = "Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests.debug.xcconfig"; sourceTree = "<group>"; };
+		80A66778C82763EB45D51455 /* Pods_Mastodon_MastodonUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Mastodon_MastodonUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		855149C7295F1C5F00943D96 /* UIInterfaceOrientationMask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIInterfaceOrientationMask.swift; sourceTree = "<group>"; };
 		855149C929606D6400943D96 /* PortraitAlertController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortraitAlertController.swift; sourceTree = "<group>"; };
 		85904C01293BC0EB0011C817 /* ImageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProvider.swift; sourceTree = "<group>"; };
 		85904C03293BC1940011C817 /* URLActivityItemWithMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLActivityItemWithMetadata.swift; sourceTree = "<group>"; };
 		85BC11B22932414900E191CD /* AltViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AltViewController.swift; sourceTree = "<group>"; };
-		8850E70A1D5FF51432E43653 /* Pods-Mastodon-MastodonUITests.asdk - release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-MastodonUITests.asdk - release.xcconfig"; path = "Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests.asdk - release.xcconfig"; sourceTree = "<group>"; };
-		8E79CCBE51FBC3F7FE8CF49F /* Pods-MastodonTests.release snapshot.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MastodonTests.release snapshot.xcconfig"; path = "Target Support Files/Pods-MastodonTests/Pods-MastodonTests.release snapshot.xcconfig"; sourceTree = "<group>"; };
-		8ED8C4B1F1BA2DCFF2926BB1 /* Pods-Mastodon-NotificationService.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-NotificationService.debug.xcconfig"; path = "Target Support Files/Pods-Mastodon-NotificationService/Pods-Mastodon-NotificationService.debug.xcconfig"; sourceTree = "<group>"; };
-		9780A4C98FFC65B32B50D1C0 /* Pods-MastodonTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MastodonTests.release.xcconfig"; path = "Target Support Files/Pods-MastodonTests/Pods-MastodonTests.release.xcconfig"; sourceTree = "<group>"; };
-		9A0982D8F349244EB558CDFD /* Pods-AppShared.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AppShared.debug.xcconfig"; path = "Target Support Files/Pods-AppShared/Pods-AppShared.debug.xcconfig"; sourceTree = "<group>"; };
-		9CFF58FD900AC059428700E7 /* Pods-NotificationService.asdk - release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NotificationService.asdk - release.xcconfig"; path = "Target Support Files/Pods-NotificationService/Pods-NotificationService.asdk - release.xcconfig"; sourceTree = "<group>"; };
-		A4ABE34829701A4496C5BB64 /* Pods_Mastodon.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Mastodon.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		A67FD038ECDA0E411AF8DB4D /* Pods-Mastodon-MastodonUITests.asdk.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-MastodonUITests.asdk.xcconfig"; path = "Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests.asdk.xcconfig"; sourceTree = "<group>"; };
-		A9B1FB898DFD6063B044298C /* Pods-AppShared.asdk - debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AppShared.asdk - debug.xcconfig"; path = "Target Support Files/Pods-AppShared/Pods-AppShared.asdk - debug.xcconfig"; sourceTree = "<group>"; };
-		B31D44635FCF6452F7E1B865 /* Pods-Mastodon-AppShared.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-AppShared.release.xcconfig"; path = "Target Support Files/Pods-Mastodon-AppShared/Pods-Mastodon-AppShared.release.xcconfig"; sourceTree = "<group>"; };
-		B44342AC2B6585F8295F1DDF /* Pods-Mastodon-NotificationService.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-NotificationService.release.xcconfig"; path = "Target Support Files/Pods-Mastodon-NotificationService/Pods-Mastodon-NotificationService.release.xcconfig"; sourceTree = "<group>"; };
-		BB482D32A7B9825BF5327C4F /* Pods-Mastodon-MastodonUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-MastodonUITests.release.xcconfig"; path = "Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests.release.xcconfig"; sourceTree = "<group>"; };
-		BD7598A87F4497045EDEF252 /* Pods-Mastodon.asdk - release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon.asdk - release.xcconfig"; path = "Target Support Files/Pods-Mastodon/Pods-Mastodon.asdk - release.xcconfig"; sourceTree = "<group>"; };
+		866815100A16AC58D9F66CD6 /* Pods-MastodonTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MastodonTests.release.xcconfig"; path = "Target Support Files/Pods-MastodonTests/Pods-MastodonTests.release.xcconfig"; sourceTree = "<group>"; };
+		9923D862E75D3FD8DAF21D8B /* Pods-Mastodon.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon.profile.xcconfig"; path = "Target Support Files/Pods-Mastodon/Pods-Mastodon.profile.xcconfig"; sourceTree = "<group>"; };
+		A9B6E15672FD8B7037F0B299 /* Pods-Mastodon.release snapshot.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon.release snapshot.xcconfig"; path = "Target Support Files/Pods-Mastodon/Pods-Mastodon.release snapshot.xcconfig"; sourceTree = "<group>"; };
+		BF98437A37C950A45F54892F /* Pods-MastodonTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MastodonTests.profile.xcconfig"; path = "Target Support Files/Pods-MastodonTests/Pods-MastodonTests.profile.xcconfig"; sourceTree = "<group>"; };
 		C24C97022922F30500BAE8CB /* RefreshControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshControl.swift; sourceTree = "<group>"; };
-		C3789232A52F43529CA67E95 /* Pods-MastodonIntent.asdk - debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MastodonIntent.asdk - debug.xcconfig"; path = "Target Support Files/Pods-MastodonIntent/Pods-MastodonIntent.asdk - debug.xcconfig"; sourceTree = "<group>"; };
-		CD92E0F10BDE4FE7C4B999F2 /* Pods_MastodonTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MastodonTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		D7D7CF93E262178800077512 /* Pods-Mastodon-AppShared.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-AppShared.debug.xcconfig"; path = "Target Support Files/Pods-Mastodon-AppShared/Pods-Mastodon-AppShared.debug.xcconfig"; sourceTree = "<group>"; };
+		D15EE9B94A7970947047BD59 /* Pods-MastodonTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MastodonTests.debug.xcconfig"; path = "Target Support Files/Pods-MastodonTests/Pods-MastodonTests.debug.xcconfig"; sourceTree = "<group>"; };
 		D8099077294BC8A30050219F /* PrivacyTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyTableViewController.swift; sourceTree = "<group>"; };
 		D8099079294BC9390050219F /* PrivacyTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyTableViewCell.swift; sourceTree = "<group>"; };
 		D809907B294D25510050219F /* PrivacyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyViewModel.swift; sourceTree = "<group>"; };
@@ -1208,17 +1185,12 @@
 		DBFEEC9A279BDDD9004F81DD /* ProfileAboutViewModel+Diffable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProfileAboutViewModel+Diffable.swift"; sourceTree = "<group>"; };
 		DBFEEC9C279C12C1004F81DD /* ProfileFieldEditCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileFieldEditCollectionViewCell.swift; sourceTree = "<group>"; };
 		DBFEF06726A58D07006D7ED1 /* ShareActionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareActionExtension.entitlements; sourceTree = "<group>"; };
-		DDB1B139FA8EA26F510D58B6 /* Pods-AppShared.asdk - release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AppShared.asdk - release.xcconfig"; path = "Target Support Files/Pods-AppShared/Pods-AppShared.asdk - release.xcconfig"; sourceTree = "<group>"; };
-		DF65937EC1FF64462BC002EE /* Pods-MastodonTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MastodonTests.profile.xcconfig"; path = "Target Support Files/Pods-MastodonTests/Pods-MastodonTests.profile.xcconfig"; sourceTree = "<group>"; };
-		E5C7236E58D14A0322FE00F2 /* Pods-Mastodon-MastodonUITests.asdk - debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon-MastodonUITests.asdk - debug.xcconfig"; path = "Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests.asdk - debug.xcconfig"; sourceTree = "<group>"; };
+		DD1EFF72748E306183C4D8B0 /* Pods_MastodonTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MastodonTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD2146C3D087A61330DA1E23 /* Pods-Mastodon.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mastodon.debug.xcconfig"; path = "Target Support Files/Pods-Mastodon/Pods-Mastodon.debug.xcconfig"; sourceTree = "<group>"; };
 		E9AABD3D26B64B8C00E237DA /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Intents.strings; sourceTree = "<group>"; };
 		E9AABD4026B64B8D00E237DA /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		EC6E707B68A67DB08EC288FA /* Pods-MastodonTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MastodonTests.debug.xcconfig"; path = "Target Support Files/Pods-MastodonTests/Pods-MastodonTests.debug.xcconfig"; sourceTree = "<group>"; };
-		ECA373ABA86BE3C2D7ED878E /* Pods-AppShared.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AppShared.release.xcconfig"; path = "Target Support Files/Pods-AppShared/Pods-AppShared.release.xcconfig"; sourceTree = "<group>"; };
-		EE13214BC0246BE5210CCC10 /* Pods-AppShared.asdk.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AppShared.asdk.xcconfig"; path = "Target Support Files/Pods-AppShared/Pods-AppShared.asdk.xcconfig"; sourceTree = "<group>"; };
-		F31E7502A7E3945B98C6CBAF /* Pods-NotificationService.asdk.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-NotificationService.asdk.xcconfig"; path = "Target Support Files/Pods-NotificationService/Pods-NotificationService.asdk.xcconfig"; sourceTree = "<group>"; };
-		F4A2A2D7000E477CA459ADA9 /* Pods_AppShared.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_AppShared.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		F920AD4EC23B0D00F5CCA58E /* Pods-MastodonIntent.asdk - release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MastodonIntent.asdk - release.xcconfig"; path = "Target Support Files/Pods-MastodonIntent/Pods-MastodonIntent.asdk - release.xcconfig"; sourceTree = "<group>"; };
+		EC81D76E6ED909D4AA897C67 /* Pods-MastodonTests.release snapshot.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MastodonTests.release snapshot.xcconfig"; path = "Target Support Files/Pods-MastodonTests/Pods-MastodonTests.release snapshot.xcconfig"; sourceTree = "<group>"; };
+		FBDC144F29A5405700405037 /* MastodonMyServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MastodonMyServer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1248,7 +1220,7 @@
 			files = (
 				357FEEAF29523D470021C9DC /* MastodonSDKDynamic in Frameworks */,
 				DBF96326262EC0A6001D8D25 /* AuthenticationServices.framework in Frameworks */,
-				87FFDA5D898A5C42ADCB35E7 /* Pods_Mastodon.framework in Frameworks */,
+				4D64F658C72728EF1177C7C8 /* Pods_Mastodon.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1257,8 +1229,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9E44C7202967AD17004B2A72 /* MastodonSDKDynamic in Frameworks */,
-				5E44BF88AD33646E64727BCF /* Pods_MastodonTests.framework in Frameworks */,
-				5E0DEC05797A7E6933788DDB /* Pods_MastodonTests.framework in Frameworks */,
+				FB0812D507A67BAF8D216FF2 /* Pods_MastodonTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1266,7 +1237,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				18BC7629F65E6DB12CB8416D /* Pods_Mastodon_MastodonUITests.framework in Frameworks */,
+				5948BE0238DF5B39692A090D /* Pods_Mastodon_MastodonUITests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1371,45 +1342,18 @@
 		1EBA4F56E920856A3FC84ACB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				2E1F6A67FDF9771D3E064FDC /* Pods-Mastodon.debug.xcconfig */,
-				75E3471C898DDD9631729B6E /* Pods-Mastodon.release.xcconfig */,
-				459EA4F43058CAB47719E963 /* Pods-Mastodon-MastodonUITests.debug.xcconfig */,
-				BB482D32A7B9825BF5327C4F /* Pods-Mastodon-MastodonUITests.release.xcconfig */,
-				EC6E707B68A67DB08EC288FA /* Pods-MastodonTests.debug.xcconfig */,
-				9780A4C98FFC65B32B50D1C0 /* Pods-MastodonTests.release.xcconfig */,
-				8ED8C4B1F1BA2DCFF2926BB1 /* Pods-Mastodon-NotificationService.debug.xcconfig */,
-				B44342AC2B6585F8295F1DDF /* Pods-Mastodon-NotificationService.release.xcconfig */,
-				D7D7CF93E262178800077512 /* Pods-Mastodon-AppShared.debug.xcconfig */,
-				B31D44635FCF6452F7E1B865 /* Pods-Mastodon-AppShared.release.xcconfig */,
-				9A0982D8F349244EB558CDFD /* Pods-AppShared.debug.xcconfig */,
-				ECA373ABA86BE3C2D7ED878E /* Pods-AppShared.release.xcconfig */,
-				EE13214BC0246BE5210CCC10 /* Pods-AppShared.asdk.xcconfig */,
-				819CEC9DCAD8E8E7BD85A7BB /* Pods-Mastodon.asdk.xcconfig */,
-				A67FD038ECDA0E411AF8DB4D /* Pods-Mastodon-MastodonUITests.asdk.xcconfig */,
-				5DA82A9B4ABDAFA3AB9A49C7 /* Pods-MastodonTests.asdk.xcconfig */,
-				F31E7502A7E3945B98C6CBAF /* Pods-NotificationService.asdk.xcconfig */,
-				A9B1FB898DFD6063B044298C /* Pods-AppShared.asdk - debug.xcconfig */,
-				DDB1B139FA8EA26F510D58B6 /* Pods-AppShared.asdk - release.xcconfig */,
-				1D6D967E77A5357E2C6110D9 /* Pods-Mastodon.asdk - debug.xcconfig */,
-				BD7598A87F4497045EDEF252 /* Pods-Mastodon.asdk - release.xcconfig */,
-				E5C7236E58D14A0322FE00F2 /* Pods-Mastodon-MastodonUITests.asdk - debug.xcconfig */,
-				8850E70A1D5FF51432E43653 /* Pods-Mastodon-MastodonUITests.asdk - release.xcconfig */,
-				7CEFFAE9AF9284B13C0A758D /* Pods-MastodonTests.asdk - debug.xcconfig */,
-				46DAB0EBDDFB678347CD96FF /* Pods-MastodonTests.asdk - release.xcconfig */,
-				3B7FD8F28DDA8FBCE5562B78 /* Pods-NotificationService.asdk - debug.xcconfig */,
-				9CFF58FD900AC059428700E7 /* Pods-NotificationService.asdk - release.xcconfig */,
-				6130CBE4B26E3C976ACC1688 /* Pods-ShareActionExtension.asdk - debug.xcconfig */,
-				5CE45680252519F42FEA2D13 /* Pods-ShareActionExtension.asdk - release.xcconfig */,
-				C3789232A52F43529CA67E95 /* Pods-MastodonIntent.asdk - debug.xcconfig */,
-				F920AD4EC23B0D00F5CCA58E /* Pods-MastodonIntent.asdk - release.xcconfig */,
-				3E08A432F40BA7B9CAA9DB68 /* Pods-AppShared.release snapshot.xcconfig */,
-				0655B257371274BEB7EB1C19 /* Pods-Mastodon.release snapshot.xcconfig */,
-				0827D1674B2523503E8605F6 /* Pods-Mastodon-MastodonUITests.release snapshot.xcconfig */,
-				8E79CCBE51FBC3F7FE8CF49F /* Pods-MastodonTests.release snapshot.xcconfig */,
-				63EF9E6E5B575CD2A8B0475D /* Pods-AppShared.profile.xcconfig */,
-				7CB58D292DA7ACEF179A9050 /* Pods-Mastodon.profile.xcconfig */,
-				728DE51ADA27C395C6E1BAB5 /* Pods-Mastodon-MastodonUITests.profile.xcconfig */,
-				DF65937EC1FF64462BC002EE /* Pods-MastodonTests.profile.xcconfig */,
+				DD2146C3D087A61330DA1E23 /* Pods-Mastodon.debug.xcconfig */,
+				9923D862E75D3FD8DAF21D8B /* Pods-Mastodon.profile.xcconfig */,
+				4DA75A436801435A04123191 /* Pods-Mastodon.release.xcconfig */,
+				A9B6E15672FD8B7037F0B299 /* Pods-Mastodon.release snapshot.xcconfig */,
+				7C254CCD427B3747837E3819 /* Pods-Mastodon-MastodonUITests.debug.xcconfig */,
+				25A84B41760D0E941C3CB731 /* Pods-Mastodon-MastodonUITests.profile.xcconfig */,
+				5E8E4EC7A256F30DF3CDB93E /* Pods-Mastodon-MastodonUITests.release.xcconfig */,
+				3FB2DE3A8AA10A30D74F116C /* Pods-Mastodon-MastodonUITests.release snapshot.xcconfig */,
+				D15EE9B94A7970947047BD59 /* Pods-MastodonTests.debug.xcconfig */,
+				BF98437A37C950A45F54892F /* Pods-MastodonTests.profile.xcconfig */,
+				866815100A16AC58D9F66CD6 /* Pods-MastodonTests.release.xcconfig */,
+				EC81D76E6ED909D4AA897C67 /* Pods-MastodonTests.release snapshot.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -1701,15 +1645,14 @@
 			isa = PBXGroup;
 			children = (
 				DBF96325262EC0A6001D8D25 /* AuthenticationServices.framework */,
-				A4ABE34829701A4496C5BB64 /* Pods_Mastodon.framework */,
-				3C030226D3C73DCC23D67452 /* Pods_Mastodon_MastodonUITests.framework */,
-				452147B2903DF38070FE56A2 /* Pods_MastodonTests.framework */,
-				F4A2A2D7000E477CA459ADA9 /* Pods_AppShared.framework */,
 				DB8FAB9E26AEC3A2008E5AF4 /* Intents.framework */,
 				DB8FABA926AEC3A2008E5AF4 /* IntentsUI.framework */,
 				2A6451022964223800CD8B8A /* UniformTypeIdentifiers.framework */,
 				2A728121297EA9D7004138C5 /* WidgetKit.framework */,
 				2A728123297EA9D7004138C5 /* SwiftUI.framework */,
+				6680D28D537D289A2928E568 /* Pods_Mastodon.framework */,
+				80A66778C82763EB45D51455 /* Pods_Mastodon_MastodonUITests.framework */,
+				DD1EFF72748E306183C4D8B0 /* Pods_MastodonTests.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -2581,7 +2524,6 @@
 		DB98335F25C93B0400AD9700 /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
-				CD92E0F10BDE4FE7C4B999F2 /* Pods_MastodonTests.framework */,
 				2DA7D05025CA545E00804E11 /* LoadMoreConfigurableTableViewContainer.swift */,
 				DB1FD45F25F278AF004CFCFC /* CategoryPickerSection.swift */,
 			);
@@ -2816,6 +2758,7 @@
 				85904C01293BC0EB0011C817 /* ImageProvider.swift */,
 				85904C03293BC1940011C817 /* URLActivityItemWithMetadata.swift */,
 				855149C929606D6400943D96 /* PortraitAlertController.swift */,
+				FBDC144F29A5405700405037 /* MastodonMyServer.swift */,
 			);
 			path = Helper;
 			sourceTree = "<group>";
@@ -3038,8 +2981,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = DB427DFC25BAA00100D1B89D /* Build configuration list for PBXNativeTarget "Mastodon" */;
 			buildPhases = (
-				7A04933A2AB1D5B758D4F908 /* [CP] Check Pods Manifest.lock */,
-				5532CB85BBE168B25B20720B /* [CP] Embed Pods Frameworks */,
+				FC6173A6D0E210A905505270 /* [CP] Check Pods Manifest.lock */,
 				DB427DD025BAA00100D1B89D /* Resources */,
 				DB427DCE25BAA00100D1B89D /* Sources */,
 				DB427DCF25BAA00100D1B89D /* Frameworks */,
@@ -3048,6 +2990,7 @@
 				DB3D100425BAA71500EAA174 /* Run SwiftGen */,
 				DB025B8E278D6448002F581E /* Run Sourcery: Core Data */,
 				DB697DD2278F48D5004EF2F7 /* Run Sourcery */,
+				173917B70EB8D9F7D6D81B60 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -3070,7 +3013,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = DB427DFF25BAA00100D1B89D /* Build configuration list for PBXNativeTarget "MastodonTests" */;
 			buildPhases = (
-				E139F888AA77A10B890BFED6 /* [CP] Check Pods Manifest.lock */,
+				6AF61B8A693EC5246053715B /* [CP] Check Pods Manifest.lock */,
 				DB427DE425BAA00100D1B89D /* Sources */,
 				DB427DE525BAA00100D1B89D /* Frameworks */,
 				DB427DE625BAA00100D1B89D /* Resources */,
@@ -3093,11 +3036,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = DB427E0225BAA00100D1B89D /* Build configuration list for PBXNativeTarget "MastodonUITests" */;
 			buildPhases = (
-				6E033728B42BA1C0018B6131 /* [CP] Check Pods Manifest.lock */,
+				78628204B1AB3E72103369AE /* [CP] Check Pods Manifest.lock */,
 				DB427DEF25BAA00100D1B89D /* Sources */,
 				DB427DF025BAA00100D1B89D /* Frameworks */,
 				DB427DF125BAA00100D1B89D /* Resources */,
-				ECC2E90D421B45415C311BED /* [CP] Embed Pods Frameworks */,
+				6098176C17371EDA44B2C89B /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -3336,7 +3279,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		5532CB85BBE168B25B20720B /* [CP] Embed Pods Frameworks */ = {
+		173917B70EB8D9F7D6D81B60 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -3353,7 +3296,46 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Mastodon/Pods-Mastodon-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		6E033728B42BA1C0018B6131 /* [CP] Check Pods Manifest.lock */ = {
+		6098176C17371EDA44B2C89B /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		6AF61B8A693EC5246053715B /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-MastodonTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		78628204B1AB3E72103369AE /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -3369,28 +3351,6 @@
 			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/Pods-Mastodon-MastodonUITests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		7A04933A2AB1D5B758D4F908 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-Mastodon-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -3454,7 +3414,7 @@
 			shellPath = /bin/sh;
 			shellScript = "if [[ -f \"${PODS_ROOT}/Sourcery/bin/sourcery\" ]]; then\n  \"${PODS_ROOT}/Sourcery/bin/sourcery\" --config ./Mastodon\nelse\n  echo \"warning: Sourcery is not installed. Run 'pod install --repo-update' to install it.\"\nfi\n";
 		};
-		E139F888AA77A10B890BFED6 /* [CP] Check Pods Manifest.lock */ = {
+		FC6173A6D0E210A905505270 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -3469,28 +3429,11 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-MastodonTests-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-Mastodon-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		ECC2E90D421B45415C311BED /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Mastodon-MastodonUITests/Pods-Mastodon-MastodonUITests-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -3574,6 +3517,7 @@
 				DB02CDAB26256A9500D0A2AF /* ThreadReplyLoaderTableViewCell.swift in Sources */,
 				DBEFCD80282A2AA900C0ABEA /* ReportServerRulesViewModel.swift in Sources */,
 				DB0617FF27855D6C0030EE79 /* MastodonServerRulesViewModel+Diffable.swift in Sources */,
+				FBDC145029A5405700405037 /* MastodonMyServer.swift in Sources */,
 				DBB5255E2611F07A002F1F29 /* ProfileViewModel.swift in Sources */,
 				DB0FCB982797F6BF006C02E2 /* UserTableViewCell+ViewModel.swift in Sources */,
 				2D8434FB25FF46B300EECE90 /* HomeTimelineNavigationBarTitleView.swift in Sources */,
@@ -4195,7 +4139,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OpenInActionExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Open using Mastodon";
@@ -4207,7 +4151,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.OpenInActionExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.OpenInActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4225,7 +4169,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OpenInActionExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Open using Mastodon";
@@ -4237,7 +4181,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.OpenInActionExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.OpenInActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4255,7 +4199,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OpenInActionExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Open using Mastodon";
@@ -4267,7 +4211,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.OpenInActionExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.OpenInActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4285,7 +4229,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OpenInActionExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Open using Mastodon";
@@ -4297,7 +4241,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.OpenInActionExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.OpenInActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4317,7 +4261,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WidgetExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetExtension;
@@ -4329,7 +4273,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.WidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.WidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4348,7 +4292,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WidgetExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetExtension;
@@ -4360,7 +4304,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.WidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.WidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4379,7 +4323,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WidgetExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetExtension;
@@ -4391,7 +4335,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.WidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.WidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4410,7 +4354,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WidgetExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetExtension;
@@ -4422,7 +4366,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.WidgetExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.WidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -4555,7 +4499,7 @@
 		};
 		DB427DFD25BAA00100D1B89D /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2E1F6A67FDF9771D3E064FDC /* Pods-Mastodon.debug.xcconfig */;
+			baseConfigurationReference = DD2146C3D087A61330DA1E23 /* Pods-Mastodon.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -4565,17 +4509,21 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "Mastodon/Resources/Preview\\ Assets.xcassets";
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = Mastodon/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MastoTurk;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4.12;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app;
+				MARKETING_VERSION = 2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "Mastodon/Vender/Mastodon-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -4586,7 +4534,7 @@
 		};
 		DB427DFE25BAA00100D1B89D /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 75E3471C898DDD9631729B6E /* Pods-Mastodon.release.xcconfig */;
+			baseConfigurationReference = 4DA75A436801435A04123191 /* Pods-Mastodon.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -4596,18 +4544,22 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "Mastodon/Resources/Preview\\ Assets.xcassets";
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				EXCLUDED_SOURCE_FILE_NAMES = "Mastodon/Resources/Preview\\ Assets.xcassets";
 				INFOPLIST_FILE = Mastodon/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MastoTurk;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4.12;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app;
+				MARKETING_VERSION = 2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "Mastodon/Vender/Mastodon-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -4617,18 +4569,18 @@
 		};
 		DB427E0025BAA00100D1B89D /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = EC6E707B68A67DB08EC288FA /* Pods-MastodonTests.debug.xcconfig */;
+			baseConfigurationReference = D15EE9B94A7970947047BD59 /* Pods-MastodonTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.MastodonTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.Tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -4641,18 +4593,18 @@
 		};
 		DB427E0125BAA00100D1B89D /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9780A4C98FFC65B32B50D1C0 /* Pods-MastodonTests.release.xcconfig */;
+			baseConfigurationReference = 866815100A16AC58D9F66CD6 /* Pods-MastodonTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.MastodonTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.Tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -4665,17 +4617,17 @@
 		};
 		DB427E0325BAA00100D1B89D /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 459EA4F43058CAB47719E963 /* Pods-Mastodon-MastodonUITests.debug.xcconfig */;
+			baseConfigurationReference = 7C254CCD427B3747837E3819 /* Pods-Mastodon-MastodonUITests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.MastodonUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.UITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -4688,17 +4640,17 @@
 		};
 		DB427E0425BAA00100D1B89D /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = BB482D32A7B9825BF5327C4F /* Pods-Mastodon-MastodonUITests.release.xcconfig */;
+			baseConfigurationReference = 5E8E4EC7A256F30DF3CDB93E /* Pods-Mastodon-MastodonUITests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.MastodonUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.UITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -4774,7 +4726,7 @@
 		};
 		DB848E2B282B5E6300A302CC /* Profile */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7CB58D292DA7ACEF179A9050 /* Pods-Mastodon.profile.xcconfig */;
+			baseConfigurationReference = 9923D862E75D3FD8DAF21D8B /* Pods-Mastodon.profile.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -4784,17 +4736,21 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "Mastodon/Resources/Preview\\ Assets.xcassets";
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = Mastodon/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MastoTurk;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4.12;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app;
+				MARKETING_VERSION = 2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "Mastodon/Vender/Mastodon-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -4805,18 +4761,18 @@
 		};
 		DB848E2C282B5E6300A302CC /* Profile */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = DF65937EC1FF64462BC002EE /* Pods-MastodonTests.profile.xcconfig */;
+			baseConfigurationReference = BF98437A37C950A45F54892F /* Pods-MastodonTests.profile.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.MastodonTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.Tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -4829,17 +4785,17 @@
 		};
 		DB848E2D282B5E6300A302CC /* Profile */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 728DE51ADA27C395C6E1BAB5 /* Pods-Mastodon-MastodonUITests.profile.xcconfig */;
+			baseConfigurationReference = 25A84B41760D0E941C3CB731 /* Pods-Mastodon-MastodonUITests.profile.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.MastodonUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.UITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -4856,14 +4812,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NotificationService/NotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = NotificationService/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.NotificationService;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.NotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -4877,14 +4834,15 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareActionExtension/ShareActionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = ShareActionExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.ShareActionExtension;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.ShareActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -4899,14 +4857,15 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MastodonIntent/MastodonIntent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonIntent/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.MastodonIntent;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.MastodonIntent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -4921,14 +4880,15 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MastodonIntent/MastodonIntent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonIntent/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.MastodonIntent;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.MastodonIntent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -4943,14 +4903,15 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MastodonIntent/MastodonIntent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonIntent/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.MastodonIntent;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.MastodonIntent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -4965,14 +4926,15 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareActionExtension/ShareActionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = ShareActionExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.ShareActionExtension;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.ShareActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -4987,14 +4949,15 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareActionExtension/ShareActionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = ShareActionExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.ShareActionExtension;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.ShareActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -5065,7 +5028,7 @@
 		};
 		DBEB19E227E4658E00B0E80E /* Release Snapshot */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0655B257371274BEB7EB1C19 /* Pods-Mastodon.release snapshot.xcconfig */;
+			baseConfigurationReference = A9B6E15672FD8B7037F0B299 /* Pods-Mastodon.release snapshot.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -5075,17 +5038,21 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "Mastodon/Resources/Preview\\ Assets.xcassets";
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = Mastodon/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MastoTurk;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4.12;
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app;
+				MARKETING_VERSION = 2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "Mastodon/Vender/Mastodon-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -5095,18 +5062,18 @@
 		};
 		DBEB19E327E4658E00B0E80E /* Release Snapshot */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 8E79CCBE51FBC3F7FE8CF49F /* Pods-MastodonTests.release snapshot.xcconfig */;
+			baseConfigurationReference = EC81D76E6ED909D4AA897C67 /* Pods-MastodonTests.release snapshot.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.MastodonTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.Tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -5119,17 +5086,17 @@
 		};
 		DBEB19E427E4658E00B0E80E /* Release Snapshot */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0827D1674B2523503E8605F6 /* Pods-Mastodon-MastodonUITests.release snapshot.xcconfig */;
+			baseConfigurationReference = 3FB2DE3A8AA10A30D74F116C /* Pods-Mastodon-MastodonUITests.release snapshot.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.MastodonUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.UITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -5146,14 +5113,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NotificationService/NotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = NotificationService/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.NotificationService;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.NotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -5167,14 +5135,15 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareActionExtension/ShareActionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = ShareActionExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.ShareActionExtension;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.ShareActionExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -5189,14 +5158,15 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MastodonIntent/MastodonIntent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = MastodonIntent/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.MastodonIntent;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.MastodonIntent;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION $(inherited)";
@@ -5212,14 +5182,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NotificationService/NotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = NotificationService/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.NotificationService;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.NotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -5234,14 +5205,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NotificationService/NotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5Z4GVSS33P;
+				DEVELOPMENT_TEAM = H2WD9LNSXC;
 				INFOPLIST_FILE = NotificationService/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.joinmastodon.app.NotificationService;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sokullulabs.mastoturk.NotificationService;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;

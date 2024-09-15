@@ -141,9 +141,10 @@ extension WelcomeViewController {
         pageCollectionView.dataSource = self
         view.addSubview(pageCollectionView)
 
-        pageControl.numberOfPages = self.educationPages.count
+        pageControl.numberOfPages = 1 //self.educationPages.count
         pageControl.addTarget(self, action: #selector(WelcomeViewController.pageControlDidChange(_:)), for: .valueChanged)
         view.addSubview(pageControl)
+        pageControl.isHidden = true
 
         let scrollView = pageCollectionView as UIScrollView
         scrollView.delegate = self
