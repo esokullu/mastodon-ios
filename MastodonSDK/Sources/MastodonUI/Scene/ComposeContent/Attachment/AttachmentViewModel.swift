@@ -5,10 +5,10 @@
 //  Created by MainasuK on 2021/11/19.
 //
 
-import os.log
 import UIKit
 import Combine
 import PhotosUI
+import MastodonSDK
 import MastodonCore
 import MastodonLocalization
 import func QuartzCore.CACurrentMediaTime
@@ -20,9 +20,6 @@ public protocol AttachmentViewModelDelegate: AnyObject {
 
 final public class AttachmentViewModel: NSObject, ObservableObject, Identifiable {
 
-    static let logger = Logger(subsystem: "AttachmentViewModel", category: "ViewModel")
-    let logger = Logger(subsystem: "AttachmentViewModel", category: "ViewModel")
-    
     public let id = UUID()
     
     var disposeBag = Set<AnyCancellable>()
@@ -44,12 +41,13 @@ final public class AttachmentViewModel: NSObject, ObservableObject, Identifiable
     }()
 
     // input
-    public let api: APIService
-    public let authContext: AuthContext
+    public let authenticationBox: MastodonAuthenticationBox
     public let input: Input
     public let sizeLimit: SizeLimit
-    @Published var caption = ""
-    
+    @Published public internal(set) var caption = ""
+    @Published public private(set) var isCaptionEditable = true
+    let isEditing: Bool
+
     // output
     @Published public private(set) var output: Output?
     @Published public private(set) var thumbnail: UIImage?      // original size image thumbnail
@@ -73,19 +71,22 @@ final public class AttachmentViewModel: NSObject, ObservableObject, Identifiable
     @Published var remainTimeLocalizedString: String?
     
     public init(
-        api: APIService,
-        authContext: AuthContext,
+        authenticationBox: MastodonAuthenticationBox,
         input: Input,
         sizeLimit: SizeLimit,
-        delegate: AttachmentViewModelDelegate
+        delegate: AttachmentViewModelDelegate,
+        isEditing: Bool = false,
+        caption: String? = nil
     ) {
-        self.api = api
-        self.authContext = authContext
+        self.authenticationBox = authenticationBox
         self.input = input
         self.sizeLimit = sizeLimit
         self.delegate = delegate
+        self.isEditing = isEditing
+
+        self.caption = caption ?? ""
+
         super.init()
-        // end init
         
         Timer.publish(every: 1.0 / 60.0, on: .main, in: .common)        // 60 FPS
             .autoconnect()
@@ -100,7 +101,6 @@ final public class AttachmentViewModel: NSObject, ObservableObject, Identifiable
         progress
             .observe(\.fractionCompleted, options: [.initial, .new]) { [weak self] progress, _ in
                 guard let self = self else { return }
-                self.logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): publish progress \(progress.fractionCompleted)")
                 DispatchQueue.main.async {
                     self.fractionCompleted = progress.fractionCompleted
                 }
@@ -111,7 +111,6 @@ final public class AttachmentViewModel: NSObject, ObservableObject, Identifiable
         // progress
         //     .observe(\.isFinished, options: [.initial, .new]) { [weak self] progress, _ in
         //         guard let self = self else { return }
-        //         self.logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): publish progress \(progress.fractionCompleted)")
         //         DispatchQueue.main.async {
         //             self.objectWillChange.send()
         //         }
@@ -135,6 +134,19 @@ final public class AttachmentViewModel: NSObject, ObservableObject, Identifiable
         let uploadTask = Task { @MainActor in
             do {
                 var output = try await load(input: input)
+                
+                switch input {
+                case .mastodonAssetUrl:
+                    if self.isEditing == false {
+                        self.isCaptionEditable = false
+                    }
+                    self.uploadState = .finish
+                    self.output = output
+                    self.uploadResult = .exists
+                    return
+                default:
+                    break
+                }
                 
                 switch output {
                 case .image(let data, _):
@@ -160,13 +172,9 @@ final public class AttachmentViewModel: NSObject, ObservableObject, Identifiable
             }
         }   // end Task
         self.uploadTask = uploadTask
-        Task {
-            await uploadTask.value
-        }
     }
     
     deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         
         uploadTask?.cancel()
         
@@ -249,6 +257,7 @@ extension AttachmentViewModel {
     public enum Input: Hashable {
         case image(UIImage)
         case url(URL)
+        case mastodonAssetUrl(url: URL, attachmentId: String)
         case pickerResult(PHPickerResult)
         case itemProvider(NSItemProvider)
     }
@@ -311,4 +320,5 @@ extension AttachmentViewModel {
     func update(uploadResult: UploadResult) {
         self.uploadResult = uploadResult
     }
+
 }

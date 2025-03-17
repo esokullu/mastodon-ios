@@ -5,7 +5,6 @@
 //  Created by sxiaojian on 2021/3/11.
 //
 
-import os.log
 import Foundation
 import Combine
 import UIKit
@@ -145,18 +144,7 @@ extension ContentWarningOverlayView {
         addGestureRecognizer(tapGestureRecognizer)
         
         configure(style: .media)
-        setupBackgroundColor(theme: ThemeService.shared.currentTheme.value)
-        ThemeService.shared.currentTheme
-            .receive(on: RunLoop.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.setupBackgroundColor(theme: theme)
-            }
-            .store(in: &_disposeBag)
-    }
-
-    private func setupBackgroundColor(theme: Theme) {
-        contentOverlayView.backgroundColor = theme.contentWarningOverlayBackgroundColor
+        contentOverlayView.backgroundColor = SystemTheme.contentWarningOverlayBackgroundColor
     }
 }
 
@@ -200,7 +188,6 @@ extension ContentWarningOverlayView {
 
 extension ContentWarningOverlayView {
     @objc private func tapGestureRecognizerHandler(_ sender: UITapGestureRecognizer) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         delegate?.contentWarningOverlayViewDidPressed(self)
     }
 }

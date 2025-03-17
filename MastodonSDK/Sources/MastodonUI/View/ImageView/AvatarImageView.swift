@@ -11,15 +11,16 @@ import AlamofireImage
 
 public class AvatarImageView: FLAnimatedImageView {
     public var imageViewSize: CGSize?
-    public var configuration = Configuration(url: nil)
+    public var url: URL? = nil
     public var cornerConfiguration = CornerConfiguration()
 }
 
 extension AvatarImageView {
     
     public func prepareForReuse() {
-        cancelTask()
-        af.cancelImageRequest()
+        cancelTask() // should cancel any gif loading task
+        af.cancelImageRequest() // should cancel any normal image loading task
+        self.image = Self.placeholder // because loading a gif doesn't offer a placeholder option and we want to make sure we don't continue showing an avatar from another account while a gif avatar loads
     }
 
     override public func layoutSubviews() {
@@ -55,41 +56,17 @@ extension AvatarImageView {
     
     public static let placeholder = UIImage.placeholder(color: .systemFill)
     
-    public struct Configuration {
-        public let url: URL?
-        public let placeholder: UIImage?
-        
-        public init(
-            url: URL?,
-            placeholder: UIImage = AvatarImageView.placeholder
-        ) {
-            self.url = url
-            self.placeholder = placeholder
-        }
-        
-        public init(
-            image: UIImage
-        ) {
-            self.url = nil
-            self.placeholder = image
-        }
-    }
-    
-    public func configure(configuration: Configuration) {
+    public func configure(with url: URL?) {
         prepareForReuse()
         
-        self.configuration = configuration
+        self.url = url
         
-        guard let url = configuration.url else {
-            image = configuration.placeholder
-            return
-        }
-        
+        guard let url else { return }
+
         switch url.pathExtension.lowercased() {
         case "gif":
             setImage(
-                url: configuration.url,
-                placeholder: configuration.placeholder,
+                url: url,
                 scaleToSize: imageViewSize
             )
         default:
@@ -105,7 +82,7 @@ extension AvatarImageView {
             
             af.setImage(
                 withURL: url,
-                placeholderImage: configuration.placeholder,
+                placeholderImage: Self.placeholder,
                 filter: filter
             )
         }

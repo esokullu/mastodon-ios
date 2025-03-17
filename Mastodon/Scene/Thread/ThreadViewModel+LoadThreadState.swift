@@ -5,18 +5,16 @@
 //  Created by MainasuK Cirno on 2021-4-12.
 //
 
-import os.log
 import Foundation
 import Combine
 import GameplayKit
 import CoreDataStack
 import MastodonSDK
+import MastodonCore
 
 extension ThreadViewModel {
     class LoadThreadState: GKState {
         
-        let logger = Logger(subsystem: "ThreadViewModel.LoadThreadState", category: "StateMachine")
-
         let id = UUID()
         
         weak var viewModel: ThreadViewModel?
@@ -25,21 +23,9 @@ extension ThreadViewModel {
             self.viewModel = viewModel
         }
         
-        override func didEnter(from previousState: GKState?) {
-            super.didEnter(from: previousState)
-            
-            let from = previousState.flatMap { String(describing: $0) } ?? "nil"
-            let to = String(describing: self)
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): \(from) -> \(to)")
-        }
-        
         @MainActor
         func enter(state: LoadThreadState.Type) {
             stateMachine?.enter(state)
-        }
-        
-        deinit {
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): [\(self.id.uuidString)] \(String(describing: self))")
         }
     }
 }
@@ -66,51 +52,42 @@ extension ThreadViewModel.LoadThreadState {
         override func didEnter(from previousState: GKState?) {
             super.didEnter(from: previousState)
 
-            guard let viewModel = viewModel, let stateMachine = stateMachine else { return }
+            guard let viewModel, let stateMachine else { return }
             
-            guard let threadContext = viewModel.threadContext else {
-                stateMachine.enter(Fail.self)
-                return
-            }
             
             Task { @MainActor in
+                guard let threadContext = viewModel.threadContext else {
+                    stateMachine.enter(Fail.self)
+                    return
+                }
                 do {
-                    let response = try await viewModel.context.apiService.statusContext(
+                    let response = try await APIService.shared.statusContext(
                         statusID: threadContext.statusID,
-                        authenticationBox: viewModel.authContext.mastodonAuthenticationBox
+                        authenticationBox: viewModel.authenticationBox
                     )
-                    
-                    await enter(state: NoMore.self)
+
+                    enter(state: NoMore.self)
                     
                     // assert(!Thread.isMainThread)
                     // await Task.sleep(1_000_000_000)     // 1s delay to prevent UI render issue
+
+                    _ = try await APIService.shared.getHistory(forStatusID: threadContext.statusID,
+                                                                                          authenticationBox: viewModel.authenticationBox)
                     
-                    viewModel.mastodonStatusThreadViewModel.appendAncestor(
-                        domain: threadContext.domain,
+                    await viewModel.mastodonStatusThreadViewModel.appendAncestor(
                         nodes: MastodonStatusThreadViewModel.Node.replyToThread(
                             for: threadContext.replyToID,
                             from: response.value.ancestors
                         )
                     )
-                    // deprecated: Tree mode replies
-                    // viewModel.mastodonStatusThreadViewModel.appendDescendant(
-                    //     domain: threadContext.domain,
-                    //     nodes: MastodonStatusThreadViewModel.Node.children(
-                    //         of: threadContext.statusID,
-                    //         from: response.value.descendants
-                    //     )
-                    // )
-                    
-                    // new: the same order from API
-                    viewModel.mastodonStatusThreadViewModel.appendDescendant(
-                        domain: threadContext.domain,
+
+                    await viewModel.mastodonStatusThreadViewModel.appendDescendant(
                         nodes: response.value.descendants.map { status in
-                            return .init(statusID: status.id, children: [])
+                            return .init(status: .fromEntity(status), children: [])
                         }
                     )
                 } catch {
-                    logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): fetch status context for \(threadContext.statusID) fail: \(error.localizedDescription)")
-                    await enter(state: Fail.self)
+                    enter(state: Fail.self)
                 }
             }   // end Task
         }
@@ -137,8 +114,7 @@ extension ThreadViewModel.LoadThreadState {
     
     class NoMore: ThreadViewModel.LoadThreadState {
         override func isValidNextState(_ stateClass: AnyClass) -> Bool {
-            return false
+            stateClass is Loading.Type
         }
     }
-    
 }

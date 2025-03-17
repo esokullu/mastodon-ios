@@ -5,13 +5,13 @@
 //  Created by sxiaojian on 2021/4/12.
 //
 
-import os.log
 import UIKit
 import Combine
 import Pageboy
 import MastodonAsset
 import MastodonCore
 import MastodonLocalization
+import MastodonSDK
 
 final class NotificationViewModel {
     
@@ -19,29 +19,48 @@ final class NotificationViewModel {
     
     // input
     let context: AppContext
-    let authContext: AuthContext
+    let authenticationBox: MastodonAuthenticationBox
+    var notificationPolicy: Mastodon.Entity.NotificationPolicy?
     let viewDidLoad = PassthroughSubject<Void, Never>()
     
     // output
-    let scopes = NotificationTimelineViewModel.Scope.allCases
     @Published var viewControllers: [UIViewController] = []
-    @Published var currentPageIndex = 0
-
-    
-    init(context: AppContext, authContext: AuthContext) {
-        self.context = context
-        self.authContext = authContext
-        // end init
+    @Published var currentPageIndex = 0 {
+        didSet {
+            lastPageIndex = currentPageIndex
+        }
     }
-}
     
-extension NotificationTimelineViewModel.Scope {
-    var title: String {
-        switch self {
-        case .everything:
-            return L10n.Scene.Notification.Title.everything
-        case .mentions:
-            return L10n.Scene.Notification.Title.mentions
+    private var lastPageIndex: Int {
+        get {
+            guard let selectedTabName = UserDefaults.shared.getLastSelectedNotificationsTabName(
+                accessToken: authenticationBox.userAuthorization.accessToken
+            ), let scope = APIService.MastodonNotificationScope(rawValue: selectedTabName) else {
+                return 0
+            }
+            
+            return APIService.MastodonNotificationScope.allCases.firstIndex(of: scope) ?? 0
+        }
+        set {
+            UserDefaults.shared.setLastSelectedNotificationsTabName(
+                accessToken: authenticationBox.userAuthorization.accessToken,
+                value: APIService.MastodonNotificationScope.allCases[newValue].rawValue
+            )
+        }
+    }
+
+    init(context: AppContext, authenticationBox: MastodonAuthenticationBox) {
+        self.context = context
+        self.authenticationBox = authenticationBox
+
+        // end init
+        Task {
+            do {
+                let policy = try await APIService.shared.notificationPolicy(authenticationBox: authenticationBox)
+                self.notificationPolicy = policy.value
+            } catch {
+                // we won't show the filtering-options.
+            }
         }
     }
 }
@@ -58,7 +77,14 @@ extension NotificationViewModel: PageboyViewControllerDataSource {
     }
     
     func defaultPage(for pageboyViewController: PageboyViewController) -> PageboyViewController.Page? {
-        return .first
+        guard
+            let pageCount = pageboyViewController.pageCount,
+            pageCount > 1,
+            (0...(pageCount - 1)).contains(lastPageIndex)
+        else {
+            return .first /// this should never happen, but in case we somehow manage to acquire invalid data in `lastPageIndex` let's make sure not to crash the app.
+        }
+        return .at(index: lastPageIndex)
     }
     
 }

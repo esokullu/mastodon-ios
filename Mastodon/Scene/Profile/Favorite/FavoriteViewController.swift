@@ -8,9 +8,7 @@
 // Note: Prefer use US favorite then EN favourite in coding
 // to following the text checker auto-correct behavior
 
-import os.log
 import UIKit
-import AVKit
 import Combine
 import GameplayKit
 import MastodonAsset
@@ -18,12 +16,7 @@ import MastodonCore
 import MastodonUI
 import MastodonLocalization
 
-final class FavoriteViewController: UIViewController, NeedsDependency, MediaPreviewableViewController {
-    
-    let logger = Logger(subsystem: "FavoriteViewController", category: "ViewController")
-    
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+final class FavoriteViewController: UIViewController, MediaPreviewableViewController {
     
     var disposeBag = Set<AnyCancellable>()
     var viewModel: FavoriteViewModel!
@@ -42,9 +35,6 @@ final class FavoriteViewController: UIViewController, NeedsDependency, MediaPrev
         return tableView
     }()
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
     
 }
 
@@ -53,14 +43,7 @@ extension FavoriteViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        view.backgroundColor = ThemeService.shared.currentTheme.value.secondarySystemBackgroundColor
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.view.backgroundColor = theme.secondarySystemBackgroundColor
-            }
-            .store(in: &disposeBag)
+        view.backgroundColor = .secondarySystemBackground
 
         navigationItem.titleView = titleView
         titleView.update(title: L10n.Scene.Favorite.title, subtitle: nil)
@@ -74,16 +57,6 @@ extension FavoriteViewController {
             tableView: tableView,
             statusTableViewCellDelegate: self
         )
-
-        // setup batch fetch
-        viewModel.listBatchFetchViewModel.setup(scrollView: tableView)
-        viewModel.listBatchFetchViewModel.shouldFetch
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                self.viewModel.stateMachine.enter(FavoriteViewModel.State.Loading.self)
-            }
-            .store(in: &disposeBag)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -102,7 +75,7 @@ extension FavoriteViewController {
 
 // MARK: - AuthContextProvider
 extension FavoriteViewController: AuthContextProvider {
-    var authContext: AuthContext { viewModel.authContext }
+    var authenticationBox: MastodonAuthenticationBox { viewModel.authenticationBox }
 }
 
 // MARK: - UITableViewDelegate
@@ -152,5 +125,15 @@ extension FavoriteViewController: StatusTableViewControllerNavigateable {
     
     @objc func statusKeyCommandHandlerRelay(_ sender: UIKeyCommand) {
         statusKeyCommandHandler(sender)
+    }
+}
+
+//MARK: - UIScrollViewDelegate
+
+extension FavoriteViewController: UIScrollViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        Self.scrollViewDidScrollToEnd(scrollView) {
+            viewModel.stateMachine.enter(FavoriteViewModel.State.Loading.self)
+        }
     }
 }

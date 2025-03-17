@@ -5,6 +5,7 @@ import SwiftUI
 import Intents
 import MastodonSDK
 import MastodonLocalization
+import MastodonCore
 
 struct LatestFollowersWidgetProvider: IntentTimelineProvider {
     func placeholder(in context: Context) -> LatestFollowersEntry {
@@ -71,17 +72,16 @@ struct LatestFollowersWidget: Widget {
         .configurationDisplayName(L10n.Widget.LatestFollowers.configurationDisplayName)
         .description(L10n.Widget.LatestFollowers.configurationDescription)
         .supportedFamilies(availableFamilies)
+        .contentMarginsDisabled() // Disable excessive margins (only effective for iOS >= 17.0
     }
 }
 
 private extension LatestFollowersWidgetProvider {
     func loadCurrentEntry(for configuration: LatestFollowersIntent, in context: Context, completion: @escaping (LatestFollowersEntry) -> Void) {
         Task { @MainActor in
+
             guard
-                let authBox = WidgetExtension.appContext
-                    .authenticationService
-                    .mastodonAuthenticationBoxes
-                    .first
+                let authBox = AuthenticationServiceProvider.shared.currentActiveUser.value
             else {
                 guard !context.isPreview else {
                     return completion(.placeholder)
@@ -91,8 +91,7 @@ private extension LatestFollowersWidgetProvider {
 
             var accounts = [LatestFollowersEntryAccountable]()
 
-            let followers = try await WidgetExtension.appContext
-                .apiService
+            let followers = try await APIService.shared
                 .followers(userID: authBox.userID, maxID: nil, authenticationBox: authBox)
                 .value
                 .prefix(2) // X most recent followers

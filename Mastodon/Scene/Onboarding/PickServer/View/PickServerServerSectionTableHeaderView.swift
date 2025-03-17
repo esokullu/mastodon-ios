@@ -5,12 +5,12 @@
 //  Created by MainasuK on 2022-1-4.
 //
 
-import os.log
 import UIKit
 import Tabman
 import MastodonAsset
 import MastodonUI
 import MastodonLocalization
+import MastodonCore
 
 protocol PickServerServerSectionTableHeaderViewDelegate: AnyObject {
     func pickServerServerSectionTableHeaderView(_ headerView: PickServerServerSectionTableHeaderView, collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
@@ -18,7 +18,7 @@ protocol PickServerServerSectionTableHeaderViewDelegate: AnyObject {
 
 final class PickServerServerSectionTableHeaderView: UIView {
     
-    static let collectionViewHeight: CGFloat = 30
+    static let collectionViewHeight: CGFloat = 36
     static let spacing: CGFloat = 16
     
     static let height: CGFloat = collectionViewHeight + spacing
@@ -98,7 +98,7 @@ extension PickServerServerSectionTableHeaderView {
 extension PickServerServerSectionTableHeaderView: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        UISelectionFeedbackGenerator().selectionChanged()
+        FeedbackGenerator.shared.generate(.selectionChanged)
 
         collectionView.selectItem(at: indexPath, animated: true, scrollPosition: .centeredHorizontally)
         delegate?.pickServerServerSectionTableHeaderView(self, collectionView: collectionView, didSelectItemAt: indexPath)

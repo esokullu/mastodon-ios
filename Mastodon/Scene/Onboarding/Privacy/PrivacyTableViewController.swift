@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SwiftUI
 import MastodonCore
 import MastodonSDK
 import MastodonLocalization
@@ -34,19 +35,14 @@ enum PrivacyRow {
     }
 }
 
-class PrivacyTableViewController: UIViewController, NeedsDependency {
+class PrivacyTableViewController: UIViewController {
 
-    var context: AppContext!
-    var coordinator: SceneCoordinator!
-
+    private let coordinator: SceneCoordinator
     private let tableView: UITableView
     let viewModel: PrivacyViewModel
 
-    init(context: AppContext, coordinator: SceneCoordinator, viewModel: PrivacyViewModel) {
-
-        self.context = context
+    init(coordinator: SceneCoordinator, viewModel: PrivacyViewModel) {
         self.coordinator = coordinator
-
         self.viewModel = viewModel
 
         tableView = UITableView(frame: .zero, style: .insetGrouped)
@@ -81,24 +77,12 @@ class PrivacyTableViewController: UIViewController, NeedsDependency {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        navigationItem.largeTitleDisplayMode = .always
         setupOnboardingAppearance()
     }
 
-    //MARK: - Actions
-    @objc private func backButtonPressed(_ sender: UIButton) {
-        navigationController?.popViewController(animated: true)
-    }
-
     @objc private func nextButtonPressed(_ sender: UIButton) {
-        let viewModel = MastodonRegisterViewModel(
-            context: context,
-            domain: viewModel.domain,
-            authenticateInfo: viewModel.authenticateInfo,
-            instance: viewModel.instance,
-            applicationToken: viewModel.applicationToken
-        )
-        _ = coordinator.present(scene: .mastodonRegister(viewModel: viewModel), from: self, transition: .show)
+        viewModel.didAccept()
     }
 }
 
@@ -115,6 +99,7 @@ extension PrivacyTableViewController: UITableViewDataSource {
         var contentConfiguration = cell.defaultContentConfiguration()
         contentConfiguration.textProperties.color = Asset.Colors.Brand.blurple.color
         contentConfiguration.text = row.title
+        cell.accessibilityTraits = [.button, .link]
 
         cell.contentConfiguration = contentConfiguration
 
@@ -134,19 +119,22 @@ extension PrivacyTableViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         let wrapper = UIView()
-
-        let label = UILabel()
+        let controller = UIHostingController(
+            rootView: HeaderTextView(
+                text: LocalizedStringKey(L10n.Scene.Privacy.description(viewModel.domain))
+            )
+        )
+        guard let label = controller.view else { return nil }
+        addChild(controller)
+        label.backgroundColor = .clear
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.numberOfLines = 0
-        label.text = L10n.Scene.Privacy.description
-        label.textColor = Asset.Colors.Label.primary.color
         wrapper.addSubview(label)
-
+        controller.didMove(toParent: self)
         NSLayoutConstraint.activate([
             label.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: 16),
             label.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
             wrapper.trailingAnchor.constraint(equalTo: label.trailingAnchor),
-            wrapper.bottomAnchor.constraint(equalTo: label.bottomAnchor, constant: 16),
+            wrapper.bottomAnchor.constraint(equalTo: label.bottomAnchor, constant: 16)
         ])
 
         return wrapper
@@ -154,3 +142,14 @@ extension PrivacyTableViewController: UITableViewDelegate {
 }
 
 extension PrivacyTableViewController: OnboardingViewControllerAppearance { }
+
+private struct HeaderTextView: View {
+    let text: LocalizedStringKey
+    
+    var body: some View {
+        Text(text)
+            .fixedSize(horizontal: false, vertical: true)
+            .foregroundStyle(Asset.Colors.Label.primary.swiftUIColor)
+            .padding(.bottom, 16)
+    }
+}

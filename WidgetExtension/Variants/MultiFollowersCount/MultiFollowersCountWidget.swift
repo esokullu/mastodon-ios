@@ -4,6 +4,7 @@ import WidgetKit
 import SwiftUI
 import Intents
 import MastodonSDK
+import MastodonCore
 import MastodonLocalization
 
 struct MultiFollowersCountWidgetProvider: IntentTimelineProvider {
@@ -64,17 +65,16 @@ struct MultiFollowersCountWidget: Widget {
         .configurationDisplayName(L10n.Widget.MultipleFollowers.configurationDisplayName)
         .description(L10n.Widget.MultipleFollowers.configurationDescription)
         .supportedFamilies(availableFamilies)
+        .contentMarginsDisabled() // Disable excessive margins (only effective for iOS >= 17.0
     }
 }
 
 private extension MultiFollowersCountWidgetProvider {
     func loadCurrentEntry(for configuration: MultiFollowersCountIntent, in context: Context, completion: @escaping (MultiFollowersCountEntry) -> Void) {
-        Task {
+        Task { @MainActor in
+
             guard
-                let authBox = WidgetExtension.appContext
-                    .authenticationService
-                    .mastodonAuthenticationBoxes
-                    .first
+                let authBox = AuthenticationServiceProvider.shared.currentActiveUser.value
             else {
                 guard !context.isPreview else {
                     return completion(.placeholder)
@@ -86,9 +86,7 @@ private extension MultiFollowersCountWidgetProvider {
             
             if let configuredAccounts = configuration.accounts?.compactMap({ $0 }) {
                 desiredAccounts = configuredAccounts
-            } else if let currentlyLoggedInAccount = authBox.authenticationRecord.object(
-                in: WidgetExtension.appContext.managedObjectContext
-            )?.user.acctWithDomain {
+            } else if let currentlyLoggedInAccount = authBox.cachedAccount?.acctWithDomain {
                 desiredAccounts = [currentlyLoggedInAccount]
             } else {
                 return completion(.unconfigured)
@@ -98,8 +96,7 @@ private extension MultiFollowersCountWidgetProvider {
             
             for desiredAccount in desiredAccounts {
                 guard
-                    let resultingAccount = try await WidgetExtension.appContext
-                        .apiService
+                    let resultingAccount = try await APIService.shared
                         .search(query: .init(q: desiredAccount, type: .accounts), authenticationBox: authBox)
                         .value
                         .accounts

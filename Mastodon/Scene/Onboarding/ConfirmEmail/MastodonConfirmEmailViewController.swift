@@ -7,19 +7,15 @@
 
 import Combine
 import MastodonSDK
-import os.log
 import UIKit
 import MastodonAsset
 import MastodonCore
 import MastodonUI
 import MastodonLocalization
 
-final class MastodonConfirmEmailViewController: UIViewController, NeedsDependency {
+final class MastodonConfirmEmailViewController: UIViewController {
     
     var disposeBag = Set<AnyCancellable>()
-
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
 
     var viewModel: MastodonConfirmEmailViewModel!
 
@@ -100,17 +96,17 @@ extension MastodonConfirmEmailViewController {
         self.viewModel.timestampUpdatePublisher
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                AuthenticationViewModel.verifyAndSaveAuthentication(context: self.context, info: self.viewModel.authenticateInfo, userToken: self.viewModel.userToken)
+                AuthenticationViewModel.verifyAndActivateAuthentication(info: self.viewModel.authenticateInfo, userToken: self.viewModel.userToken)
                     .receive(on: DispatchQueue.main)
                     .sink { completion in
                         switch completion {
-                        case .failure(let error):
-                            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: swap user access token swap fail: %s", (#file as NSString).lastPathComponent, #line, #function, error.localizedDescription)
+                        case .failure(_):
+                                break
                         case .finished:
                             // upload avatar and set display name in the background
                             Just(self.viewModel.userToken.accessToken)
                                 .asyncMap { token in
-                                    try await self.context.apiService.accountUpdateCredentials(
+                                    try await APIService.shared.accountUpdateCredentials(
                                         domain: self.viewModel.authenticateInfo.domain,
                                         query: self.viewModel.updateCredentialQuery,
                                         authorization: Mastodon.API.OAuth.Authorization(accessToken: token)
@@ -119,19 +115,18 @@ extension MastodonConfirmEmailViewController {
                                 .retry(3)
                                 .sink { completion in
                                     switch completion {
-                                    case .failure(let error):
-                                        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: setup avatar & display name fail: %s", ((#file as NSString).lastPathComponent), #line, #function, error.localizedDescription)
-                                    case .finished:
-                                        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: setup avatar & display name success", ((#file as NSString).lastPathComponent), #line, #function)
+                                    case .failure(_):
+                                            break
+                                        case .finished:
+                                            break
                                     }
                                 } receiveValue: { _ in
                                     // do nothing
                                 }
-                                .store(in: &self.context.disposeBag)    // execute in the background
+                                .store(in: &AppContext.shared.disposeBag)    // execute in the background
                         }   // end switch
-                    } receiveValue: { response in
-                        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: user %s's email confirmed", ((#file as NSString).lastPathComponent), #line, #function, response.value.username)
-                        self.coordinator.setup()
+                    } receiveValue: { _ in
+                        self.sceneCoordinator?.setup()
                         // self.dismiss(animated: true, completion: nil)
                     }
                     .store(in: &self.disposeBag)
@@ -153,7 +148,8 @@ extension MastodonConfirmEmailViewController {
         let nowIn60Seconds = Date().addingTimeInterval(60)
         let boldFont = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: .systemFont(ofSize: 15, weight: .bold))
         let regularFont = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: .systemFont(ofSize: 15, weight: .regular))
-
+        let digitFont = UIFontMetrics(forTextStyle: .body).scaledFont(for: .monospacedDigitSystemFont(ofSize: 15, weight: .bold))
+        
         let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] in 
             guard Date() < nowIn60Seconds else {
                 self?.resendEmailButton.isEnabled = true
@@ -176,7 +172,7 @@ extension MastodonConfirmEmailViewController {
 
             var configuration = self?.resendEmailButton.configuration
 
-            let boldResendString = AttributedString(L10n.Scene.ConfirmEmail.DidntGetLink.resendIn(Int(nowIn60Seconds.timeIntervalSinceNow) + 1), attributes: .init([.font: boldFont]))
+            let boldResendString = AttributedString(L10n.Scene.ConfirmEmail.DidntGetLink.resendIn(Int(nowIn60Seconds.timeIntervalSinceNow) + 1), attributes: .init([.font: digitFont]))
             var attributedTitle = AttributedString(L10n.Scene.ConfirmEmail.DidntGetLink.prefix, attributes: .init([.font: regularFont]))
 
             attributedTitle.append(AttributedString(" "))
@@ -209,13 +205,13 @@ extension MastodonConfirmEmailViewController {
         let resendAction = UIAlertAction(title: L10n.Scene.ConfirmEmail.DontReceiveEmail.resendEmail, style: .default) { _ in
             let url = Mastodon.API.resendEmailURL(domain: self.viewModel.authenticateInfo.domain)
             let viewModel = MastodonResendEmailViewModel(resendEmailURL: url, email: self.viewModel.email)
-            _ = self.coordinator.present(scene: .mastodonResendEmail(viewModel: viewModel), from: self, transition: .modal(animated: true, completion: nil))
+            _ = self.sceneCoordinator?.present(scene: .mastodonResendEmail(viewModel: viewModel), from: self, transition: .modal(animated: true, completion: nil))
         }
         let okAction = UIAlertAction(title: L10n.Common.Controls.Actions.ok, style: .default) { _ in
         }
         alertController.addAction(resendAction)
         alertController.addAction(okAction)
-        _ = self.coordinator.present(scene: .alertController(alertController: alertController), from: self, transition: .alertController(animated: true, completion: nil))
+        _ = self.sceneCoordinator?.present(scene: .alertController(alertController: alertController), from: self, transition: .alertController(animated: true, completion: nil))
     }
 }
 

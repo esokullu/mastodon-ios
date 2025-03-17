@@ -12,7 +12,6 @@ import Foundation
 import GameplayKit
 import MastodonSDK
 import OrderedCollections
-import os.log
 import UIKit
 import MastodonCore
 
@@ -24,14 +23,13 @@ class ReportStatusViewModel {
     
     // input
     let context: AppContext
-    let authContext: AuthContext
-    let user: ManagedObjectRecord<MastodonUser>
-    let status: ManagedObjectRecord<Status>?
-    let statusFetchedResultsController: StatusFetchedResultsController
-    let listBatchFetchViewModel = ListBatchFetchViewModel()
+    let authenticationBox: MastodonAuthenticationBox
+    let account: Mastodon.Entity.Account
+    let status: MastodonStatus?
+    let dataController: StatusDataController
 
     @Published var isSkip = false
-    @Published var selectStatuses = OrderedSet<ManagedObjectRecord<Status>>()
+    @Published var selectStatuses = OrderedSet<MastodonStatus>()
 
     // output
     var diffableDataSource: UITableViewDiffableDataSource<ReportSection, ReportItem>?
@@ -49,21 +47,18 @@ class ReportStatusViewModel {
     
     @Published var isNextButtonEnabled = false
     
+    @MainActor
     init(
         context: AppContext,
-        authContext: AuthContext,
-        user: ManagedObjectRecord<MastodonUser>,
-        status: ManagedObjectRecord<Status>?
+        authenticationBox: MastodonAuthenticationBox,
+        account: Mastodon.Entity.Account,
+        status: MastodonStatus?
     ) {
         self.context = context
-        self.authContext = authContext
-        self.user = user
+        self.authenticationBox = authenticationBox
+        self.account = account
         self.status = status
-        self.statusFetchedResultsController = StatusFetchedResultsController(
-            managedObjectContext: context.managedObjectContext,
-            domain: authContext.mastodonAuthenticationBox.domain,
-            additionalTweetPredicate: nil
-        )
+        self.dataController = StatusDataController()
         // end init
         
         if let status = status {

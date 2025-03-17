@@ -21,22 +21,26 @@ struct MastodonRegisterView: View {
         ScrollView(.vertical) {
             let margin: CGFloat = 16
             VStack(alignment: .leading, spacing: 16) {
+                Spacer()
                 TextField(L10n.Scene.Register.Input.DisplayName.placeholder.localizedCapitalized, text: $viewModel.name)
                     .textContentType(.name)
                     .disableAutocorrection(true)
                     .modifier(FormTextFieldModifier(validateState: viewModel.displayNameValidateState))
                 HStack {
                     Text("@")
+                        .accessibilityHidden(true)
                     TextField(L10n.Scene.Register.Input.Username.placeholder.localizedCapitalized, text: $viewModel.username)
                         .textContentType(.username)
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
                         .keyboardType(.asciiCapable)
+                        .accessibilityLabel(viewModel.accessibilityLabelUsernameField)
                     Text("@\(viewModel.domain)")
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .measureWidth { usernameRightViewWidth = $0 }
                         .frame(width: min(300.0, usernameRightViewWidth), alignment: .trailing)
+                        .accessibilityHidden(true)
                 }
                 .modifier(FormTextFieldModifier(validateState: viewModel.usernameValidateState))
                 .environment(\.layoutDirection, .leftToRight)   // force LTR
@@ -114,6 +118,7 @@ struct MastodonRegisterView: View {
                     viewModel.endEditing.send()
                 }
         )
+        .scrollDismissesKeyboard(.interactively)
     }
     
     struct FormTextFieldModifier: ViewModifier {
@@ -172,7 +177,6 @@ struct MastodonRegisterView_Previews: PreviewProvider {
     static var viewModel: MastodonRegisterViewModel {
         let domain = "mstdn.jp"
         return MastodonRegisterViewModel(
-            context: .shared,
             domain: domain,
             authenticateInfo: AuthenticationViewModel.AuthenticateInfo(
                 domain: domain,
@@ -192,7 +196,8 @@ struct MastodonRegisterView_Previews: PreviewProvider {
                 tokenType: "",
                 scope: "",
                 createdAt: Date()
-            )
+            ),
+            submitValidatedUserRegistration: { (_,_) in return }
         )
     }
             

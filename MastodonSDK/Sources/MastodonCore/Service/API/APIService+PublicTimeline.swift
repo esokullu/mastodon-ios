@@ -9,7 +9,6 @@ import Foundation
 import Combine
 import CoreData
 import CoreDataStack
-import CommonOSLog
 import MastodonSDK
 
 extension APIService {
@@ -27,25 +26,7 @@ extension APIService {
             query: query,
             authorization: authorization
         ).singleOutput()
-        
-        let managedObjectContext = self.backgroundManagedObjectContext
-        try await managedObjectContext.performChanges {
-            let me = authenticationBox.authenticationRecord.object(in: managedObjectContext)?.user
-            for entity in response.value {
-                _ = Persistence.Status.createOrMerge(
-                    in: managedObjectContext,
-                    context: Persistence.Status.PersistContext(
-                        domain: domain,
-                        entity: entity,
-                        me: me,
-                        statusCache: nil,
-                        userCache: nil,
-                        networkDate: response.networkDate
-                    )
-                )
-            }
-        }
-        
+
         return response
     }   // end func
     

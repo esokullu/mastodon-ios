@@ -16,20 +16,31 @@ extension Mastodon.Entity {
     ///   2021/2/24
     /// # Reference
     ///  [Document](https://docs.joinmastodon.org/entities/poll/)
-    public struct Poll: Codable {
+    public struct Poll: Codable, Sendable, Hashable {
         public typealias ID = String
         
         public let id: ID
-        public let expiresAt: Date?     // if nil the poll does not end
+        
+        /// if nil the poll does not end
+        public let expiresAt: Date?
+        
         public let expired: Bool
+        
+        /// Does the poll allow multiple-choice answers?/
         public let multiple: Bool
+        
+        /// How many votes have been received./
         public let votesCount: Int
-        /// nil if `multiple` is false
+        
+        /// How many unique accounts have voted on a multiple-choice poll. nil if `multiple` is false
         public let votersCount: Int?
-        /// nil if no current user
+        
+        /// When called with a user token, has the authorized user voted? nil if no current user.
         public let voted: Bool?
-        /// nil if no current user
+        
+        /// When called with a user token, which options has the authorized user chosen? Contains an array of index values for options.  nil if no current user.
         public let ownVotes: [Int]?
+        
         public let options: [Option]
         
         enum CodingKeys: String, CodingKey {
@@ -47,12 +58,12 @@ extension Mastodon.Entity {
 }
 
 extension Mastodon.Entity.Poll {
-    public struct Option: Codable {
+    public struct Option: Codable, Sendable, Hashable {
         public let title: String
         /// nil if results are not published yet
         public let votesCount: Int?
         public let emojis: [Mastodon.Entity.Emoji]?
-        
+
         enum CodingKeys: String, CodingKey {
             case title
             case votesCount = "votes_count"

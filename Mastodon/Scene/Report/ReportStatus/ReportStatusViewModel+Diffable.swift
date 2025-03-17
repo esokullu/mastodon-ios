@@ -25,14 +25,14 @@ extension ReportStatusViewModel {
         diffableDataSource = ReportSection.diffableDataSource(
             tableView: tableView,
             context: context,
-            configuration: ReportSection.Configuration(authContext: authContext)
+            configuration: ReportSection.Configuration(authenticationBox: authenticationBox)
         )
 
         var snapshot = NSDiffableDataSourceSnapshot<ReportSection, ReportItem>()
         snapshot.appendSections([.main])
         diffableDataSource?.apply(snapshot)
         
-        statusFetchedResultsController.$records
+        dataController.$records
             .receive(on: DispatchQueue.main)
             .sink { [weak self] records in
                 guard let self = self else { return }

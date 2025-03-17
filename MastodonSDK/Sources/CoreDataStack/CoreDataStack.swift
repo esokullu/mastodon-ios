@@ -8,12 +8,10 @@
 import os
 import Foundation
 import Combine
-import CoreData
+@_exported import CoreData
 import MastodonCommon
 
 public final class CoreDataStack {
-    
-    static let logger = Logger(subsystem: "CoreDataStack", category: "DB")
     
     private(set) var storeDescriptions: [NSPersistentStoreDescription]
     public let didFinishLoad = CurrentValueSubject<Bool, Never>(false)
@@ -22,9 +20,14 @@ public final class CoreDataStack {
         self.storeDescriptions = storeDescriptions
     }
     
-    public convenience init(databaseName: String = "shared") {
+    public convenience init(databaseName: String = "shared", isInMemory: Bool = false) {
         let storeURL = URL.storeURL(for: AppName.groupID, databaseName: databaseName)
-        let storeDescription = NSPersistentStoreDescription(url: storeURL)
+        let storeDescription: NSPersistentStoreDescription
+        if isInMemory {
+            storeDescription = NSPersistentStoreDescription(url: URL(string: "file:///dev/null")!)  /// in-memory store with all features in favor of NSInMemoryStoreType
+        } else {
+            storeDescription = NSPersistentStoreDescription(url: storeURL)
+        }
         self.init(persistentStoreDescriptions: [storeDescription])
     }
     
@@ -77,7 +80,6 @@ public final class CoreDataStack {
                    (reason == "Can't find mapping model for migration" || reason == "Persistent store migration failed, missing mapping model.")  {
                     if let storeDescription = container.persistentStoreDescriptions.first, let url = storeDescription.url {
                         try? container.persistentStoreCoordinator.destroyPersistentStore(at: url, ofType: NSSQLiteStoreType, options: nil)
-                        os_log("%{public}s[%{public}ld], %{public}s: cannot migrate model. rebuild database…", ((#file as NSString).lastPathComponent), #line, #function)
                     } else {
                         assertionFailure()
                     }
@@ -90,24 +92,8 @@ public final class CoreDataStack {
             
             // it's looks like the remote notification only trigger when app enter and leave background
             container.viewContext.automaticallyMergesChangesFromParent = true
-            
-            os_log("%{public}s[%{public}ld], %{public}s: %s", ((#file as NSString).lastPathComponent), #line, #function, storeDescription.debugDescription)
-            
+
             callback()
-            
-            #if DEBUG
-            do {
-                let storeURL = URL.storeURL(for: AppName.groupID, databaseName: "shared")
-                let data = try Data(contentsOf: storeURL)
-                let formatter = ByteCountFormatter()
-                formatter.allowedUnits = [.useMB]
-                formatter.countStyle = .file
-                let size = formatter.string(fromByteCount: Int64(data.count))
-                CoreDataStack.logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): Database size: \(size)")
-            } catch {
-                CoreDataStack.logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): Cannot get database size")
-            }
-            #endif
         })
     }
     
@@ -122,16 +108,18 @@ extension CoreDataStack {
     }
 }
 
-extension CoreDataStack {
-    
-    public func rebuild() {
+public extension CoreDataStack {
+    func tearDown() {
         let oldStoreURL = persistentContainer.persistentStoreCoordinator.url(for: persistentContainer.persistentStoreCoordinator.persistentStores.first!)
         try! persistentContainer.persistentStoreCoordinator.destroyPersistentStore(at: oldStoreURL, ofType: NSSQLiteStoreType, options: nil)
+    }
+    
+    func rebuild() {
+        tearDown()
         
         CoreDataStack.load(persistentContainer: persistentContainer) { [weak self] in
             guard let self = self else { return }
             self.didFinishLoad.value = true
         }
     }
-
 }

@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-3-23.
 //
 
-import os.log
 import UIKit
 import Combine
 import MastodonAsset
@@ -88,9 +87,9 @@ extension ComposeStatusPollOptionCollectionViewCell {
         pollOptionView.optionPercentageLabel.isHidden = true
         pollOptionView.optionTextField.text = nil
 
-        pollOptionView.roundedBackgroundView.backgroundColor = ThemeService.shared.currentTheme.value.tertiarySystemGroupedBackgroundColor
+        pollOptionView.roundedBackgroundView.backgroundColor = .tertiarySystemGroupedBackground
         pollOptionView.checkmarkBackgroundView.backgroundColor = UIColor(dynamicProvider: { traitCollection in
-            return traitCollection.userInterfaceStyle == .light ? .white : ThemeService.shared.currentTheme.value.tableViewCellSelectionBackgroundColor
+            return traitCollection.userInterfaceStyle == .light ? .white : SystemTheme.tableViewCellSelectionBackgroundColor
         })
         setupBorderColor()
         
@@ -110,9 +109,9 @@ extension ComposeStatusPollOptionCollectionViewCell {
     
     private func setupBorderColor() {
         pollOptionView.roundedBackgroundView.layer.borderWidth = 1
-        pollOptionView.roundedBackgroundView.layer.borderColor = ThemeService.shared.currentTheme.value.tableViewCellSelectionBackgroundColor.withAlphaComponent(0.3).cgColor
+        pollOptionView.roundedBackgroundView.layer.borderColor = SystemTheme.tableViewCellSelectionBackgroundColor.withAlphaComponent(0.3).cgColor
 
-        pollOptionView.checkmarkBackgroundView.layer.borderColor = ThemeService.shared.currentTheme.value.tableViewCellSelectionBackgroundColor.withAlphaComponent(0.3).cgColor
+        pollOptionView.checkmarkBackgroundView.layer.borderColor = SystemTheme.tableViewCellSelectionBackgroundColor.withAlphaComponent(0.3).cgColor
         pollOptionView.checkmarkBackgroundView.layer.borderWidth = 1
     }
     
@@ -127,7 +126,6 @@ extension ComposeStatusPollOptionCollectionViewCell {
 extension ComposeStatusPollOptionCollectionViewCell {
 
     @objc private func singleTagGestureRecognizerHandler(_ sender: UITapGestureRecognizer) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         pollOptionView.optionTextField.becomeFirstResponder()
     }
     
@@ -144,12 +142,10 @@ extension ComposeStatusPollOptionCollectionViewCell: DeleteBackwardResponseTextF
 extension ComposeStatusPollOptionCollectionViewCell: UITextFieldDelegate {
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         delegate?.composeStatusPollOptionCollectionViewCell(self, textFieldDidBeginEditing: textField)
     }
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         if textField === pollOptionView.optionTextField {
             delegate?.composeStatusPollOptionCollectionViewCell(self, pollOptionTextFieldDidReturn: textField)
         }

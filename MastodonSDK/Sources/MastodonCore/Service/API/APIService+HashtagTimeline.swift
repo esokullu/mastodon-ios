@@ -9,13 +9,11 @@ import Foundation
 import Combine
 import CoreData
 import CoreDataStack
-import CommonOSLog
 import MastodonSDK
 
 extension APIService {
     
     public func hashtagTimeline(
-        domain: String,
         sinceID: Mastodon.Entity.Status.ID? = nil,
         maxID: Mastodon.Entity.Status.ID? = nil,
         limit: Int = onceRequestStatusMaxCount,
@@ -41,26 +39,7 @@ extension APIService {
             query: query,
             hashtag: hashtag,
             authorization: authorization
-        ).singleOutput()
-        
-        let managedObjectContext = self.backgroundManagedObjectContext
-        try await managedObjectContext.performChanges {
-            let me = authenticationBox.authenticationRecord.object(in: managedObjectContext)?.user
-            
-            for entity in response.value {
-                _ = Persistence.Status.createOrMerge(
-                    in: managedObjectContext,
-                    context: Persistence.Status.PersistContext(
-                        domain: domain,
-                        entity: entity,
-                        me: me,
-                        statusCache: nil,
-                        userCache: nil,
-                        networkDate: response.networkDate
-                    )
-                )
-            }
-        }
+        )
 
         return response
     }

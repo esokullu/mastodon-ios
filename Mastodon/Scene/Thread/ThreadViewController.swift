@@ -5,23 +5,17 @@
 //  Created by MainasuK Cirno on 2021-4-12.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreData
-import AVKit
 import MastodonMeta
 import MastodonAsset
 import MastodonCore
 import MastodonUI
 import MastodonLocalization
+import MastodonSDK
 
-final class ThreadViewController: UIViewController, NeedsDependency, MediaPreviewableViewController {
-    
-    let logger = Logger(subsystem: "ThreadViewController", category: "ViewController")
-        
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+final class ThreadViewController: UIViewController, MediaPreviewableViewController {
     
     var disposeBag = Set<AnyCancellable>()
     var viewModel: ThreadViewModel!
@@ -47,11 +41,6 @@ final class ThreadViewController: UIViewController, NeedsDependency, MediaPrevie
         
         return tableView
     }()
-    
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s:", ((#file as NSString).lastPathComponent), #line, #function)
-    }
-    
 }
 
 extension ThreadViewController {
@@ -59,14 +48,7 @@ extension ThreadViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = ThemeService.shared.currentTheme.value.secondarySystemBackgroundColor
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.view.backgroundColor = theme.secondarySystemBackgroundColor
-            }
-            .store(in: &disposeBag)
+        view.backgroundColor = .secondarySystemBackground
         
         navigationItem.title = L10n.Scene.Thread.backTitle
         navigationItem.titleView = titleView
@@ -83,6 +65,21 @@ extension ThreadViewController {
                 }
                 self.titleView.update(titleMetaContent: title, subtitle: nil)
             }
+            .store(in: &disposeBag)
+        
+        viewModel.onDismiss
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] status in
+                self?.navigationController?.popViewController(animated: true)
+                self?.navigationController?.notifyChildrenAboutStatusDeletion(status)
+            })
+            .store(in: &disposeBag)
+        
+        viewModel.onEdit
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] status in
+                self?.navigationController?.notifyChildrenAboutStatusEdit(status)
+            })
             .store(in: &disposeBag)
         
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -112,14 +109,13 @@ extension ThreadViewController {
 
 extension ThreadViewController {
     @objc private func replyBarButtonItemPressed(_ sender: UIBarButtonItem) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
         guard case let .root(threadContext) = viewModel.root else { return }
         let composeViewModel = ComposeViewModel(
-            context: context,
-            authContext: viewModel.authContext,
+            authenticationBox: viewModel.authenticationBox,
+            composeContext: .composeStatus,
             destination: .reply(parent: threadContext.status)
         )
-        _ = coordinator.present(
+        _ = self.sceneCoordinator?.present(
             scene: .compose(viewModel: composeViewModel),
             from: self,
             transition: .modal(animated: true, completion: nil)
@@ -129,7 +125,7 @@ extension ThreadViewController {
 
 // MARK: - AuthContextProvider
 extension ThreadViewController: AuthContextProvider {
-    var authContext: AuthContext { viewModel.authContext }
+    var authenticationBox: MastodonAuthenticationBox { viewModel.authenticationBox }
 }
 
 // MARK: - UITableViewDelegate
@@ -195,5 +191,19 @@ extension ThreadViewController: StatusTableViewControllerNavigateable {
 
     @objc func statusKeyCommandHandlerRelay(_ sender: UIKeyCommand) {
         statusKeyCommandHandler(sender)
+    }
+}
+
+extension UINavigationController {
+    func notifyChildrenAboutStatusDeletion(_ status: MastodonStatus) {
+        viewControllers.compactMap { $0 as? DataSourceProvider }.forEach { provider in
+            provider?.update(status: status, intent: .delete)
+        }
+    }
+    
+    func notifyChildrenAboutStatusEdit(_ status: MastodonStatus) {
+        viewControllers.compactMap { $0 as? DataSourceProvider }.forEach { provider in
+            provider?.update(status: status, intent: .edit)
+        }
     }
 }

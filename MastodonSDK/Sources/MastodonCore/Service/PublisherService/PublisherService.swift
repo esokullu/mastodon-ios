@@ -5,19 +5,16 @@
 //  Created by MainasuK on 2021-12-2.
 //
 
-import os.log
 import UIKit
 import Combine
 
+@MainActor
 public final class PublisherService {
+    
+    public static let shared = { PublisherService() }()
     
     var disposeBag = Set<AnyCancellable>()
     
-    let logger = Logger(subsystem: "PublisherService", category: "Service")
-    
-    // input
-    let apiService: APIService
-
     @Published public private(set) var statusPublishers: [StatusPublisher] = []
     
     // output
@@ -26,35 +23,27 @@ public final class PublisherService {
     var currentPublishProgressObservation: NSKeyValueObservation?
     @Published public var currentPublishProgress: Double = 0
     
-    public init(
-        apiService: APIService
-    ) {
-        self.apiService = apiService
-        
+    private init() {
         $statusPublishers
             .receive(on: DispatchQueue.main)
             .sink { [weak self] publishers in
                 guard let self = self else { return }
+                
+                self.currentPublishProgressObservation?.invalidate()
+                
                 guard let last = publishers.last else {
                     self.currentPublishProgressObservation = nil
+                    self.currentPublishProgress = 0
                     return
                 }
                 
                 self.currentPublishProgressObservation = last.progress
                     .observe(\.fractionCompleted, options: [.initial, .new]) { [weak self] progress, _ in
                         guard let self = self else { return }
-                        self.logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): publish progress \(progress.fractionCompleted)")
-                        self.currentPublishProgress = progress.fractionCompleted
+                        Task { @MainActor in
+                            self.currentPublishProgress = progress.fractionCompleted
+                        }
                     }
-            }
-            .store(in: &disposeBag)
-        
-        $statusPublishers
-            .filter { $0.isEmpty }
-            .delay(for: 1, scheduler: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                self.currentPublishProgress = 0
             }
             .store(in: &disposeBag)
         
@@ -64,10 +53,10 @@ public final class PublisherService {
                 switch result {
                 case .success:
                     break
-                    // TODO:
-                    // update store review count trigger
+                    // TODO: update store review count trigger
                     // UserDefaults.shared.storeReviewInteractTriggerCount += 1
                 case .failure:
+                    // TODO: do not prompt for AppStore review until at least one successful publish has happened after this (IOS-35)
                     break
                 }
             }
@@ -79,7 +68,7 @@ public final class PublisherService {
 extension PublisherService {
     
     @MainActor
-    public func enqueue(statusPublisher publisher: StatusPublisher, authContext: AuthContext) {
+    public func enqueue(statusPublisher publisher: StatusPublisher, authenticationBox: MastodonAuthenticationBox) {
         guard !statusPublishers.contains(where: { $0 === publisher }) else {
             assertionFailure()
             return
@@ -88,19 +77,17 @@ extension PublisherService {
         
         Task {
             do {
-                self.logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): publish status…")
-                let result = try await publisher.publish(api: apiService, authContext: authContext)
+                let result = try await publisher.publish(api: APIService.shared, authenticationBox: authenticationBox)
                 
-                self.logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): publish status success")
                 self.statusPublishResult.send(.success(result))
                 self.statusPublishers.removeAll(where: { $0 === publisher })
                 
             } catch is CancellationError {
-                self.logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): publish cancelled")
                 self.statusPublishers.removeAll(where: { $0 === publisher })
-                
+                self.currentPublishProgress = 0
+                self.statusPublishResult.send(.failure(CancellationError()))
             } catch {
-                self.logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): publish failure: \(error.localizedDescription)")
+                self.statusPublishers.removeAll(where: { $0 === publisher })
                 self.statusPublishResult.send(.failure(error))
                 self.currentPublishProgress = 0
             }

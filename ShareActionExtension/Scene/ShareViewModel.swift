@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-7-16.
 //
 
-import os.log
 import Foundation
 import Combine
 import CoreData
@@ -20,13 +19,11 @@ import MastodonCore
 
 final class ShareViewModel {
     
-    let logger = Logger(subsystem: "ComposeViewModel", category: "ViewModel")
-    
     var disposeBag = Set<AnyCancellable>()
     
     // input
     let context: AppContext
-    @Published var authContext: AuthContext?
+    @Published var authenticationBox: MastodonAuthenticationBox?
     
     @Published var isPublishing = false
     

@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-4-12.
 //
 
-import os.log
 import Foundation
 import Combine
 import CoreData
@@ -27,27 +26,7 @@ extension APIService {
             statusID: statusID,
             authorization: authorization
         ).singleOutput()
-        
-        let managedObjectContext = self.backgroundManagedObjectContext
-        try await managedObjectContext.performChanges {
-            let me = authenticationBox.authenticationRecord.object(in: managedObjectContext)?.user
-            let value = response.value.ancestors + response.value.descendants
-            
-            for entity in value {
-                _ = Persistence.Status.createOrMerge(
-                    in: managedObjectContext,
-                    context: Persistence.Status.PersistContext(
-                        domain: domain,
-                        entity: entity,
-                        me: me,
-                        statusCache: nil,
-                        userCache: nil,
-                        networkDate: response.networkDate
-                    )
-                )
-            }
-        }
-        
+
         return response
     }   // end func
 }

@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-4-25.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreDataStack
@@ -14,41 +13,30 @@ import MastodonAsset
 import MastodonLocalization
 import MastodonCommon
 
+@MainActor
 public final class SettingService {
+    
+    public static let shared = { SettingService() }()
     
     var disposeBag = Set<AnyCancellable>()
     
-    private var currentSettingUpdateSubscription: AnyCancellable?
- 
     // input
-    weak var apiService: APIService?
-    weak var authenticationService: AuthenticationService?
-    weak var notificationService: NotificationService?
-    
+    var apiService: APIService { APIService.shared }
+    var notificationService: NotificationService { NotificationService.shared
+    }
     // output
     let settingFetchedResultController: SettingFetchedResultController
     public let currentSetting = CurrentValueSubject<Setting?, Never>(nil)
     
-    init(
-        apiService: APIService,
-        authenticationService: AuthenticationService,
-        notificationService: NotificationService
-    ) {
-        self.apiService = apiService
-        self.authenticationService = authenticationService
-        self.notificationService = notificationService
-        self.settingFetchedResultController = SettingFetchedResultController(
-            managedObjectContext: authenticationService.managedObjectContext,
-            additionalPredicate: nil
-        )
+    private init() {
+        self.settingFetchedResultController = SettingFetchedResultController()
 
         // create setting (if non-exist) for authenticated users
-        authenticationService.$mastodonAuthenticationBoxes
+        AuthenticationServiceProvider.shared.$mastodonAuthenticationBoxes
             .compactMap { [weak self] mastodonAuthenticationBoxes -> AnyPublisher<[MastodonAuthenticationBox], Never>? in
                 guard let self = self else { return nil }
-                guard let authenticationService = self.authenticationService else { return nil }
                 
-                let managedObjectContext = authenticationService.backgroundManagedObjectContext
+                let managedObjectContext = PersistenceManager.shared.backgroundManagedObjectContext
                 return managedObjectContext.performChanges {
                     for authenticationBox in mastodonAuthenticationBoxes {
                         let domain = authenticationBox.domain
@@ -72,7 +60,7 @@ public final class SettingService {
         
         // bind current setting
         Publishers.CombineLatest(
-            authenticationService.$mastodonAuthenticationBoxes,
+            AuthenticationServiceProvider.shared.$mastodonAuthenticationBoxes,
             settingFetchedResultController.settings
         )
         .sink { [weak self] mastodonAuthenticationBoxes, settings in
@@ -86,35 +74,10 @@ public final class SettingService {
         }
         .store(in: &disposeBag)
         
-        // observe current setting
-        currentSetting
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] setting in
-                guard let self = self else { return }
-                guard let setting = setting else {
-                    self.currentSettingUpdateSubscription = nil
-                    return
-                }
-
-                SettingService.updatePreference(setting: setting)
-                self.currentSettingUpdateSubscription = ManagedObjectObserver.observe(object: setting)
-                    .sink(receiveCompletion: { _ in
-                        // do nothing
-                    }, receiveValue: { change in
-                        guard case .update(let object) = change.changeType,
-                              let setting = object as? Setting else { return }
-
-                        SettingService.updatePreference(setting: setting)
-                    })
-            }
-            .store(in: &disposeBag)
-
-        let logger = Logger(subsystem: "Notification", category: "SettingService")
-
         Publishers.CombineLatest3(
             notificationService.deviceToken,
             currentSetting.eraseToAnyPublisher(),
-            authenticationService.$mastodonAuthenticationBoxes
+            AuthenticationServiceProvider.shared.$mastodonAuthenticationBoxes
         )
         .compactMap { [weak self] deviceToken, setting, mastodonAuthenticationBoxes -> AnyPublisher<Mastodon.Response.Content<Mastodon.Entity.Subscription>, Error>? in
             guard let self = self else { return nil }
@@ -127,7 +90,7 @@ public final class SettingService {
             guard setting.domain == authenticationBox.domain,
                   setting.userID == authenticationBox.userID else { return nil }
             
-            let _viewModel = self.notificationService?.dequeueNotificationViewModel(
+            let _viewModel = notificationService.dequeueNotificationViewModel(
                 mastodonAuthenticationBox: authenticationBox
             )
             guard let viewModel = _viewModel else { return nil }
@@ -154,20 +117,7 @@ public final class SettingService {
             )
         }
         .debounce(for: .seconds(3), scheduler: DispatchQueue.main)      // limit subscribe request emit time interval
-        .sink(receiveValue: { [weak self] publisher in
-            guard let self = self else { return }
-            publisher
-                .sink { completion in
-                    switch completion {
-                    case .failure(let error):
-                        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): [Push Notification] subscribe failure: \(error.localizedDescription)")
-                    case .finished:
-                        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): [Push Notification] subscribe success")
-                    }
-                } receiveValue: { response in
-                    logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): subscribe response: \(response.value.endpoint)")
-                }
-                .store(in: &self.disposeBag)
+        .sink(receiveValue: { _ in
         })
         .store(in: &disposeBag)
     }
@@ -187,33 +137,4 @@ extension SettingService {
         alertController.addAction(cancelAction)
         return alertController
     }
-    
-}
-
-extension SettingService {
-
-    static func updatePreference(setting: Setting) {
-        // set theme
-        let themeName: ThemeName = setting.preferredTrueBlackDarkMode ? .system : .mastodon
-        if UserDefaults.shared.currentThemeNameRawValue != themeName.rawValue {
-            ThemeService.shared.set(themeName: themeName)
-            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: update theme style", ((#file as NSString).lastPathComponent), #line, #function)
-        }
-
-        // set avatar mode
-        if UserDefaults.shared.preferredStaticAvatar != setting.preferredStaticAvatar {
-            UserDefaults.shared.preferredStaticAvatar = setting.preferredStaticAvatar
-        }
-
-        // set emoji mode
-        if UserDefaults.shared.preferredStaticEmoji != setting.preferredStaticEmoji {
-            UserDefaults.shared.preferredStaticEmoji = setting.preferredStaticEmoji
-        }
-
-        // set browser
-        if UserDefaults.shared.preferredUsingDefaultBrowser != setting.preferredUsingDefaultBrowser {
-            UserDefaults.shared.preferredUsingDefaultBrowser = setting.preferredUsingDefaultBrowser
-        }
-    }
-    
 }

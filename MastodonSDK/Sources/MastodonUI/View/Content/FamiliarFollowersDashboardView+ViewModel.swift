@@ -5,10 +5,10 @@
 //  Created by MainasuK on 2022-5-16.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreDataStack
+import Meta
 import MastodonCore
 import MastodonMeta
 import MastodonLocalization
@@ -16,13 +16,13 @@ import MastodonLocalization
 extension FamiliarFollowersDashboardView {
     public final class ViewModel: ObservableObject {
         public var disposeBag = Set<AnyCancellable>()
-
-        let logger = Logger(subsystem: "FamiliarFollowersDashboardView", category: "ViewModel")
         
         @Published var avatarURLs: [URL?] = []
         @Published var names: [String] = []
         @Published var emojis: MastodonContent.Emojis = [:]
         @Published var backgroundColor: UIColor?
+
+        @Published public var label: MetaContent?
     }
 }
 
@@ -45,18 +45,13 @@ extension FamiliarFollowersDashboardView.ViewModel {
             let borderWidth = min(1.5, UIFontMetrics.default.scaledValue(for: 1))
             
             for (i, avatarURL) in avatarURLs.enumerated() {
-                let avatarButton = AvatarButton()
+                let avatarButton = AvatarButton(avatarPlaceholder: .placeholder(color: .systemGray3))
                 let origin = CGPoint(x: offset * CGFloat(i), y: 0)
                 let size = CGSize(width: dimension, height: dimension)
                 avatarButton.size = size
                 avatarButton.frame = CGRect(origin: origin, size: size)
                 view.avatarContainerView.addSubview(avatarButton)
-                avatarButton.avatarImageView.configure(
-                    configuration: .init(
-                        url: avatarURL,
-                        placeholder: .placeholder(color: .systemGray3)
-                    )
-                )
+                avatarButton.avatarImageView.configure(with: avatarURL)
                 avatarButton.avatarImageView.configure(
                     cornerConfiguration: .init(
                         corner: .fixed(radius: 7),
@@ -74,11 +69,11 @@ extension FamiliarFollowersDashboardView.ViewModel {
         }
         .store(in: &disposeBag)
         
-        Publishers.CombineLatest(
+        let label = Publishers.CombineLatest(
             $names,
             $emojis
         )
-        .sink { names, emojis in
+        .map { (names, emojis) -> MetaContent in
             let content: String = {
                 guard names.count > 0 else { return " " }
                 
@@ -97,13 +92,18 @@ extension FamiliarFollowersDashboardView.ViewModel {
             }()
             let document = MastodonContent(content: content, emojis: emojis)
             do {
-                let metaContent = try MastodonMetaContent.convert(document: document)
-                view.descriptionMetaLabel.configure(content: metaContent)
+                return try MastodonMetaContent.convert(document: document)
             } catch {
                 assertionFailure()
-                view.descriptionMetaLabel.configure(content: PlaintextMetaContent(string: content))
+                return PlaintextMetaContent(string: content)
             }            
         }
-        .store(in: &disposeBag)
+
+        label
+            .sink { [weak self] metaContent in
+                view.descriptionMetaLabel.configure(content: metaContent)
+                self?.label = metaContent
+            }
+            .store(in: &disposeBag)
     }
 }

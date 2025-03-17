@@ -5,16 +5,12 @@
 //  Created by MainasuK on 2022-1-21.
 //
 
-import os.log
 import UIKit
 import Combine
 import MastodonCore
 import MastodonUI
 
 final class NotificationTableViewCell: UITableViewCell {
-    
-    let logger = Logger(subsystem: "NotificationTableViewCell", category: "View")
-    
     weak var delegate: NotificationTableViewCellDelegate?
     var disposeBag = Set<AnyCancellable>()
     private var _disposeBag = Set<AnyCancellable>()
@@ -68,13 +64,7 @@ extension NotificationTableViewCell {
             separatorLine.heightAnchor.constraint(equalToConstant: UIView.separatorLineHeight(of: contentView)).priority(.required - 1),
         ])
         
-        notificationView.quoteBackgroundView.backgroundColor = ThemeService.shared.currentTheme.value.secondarySystemBackgroundColor
-        ThemeService.shared.currentTheme
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.notificationView.quoteBackgroundView.backgroundColor = theme.secondarySystemBackgroundColor
-            }
-            .store(in: &_disposeBag)
+        notificationView.quoteBackgroundView.backgroundColor = .secondarySystemBackground
         
         notificationView.delegate = self
     }

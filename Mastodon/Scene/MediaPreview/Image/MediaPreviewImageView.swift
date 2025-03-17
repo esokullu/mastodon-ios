@@ -5,13 +5,14 @@
 //  Created by MainasuK Cirno on 2021-4-28.
 //
 
-import os.log
 import func AVFoundation.AVMakeRect
 import UIKit
 import FLAnimatedImage
 import VisionKit
 
 final class MediaPreviewImageView: UIScrollView {
+    
+    private static let imageAnalyzer = ImageAnalyzer()
     
     let imageView: FLAnimatedImageView = {
         let imageView = FLAnimatedImageView()
@@ -32,17 +33,7 @@ final class MediaPreviewImageView: UIScrollView {
 
     private var containerFrame: CGRect?
 
-    private var _interaction: UIInteraction? = {
-        if #available(iOS 16.0, *) {
-            return ImageAnalysisInteraction()
-        } else {
-            return nil
-        }
-    }()
-    @available(iOS 16.0, *)
-    var liveTextInteraction: ImageAnalysisInteraction {
-        _interaction as! ImageAnalysisInteraction
-    }
+    let liveTextInteraction = ImageAnalysisInteraction()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -70,10 +61,10 @@ extension MediaPreviewImageView {
         addSubview(imageView)
 
         doubleTapGestureRecognizer.addTarget(self, action: #selector(MediaPreviewImageView.doubleTapGestureRecognizerHandler(_:)))
+        doubleTapGestureRecognizer.delegate = self
+
         imageView.addGestureRecognizer(doubleTapGestureRecognizer)
-        if #available(iOS 16.0, *) {
-            imageView.addInteraction(liveTextInteraction)
-        }
+        imageView.addInteraction(liveTextInteraction)
 
         delegate = self
     }
@@ -90,8 +81,6 @@ extension MediaPreviewImageView {
 extension MediaPreviewImageView {
  
     @objc private func doubleTapGestureRecognizerHandler(_ sender: UITapGestureRecognizer) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-        
         let middleZoomScale = 0.5 * maximumZoomScale
         if zoomScale >= middleZoomScale {
             setZoomScale(minimumZoomScale, animated: true)
@@ -111,6 +100,20 @@ extension MediaPreviewImageView {
         }
     }
     
+}
+
+extension MediaPreviewImageView: UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard gestureRecognizer == doubleTapGestureRecognizer else { return false }
+        // block double-tap to select text gesture
+        // but only if the Live Text button is toggled off
+        if let gr = otherGestureRecognizer as? UITapGestureRecognizer,
+           gr.numberOfTapsRequired == 2,
+           liveTextInteraction.selectableItemsHighlighted == false {
+            return true
+        }
+        return false
+    }
 }
 
 extension MediaPreviewImageView {
@@ -137,23 +140,19 @@ extension MediaPreviewImageView {
         
         centerScrollViewContents()
 
-        if #available(iOS 16.0, *) {
-            Task.detached(priority: .userInitiated) {
-                do {
-                    let analysis = try await ImageAnalyzer.shared.analyze(image, configuration: ImageAnalyzer.Configuration([.text, .machineReadableCode]))
-                    await MainActor.run {
-                        self.liveTextInteraction.analysis = analysis
-                        self.liveTextInteraction.preferredInteractionTypes = .automatic
-                    }
-                } catch {
-                    await MainActor.run {
-                        self.liveTextInteraction.preferredInteractionTypes = []
-                    }
+        Task.detached(priority: .userInitiated) {
+            do {
+                let analysis = try await Self.imageAnalyzer.analyze(image, configuration: ImageAnalyzer.Configuration([.text, .machineReadableCode]))
+                await MainActor.run {
+                    self.liveTextInteraction.analysis = analysis
+                    self.liveTextInteraction.preferredInteractionTypes = .automatic
+                }
+            } catch {
+                await MainActor.run {
+                    self.liveTextInteraction.preferredInteractionTypes = []
                 }
             }
         }
-        
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: setup image for container %s", ((#file as NSString).lastPathComponent), #line, #function, container.frame.debugDescription)
     }
     
 }
@@ -166,7 +165,6 @@ extension MediaPreviewImageView: UIScrollViewDelegate {
     }
     
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         centerScrollViewContents()
         
         // set bounce when zoom in

@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-3-11.
 //
 
-import os.log
 import UIKit
 import Combine
 import PhotosUI
@@ -18,24 +17,73 @@ import MastodonUI
 import MastodonLocalization
 import MastodonSDK
 
-final class ComposeViewController: UIViewController, NeedsDependency {
-    
+final class ComposeViewController: UIViewController {
     static let minAutoCompleteVisibleHeight: CGFloat = 100
-        
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+    lazy var publishProgressView: UIProgressView = {
+        let progressView = UIProgressView(progressViewStyle: .bar)
+        progressView.alpha = 0
+        return progressView
+    }()
     
     var disposeBag = Set<AnyCancellable>()
-    var viewModel: ComposeViewModel!
+    var viewModel: ComposeViewModel
 
-    let logger = Logger(subsystem: "ComposeViewController", category: "logic")
+    init(viewModel: ComposeViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+        self.setUpPublishingIndicator()
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     
+    func setUpPublishingIndicator() {
+        publishProgressView.translatesAutoresizingMaskIntoConstraints = false
+        publishProgressView.tintColor = .systemIndigo
+        publishProgressView.trackTintColor = .systemGray
+        publishButton.addSubview(publishProgressView)
+        let constraints = [
+            publishProgressView.leadingAnchor.constraint(equalTo: publishButton.leadingAnchor),
+            publishProgressView.trailingAnchor.constraint(equalTo: publishButton.trailingAnchor),
+            publishProgressView.topAnchor.constraint(equalTo: publishButton.topAnchor),
+            publishProgressView.bottomAnchor.constraint(equalTo: publishButton.bottomAnchor),
+            publishProgressView.heightAnchor.constraint(greaterThanOrEqualToConstant: 35)
+        ]
+        NSLayoutConstraint.activate(constraints)
+        
+        PublisherService.shared.$currentPublishProgress
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] progress in
+                guard let self = self else { return }
+                let progress = Float(progress)
+                if progress > 0 {
+                    UIView.animate(withDuration: 0.25) {
+                        self.publishProgressView.alpha = 1
+                    }
+                    self.publishProgressView.setProgress(progress, animated: true)
+                }
+            }
+            .store(in: &disposeBag)
+    }
+
     lazy var composeContentViewModel: ComposeContentViewModel = {
+
+        let composeContext: ComposeContentViewModel.ComposeContext
+        let initialContent: String
+
+        switch viewModel.composeContext {
+        case .composeStatus:
+            composeContext = .composeStatus
+            initialContent = viewModel.initialContent
+        case .editStatus(let status, let statusSource):
+            composeContext = .editStatus(status: status, statusSource: statusSource)
+            initialContent = statusSource.text
+        }
+
         return ComposeContentViewModel(
-            context: context,
-            authContext: viewModel.authContext,
+            authenticationBox: viewModel.authenticationBox,
+            composeContext: composeContext,
             destination: viewModel.destination,
-            initialContent: viewModel.initialContent
+            initialContent: initialContent
         )
     }()
     private(set) lazy var composeContentViewController: ComposeContentViewController = {
@@ -46,16 +94,38 @@ final class ComposeViewController: UIViewController, NeedsDependency {
     
     private(set) lazy var cancelBarButtonItem = UIBarButtonItem(title: L10n.Common.Controls.Actions.cancel, style: .plain, target: self, action: #selector(ComposeViewController.cancelBarButtonItemPressed(_:)))
 
-    let publishButton: UIButton = {
+    private lazy var publishButton: UIButton = {
         let button = RoundedEdgesButton(type: .custom)
         button.cornerRadius = 10
         button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 16, bottom: 5, right: 16)     // set 28pt height
         button.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
         button.setTitle(L10n.Scene.Compose.composeAction, for: .normal)
+        button.addTarget(self, action: #selector(ComposeViewController.publishBarButtonItemPressed(_:)), for: .touchUpInside)
         return button
     }()
+
+    private lazy var saveButton: UIButton = {
+        let button = RoundedEdgesButton(type: .custom)
+        button.cornerRadius = 10
+        button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 16, bottom: 5, right: 16)     // set 28pt height
+        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
+        button.setTitle(L10n.Common.Controls.Actions.save, for: .normal)
+        button.addTarget(self, action: #selector(ComposeViewController.publishStatusEdit(_:)), for: .touchUpInside)
+        return button
+    }()
+
+    private(set) lazy var saveBarButtonItem: UIBarButtonItem = {
+        configurePublishButtonApperance(button: saveButton)
+        let shadowBackgroundContainer = ShadowBackgroundContainer()
+        saveButton.translatesAutoresizingMaskIntoConstraints = false
+        shadowBackgroundContainer.addSubview(saveButton)
+        saveButton.pinToParent()
+        let barButtonItem = UIBarButtonItem(customView: shadowBackgroundContainer)
+        return barButtonItem
+    }()
+
     private(set) lazy var publishBarButtonItem: UIBarButtonItem = {
-        configurePublishButtonApperance()
+        configurePublishButtonApperance(button: publishButton)
         let shadowBackgroundContainer = ShadowBackgroundContainer()
         publishButton.translatesAutoresizingMaskIntoConstraints = false
         shadowBackgroundContainer.addSubview(publishButton)
@@ -63,17 +133,15 @@ final class ComposeViewController: UIViewController, NeedsDependency {
         let barButtonItem = UIBarButtonItem(customView: shadowBackgroundContainer)
         return barButtonItem
     }()
-    private func configurePublishButtonApperance() {
-        publishButton.adjustsImageWhenHighlighted = false
-        publishButton.setBackgroundImage(.placeholder(color: Asset.Colors.Label.primary.color), for: .normal)
-        publishButton.setBackgroundImage(.placeholder(color: Asset.Colors.Label.primary.color.withAlphaComponent(0.5)), for: .highlighted)
-        publishButton.setBackgroundImage(.placeholder(color: Asset.Colors.Button.disabled.color), for: .disabled)
-        publishButton.setTitleColor(Asset.Colors.Label.primaryReverse.color, for: .normal)
+
+    private func configurePublishButtonApperance(button: UIButton) {
+        button.adjustsImageWhenHighlighted = false
+        button.setBackgroundImage(.placeholder(color: Asset.Colors.Label.primary.color), for: .normal)
+        button.setBackgroundImage(.placeholder(color: Asset.Colors.Label.primary.color.withAlphaComponent(0.5)), for: .highlighted)
+        button.setBackgroundImage(.placeholder(color: Asset.Colors.Button.disabled.color), for: .disabled)
+        button.setTitleColor(Asset.Colors.Label.primaryReverse.color, for: .normal)
     }
 
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
     
 }
 
@@ -83,18 +151,17 @@ extension ComposeViewController {
         super.viewDidLoad()
         
         navigationItem.leftBarButtonItem = cancelBarButtonItem
-        navigationItem.rightBarButtonItem = publishBarButtonItem
         viewModel.traitCollectionDidChangePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 guard self.traitCollection.userInterfaceIdiom == .pad else { return }
-                let items = [self.publishBarButtonItem]
-                self.navigationItem.rightBarButtonItems = items
+                self.navigationItem.rightBarButtonItem = self.rightBarButtonItemForCurrentContext
             }
             .store(in: &disposeBag)
-        publishButton.addTarget(self, action: #selector(ComposeViewController.publishBarButtonItemPressed(_:)), for: .touchUpInside)
-        
+
+        navigationItem.rightBarButtonItem = rightBarButtonItemForCurrentContext
+
         addChild(composeContentViewController)
         composeContentViewController.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(composeContentViewController.view)
@@ -119,8 +186,14 @@ extension ComposeViewController {
     
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-        
-        configurePublishButtonApperance()
+
+        switch viewModel.composeContext {
+        case .composeStatus:
+            configurePublishButtonApperance(button: publishButton)
+        case .editStatus:
+            configurePublishButtonApperance(button: saveButton)
+        }
+
         viewModel.traitCollectionDidChangePublisher.send()
     }
     
@@ -141,12 +214,25 @@ extension ComposeViewController {
         present(alertController, animated: true, completion: nil)
     }
 
+    private var rightBarButtonItemForCurrentContext: UIBarButtonItem {
+        switch viewModel.composeContext {
+        case .composeStatus:
+            return publishBarButtonItem
+        case .editStatus:
+            return saveBarButtonItem
+        }
+    }
 }
 
 extension ComposeViewController {
 
+    private var mediaAttachmentViewModelsWithoutCaption: [AttachmentViewModel] {
+        get {
+            composeContentViewModel.attachmentViewModels.filter({ $0.caption.isEmpty })
+        }
+    }
+
     @objc private func cancelBarButtonItemPressed(_ sender: UIBarButtonItem) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
         guard composeContentViewModel.shouldDismiss else {
             showDismissConfirmAlertController()
             return
@@ -155,27 +241,118 @@ extension ComposeViewController {
     }
     
     @objc private func publishBarButtonItemPressed(_ sender: UIBarButtonItem) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-        
+
         do {
             try composeContentViewModel.checkAttachmentPrecondition()
         } catch {
             let alertController = UIAlertController(for: error, title: nil, preferredStyle: .alert)
             let okAction = UIAlertAction(title: L10n.Common.Controls.Actions.ok, style: .default, handler: nil)
             alertController.addAction(okAction)
-            _ = coordinator.present(scene: .alertController(alertController: alertController), from: nil, transition: .alertController(animated: true, completion: nil))
+            _ = self.sceneCoordinator?.present(scene: .alertController(alertController: alertController), from: nil, transition: .alertController(animated: true, completion: nil))
             return
         }
         
+        let attachmentsWithoutCaptionCount = mediaAttachmentViewModelsWithoutCaption.count
+
+        if UserDefaults.shared.askBeforePostingWithoutAltText && attachmentsWithoutCaptionCount > 0 {
+            let alertController = UIAlertController(
+                title: L10n.Common.Alerts.MediaMissingAltText.title,
+                message: L10n.Common.Alerts.MediaMissingAltText.message(attachmentsWithoutCaptionCount),
+                preferredStyle: .alert
+            )
+            let cancelAction = UIAlertAction(title: L10n.Common.Alerts.MediaMissingAltText.cancel, style: .default, handler: nil)
+            alertController.addAction(cancelAction)
+            let confirmAction = UIAlertAction(title: L10n.Common.Alerts.MediaMissingAltText.post, style: .default) { [weak self] action in
+                self?.enqueuePublishStatus()
+            }
+            alertController.addAction(confirmAction)
+            _ = self.sceneCoordinator?.present(scene: .alertController(alertController: alertController), from: nil, transition: .alertController(animated: true, completion: nil))
+            return
+        }
+        
+        enqueuePublishStatus()
+    }
+    
+    private func enqueuePublishStatus() {
         do {
             let statusPublisher = try composeContentViewModel.statusPublisher()
-            // let result = try await statusPublisher.publish(api: context.apiService, authContext: viewModel.authContext)
-            // if let reactor = presentingViewController?.topMostNotModal as? StatusPublisherReactor {
-            //     statusPublisher.reactor = reactor
-            // }
-            viewModel.context.publisherService.enqueue(
+            cancelBarButtonItem.isEnabled = false
+            publishButton.isEnabled = false
+            statusPublisher.state
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] result in
+                    self?.cancelBarButtonItem.isEnabled = true
+                    
+                    switch result {
+                    case .success:
+                        self?.publishProgressView.progress = 100
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                            self?.dismiss(animated: true, completion: nil)
+                        }
+                    case .failure(let error):
+                        UIView.animate(withDuration: 0.25) {
+                            self?.publishProgressView.alpha = 0
+                        }
+                        self?.publishButton.isEnabled = true
+                        let alertController = UIAlertController.standardAlert(of: error)
+                        self?.present(alertController, animated: true)
+                        // HomeTimelineViewController is also listening and will post the alert if this view has been dismissed
+                    case .pending:
+                        break
+                    }
+                }
+                .store(in: &disposeBag)
+            
+            PublisherService.shared.enqueue(
                 statusPublisher: statusPublisher,
-                authContext: viewModel.authContext
+                authenticationBox: viewModel.authenticationBox
+            )
+        } catch {
+            let alertController = UIAlertController.standardAlert(of: error)
+            present(alertController, animated: true)
+            return
+        }
+    }
+
+    @objc
+    private func publishStatusEdit(_ sender: Any) {
+        do {
+            try composeContentViewModel.checkAttachmentPrecondition()
+        } catch {
+            let alertController = UIAlertController(for: error, title: nil, preferredStyle: .alert)
+            let okAction = UIAlertAction(title: L10n.Common.Controls.Actions.ok, style: .default, handler: nil)
+            alertController.addAction(okAction)
+            _ = self.sceneCoordinator?.present(scene: .alertController(alertController: alertController), from: nil, transition: .alertController(animated: true, completion: nil))
+            return
+        }
+
+        let attachmentsWithoutCaptionCount = mediaAttachmentViewModelsWithoutCaption.count
+
+        if UserDefaults.shared.askBeforePostingWithoutAltText && attachmentsWithoutCaptionCount > 0 {
+            let alertController = UIAlertController(
+                title: L10n.Common.Alerts.MediaMissingAltText.title,
+                message: L10n.Common.Alerts.MediaMissingAltText.message(attachmentsWithoutCaptionCount),
+                preferredStyle: .alert
+            )
+            let cancelAction = UIAlertAction(title: L10n.Common.Alerts.MediaMissingAltText.cancel, style: .default, handler: nil)
+            alertController.addAction(cancelAction)
+            let confirmAction = UIAlertAction(title: L10n.Common.Alerts.MediaMissingAltText.post, style: .default) { [weak self] action in
+                self?.enqueuePublishStatusEdit()
+            }
+            alertController.addAction(confirmAction)
+            _ = self.sceneCoordinator?.present(scene: .alertController(alertController: alertController), from: nil, transition: .alertController(animated: true, completion: nil))
+            return
+        }
+        
+        enqueuePublishStatusEdit()
+    }
+    
+    private func enqueuePublishStatusEdit() {
+        do {
+            guard let editStatusPublisher = try composeContentViewModel.statusEditPublisher() else { return }
+            PublisherService.shared.enqueue(
+                statusPublisher: editStatusPublisher,
+                authenticationBox: viewModel.authenticationBox
             )
         } catch {
             let alertController = UIAlertController.standardAlert(of: error)
@@ -185,7 +362,6 @@ extension ComposeViewController {
 
         dismiss(animated: true, completion: nil)
     }
-    
 }
 
 extension ComposeViewController {
@@ -200,15 +376,12 @@ extension ComposeViewController {
     }
     
     override func paste(_ sender: Any?) {
-        logger.debug("Paste event received")
 
         // Look for images on the clipboard
         if UIPasteboard.general.hasImages, let images = UIPasteboard.general.images {
-            logger.warning("Got image paste event, however attachments are not yet re-implemented.");
             let attachmentViewModels = images.map { image in
                 return AttachmentViewModel(
-                    api: viewModel.context.apiService,
-                    authContext: viewModel.authContext,
+                    authenticationBox: viewModel.authenticationBox,
                     input: .image(image),
                     sizeLimit: composeContentViewModel.sizeLimit,
                     delegate: composeContentViewModel
@@ -236,14 +409,8 @@ extension ComposeViewController: UIAdaptivePresentationControllerDelegate {
     }
     
     func presentationControllerDidAttemptToDismiss(_ presentationController: UIPresentationController) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         showDismissConfirmAlertController()
     }
-    
-    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
-    
 }
 
 extension ComposeViewController {
@@ -349,16 +516,15 @@ extension ComposeViewController {
         case .publishPost:
             publishBarButtonItemPressed(publishBarButtonItem)
         case .mediaBrowse:
-            guard !isViewControllerIsAlreadyModal(composeContentViewController.documentPickerController) else { return }
+            guard composeContentViewController.documentPickerController.presentingViewController == nil else { return }
             present(composeContentViewController.documentPickerController, animated: true, completion: nil)
         case .mediaPhotoLibrary:
-            guard !isViewControllerIsAlreadyModal(composeContentViewController.photoLibraryPicker) else { return }
-            present(composeContentViewController.photoLibraryPicker, animated: true, completion: nil)
+            composeContentViewController.presentPhotoLibraryPicker()
         case .mediaCamera:
             guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
                 return
             }
-            guard !isViewControllerIsAlreadyModal(composeContentViewController.imagePickerController) else { return }
+            guard composeContentViewController.imagePickerController.presentingViewController == nil else { return }
             present(composeContentViewController.imagePickerController, animated: true, completion: nil)
         case .togglePoll:
             composeContentViewModel.isPollActive.toggle()
@@ -373,10 +539,6 @@ extension ComposeViewController {
         case .selectVisibilityDirect:
             composeContentViewModel.visibility = .direct
         }
-    }
-    
-    private func isViewControllerIsAlreadyModal(_ viewController: UIViewController) -> Bool {
-        return viewController.presentingViewController != nil
     }
     
 }

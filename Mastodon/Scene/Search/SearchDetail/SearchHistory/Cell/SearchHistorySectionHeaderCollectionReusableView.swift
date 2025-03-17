@@ -5,19 +5,17 @@
 //  Created by MainasuK on 2022-1-20.
 //
 
-import os.log
 import UIKit
 import MastodonAsset
 import MastodonLocalization
+import MastodonUI
 
 protocol SearchHistorySectionHeaderCollectionReusableViewDelegate: AnyObject {
     func searchHistorySectionHeaderCollectionReusableView(_ searchHistorySectionHeaderCollectionReusableView: SearchHistorySectionHeaderCollectionReusableView, clearButtonDidPressed button: UIButton)
 }
 
 final class SearchHistorySectionHeaderCollectionReusableView: UICollectionReusableView {
-    
-    let logger = Logger(subsystem: "SearchHistorySectionHeaderCollectionReusableView", category: "View")
-    
+
     weak var delegate: SearchHistorySectionHeaderCollectionReusableViewDelegate?
     
     let primaryLabel: UILabel = {
@@ -31,8 +29,9 @@ final class SearchHistorySectionHeaderCollectionReusableView: UICollectionReusab
     
     let clearButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
-        button.tintColor = Asset.Colors.Label.secondary.color
+
+        button.setTitle(L10n.Scene.Search.Searching.clearAll, for: .normal)
+        button.tintColor = Asset.Colors.Brand.blurple.color
         button.accessibilityLabel = L10n.Scene.Search.Searching.clear
 
         return button
@@ -48,9 +47,6 @@ final class SearchHistorySectionHeaderCollectionReusableView: UICollectionReusab
         _init()
     }
     
-}
-
-extension SearchHistorySectionHeaderCollectionReusableView {
     private func _init() {
         primaryLabel.translatesAutoresizingMaskIntoConstraints = false
         addSubview(primaryLabel)
@@ -73,11 +69,8 @@ extension SearchHistorySectionHeaderCollectionReusableView {
         
         clearButton.addTarget(self, action: #selector(SearchHistorySectionHeaderCollectionReusableView.clearButtonDidPressed(_:)), for: .touchUpInside)
     }
-}
 
-extension SearchHistorySectionHeaderCollectionReusableView {
     @objc private func clearButtonDidPressed(_ sender: UIButton) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
         delegate?.searchHistorySectionHeaderCollectionReusableView(self, clearButtonDidPressed: sender)
     }
 }

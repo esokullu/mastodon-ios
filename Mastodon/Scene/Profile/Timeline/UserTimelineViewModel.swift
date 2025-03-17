@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-3-29.
 //
 
-import os.log
 import UIKit
 import GameplayKit
 import Combine
@@ -19,15 +18,14 @@ final class UserTimelineViewModel {
     var disposeBag = Set<AnyCancellable>()
 
     // input
-    let context: AppContext
-    let authContext: AuthContext
+    let authenticationBox: MastodonAuthenticationBox
     let title: String
-    let statusFetchedResultsController: StatusFetchedResultsController
-    let listBatchFetchViewModel = ListBatchFetchViewModel()
+    let dataController: StatusDataController
     @Published var userIdentifier: UserIdentifier?
     @Published var queryFilter: QueryFilter
 
     @Published var isBlocking = false
+    @Published var isDomainBlocking = false
     @Published var isBlockedBy = false
     @Published var isSuspended = false
 
@@ -35,7 +33,7 @@ final class UserTimelineViewModel {
     // var dataSourceDidUpdate = PassthroughSubject<Void, Never>()
 
     // output
-    var diffableDataSource: UITableViewDiffableDataSource<StatusSection, StatusItem>?
+    var diffableDataSource: UITableViewDiffableDataSource<StatusSection, MastodonItemIdentifier>?
     private(set) lazy var stateMachine: GKStateMachine = {
         let stateMachine = GKStateMachine(states: [
             State.Initial(viewModel: self),
@@ -49,27 +47,17 @@ final class UserTimelineViewModel {
         return stateMachine
     }()
 
+    @MainActor
     init(
-        context: AppContext,
-        authContext: AuthContext,
+        authenticationBox: MastodonAuthenticationBox,
         title: String,
         queryFilter: QueryFilter
     ) {
-        self.context = context
-        self.authContext = authContext
+        self.authenticationBox = authenticationBox
         self.title = title
-        self.statusFetchedResultsController = StatusFetchedResultsController(
-            managedObjectContext: context.managedObjectContext,
-            domain: authContext.mastodonAuthenticationBox.domain,
-            additionalTweetPredicate: nil
-        )
+        self.dataController = StatusDataController()
         self.queryFilter = queryFilter
     }
-
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
-
 }
 
 extension UserTimelineViewModel {

@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021/1/22.
 //
 
-import os.log
 import UIKit
 import UserNotifications
 import AVFoundation
@@ -14,15 +13,15 @@ import MastodonUI
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
-
-    let appContext = AppContext()
-
+    
+    var appContext: AppContext { return AppContext.shared }
+    
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
         AppSecret.default.register()
 
         // configure appearance
-        ThemeService.shared.apply(theme: ThemeService.shared.currentTheme.value)
+        ThemeService.shared.apply()
         
         // configure AudioSession
         try? AVAudioSession.sharedInstance().setCategory(.ambient)
@@ -65,7 +64,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 extension AppDelegate {
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        appContext.notificationService.deviceToken.value = deviceToken
+        NotificationService.shared.deviceToken.value = deviceToken
     }
 }
 
@@ -78,27 +77,23 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: [Push Notification]", ((#file as NSString).lastPathComponent), #line, #function)
         guard let pushNotification = AppDelegate.mastodonPushNotification(from: notification) else {
             completionHandler([])
             return
         }
         
-        let notificationID = String(pushNotification.notificationID)
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: [Push Notification] notification %s", ((#file as NSString).lastPathComponent), #line, #function, notificationID)
-        
         let accessToken = pushNotification.accessToken
         UserDefaults.shared.increaseNotificationCount(accessToken: accessToken)
-        appContext.notificationService.applicationIconBadgeNeedsUpdate.send()
+        NotificationService.shared.applicationIconBadgeNeedsUpdate.send()
         
-        appContext.notificationService.handle(pushNotification: pushNotification)
+        NotificationService.shared.handle(pushNotification: pushNotification)
         completionHandler([.sound])
     }
     
     
     // notification present in the background (or resume from background)
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any]) async -> UIBackgroundFetchResult {
-        let shortcutItems = try? await appContext.notificationService.unreadApplicationShortcutItems()
+        let shortcutItems = try? await NotificationService.shared.unreadApplicationShortcutItems()
         UIApplication.shared.shortcutItems = shortcutItems
         return .noData
     }
@@ -109,17 +104,14 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: [Push Notification]", ((#file as NSString).lastPathComponent), #line, #function)
-        
+
         guard let pushNotification = AppDelegate.mastodonPushNotification(from: response.notification) else {
             completionHandler()
             return
         }
         
-        let notificationID = String(pushNotification.notificationID)
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: [Push Notification] notification %s", ((#file as NSString).lastPathComponent), #line, #function, notificationID)
-        appContext.notificationService.handle(pushNotification: pushNotification)
-        appContext.notificationService.requestRevealNotificationPublisher.send(pushNotification)
+        NotificationService.shared.handle(pushNotification: pushNotification)
+        NotificationService.shared.requestRevealNotificationPublisher.send(pushNotification)
         completionHandler()
     }
     
@@ -132,11 +124,4 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         return mastodonPushNotification
     }
     
-}
-
-extension AppContext {
-    static var shared: AppContext {
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        return appDelegate.appContext
-    }
 }

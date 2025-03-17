@@ -6,8 +6,17 @@
 //
 
 import UIKit
+import MastodonSDK
 
 extension UserTimelineViewController: DataSourceProvider {
+    var filterContext: MastodonSDK.Mastodon.Entity.FilterContext? {
+        return .none
+    }
+    
+    func didToggleContentWarningDisplayStatus(status: MastodonSDK.MastodonStatus) {
+        tableView.reloadData()
+    }
+    
     func item(from source: DataSourceItem.Source) async -> DataSourceItem? {
         var _indexPath = source.indexPath
         if _indexPath == nil, let cell = source.tableViewCell {
@@ -27,6 +36,10 @@ extension UserTimelineViewController: DataSourceProvider {
         }
     }
     
+    func update(status: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
+        viewModel.dataController.update(status: status, intent: intent)
+    }
+
     @MainActor
     private func indexPath(for cell: UITableViewCell) async -> IndexPath? {
         return tableView.indexPath(for: cell)

@@ -11,7 +11,6 @@ import CoreDataStack
 import Foundation
 import MastodonSDK
 import UIKit
-import os.log
 import MastodonAsset
 import MastodonCore
 import MastodonUI
@@ -24,7 +23,7 @@ enum ReportSection: Equatable, Hashable {
 extension ReportSection {
     
     struct Configuration {
-        let authContext: AuthContext
+        let authenticationBox: MastodonAuthenticationBox
     }
     
     static func diffableDataSource(
@@ -36,7 +35,6 @@ extension ReportSection {
         tableView.register(ReportHeadlineTableViewCell.self, forCellReuseIdentifier: String(describing: ReportHeadlineTableViewCell.self))
         tableView.register(ReportStatusTableViewCell.self, forCellReuseIdentifier: String(describing: ReportStatusTableViewCell.self))
         tableView.register(ReportCommentTableViewCell.self, forCellReuseIdentifier: String(describing: ReportCommentTableViewCell.self))
-        tableView.register(ReportResultActionTableViewCell.self, forCellReuseIdentifier: String(describing: ReportResultActionTableViewCell.self))
         tableView.register(TimelineBottomLoaderTableViewCell.self, forCellReuseIdentifier: String(describing: TimelineBottomLoaderTableViewCell.self))
 
         return UITableViewDiffableDataSource(tableView: tableView) { tableView, indexPath, item -> UITableViewCell? in
@@ -46,18 +44,14 @@ extension ReportSection {
                 cell.primaryLabel.text = headerContext.primaryLabelText
                 cell.secondaryLabel.text = headerContext.secondaryLabelText
                 return cell
-            case .status(let record):
+            case .status(let status):
                 let cell = tableView.dequeueReusableCell(withIdentifier: String(describing: ReportStatusTableViewCell.self), for: indexPath) as! ReportStatusTableViewCell
-                context.managedObjectContext.performAndWait {
-                    guard let status = record.object(in: context.managedObjectContext) else { return }
-                    configure(
-                        context: context,
-                        tableView: tableView,
-                        cell: cell,
-                        viewModel: .init(value: status),
-                        configuration: configuration
-                    )
-                }
+                configure(
+                    tableView: tableView,
+                    cell: cell,
+                    viewModel: .init(value: status),
+                    configuration: configuration
+                )
                 return cell
             case .comment(let commentContext):
                 let cell = tableView.dequeueReusableCell(withIdentifier: String(describing: ReportCommentTableViewCell.self), for: indexPath) as! ReportCommentTableViewCell
@@ -76,13 +70,6 @@ extension ReportSection {
                     }
                     .store(in: &cell.disposeBag)
                 return cell
-            case .result(let record):
-                let cell = tableView.dequeueReusableCell(withIdentifier: String(describing: ReportResultActionTableViewCell.self), for: indexPath) as! ReportResultActionTableViewCell
-                context.managedObjectContext.performAndWait {
-                    guard let user = record.object(in: context.managedObjectContext) else { return }
-                    cell.avatarImageView.configure(configuration: .init(url: user.avatarImageURL()))
-                }
-                return cell
             case .bottomLoader:
                 let cell = tableView.dequeueReusableCell(withIdentifier: String(describing: TimelineBottomLoaderTableViewCell.self), for: indexPath) as! TimelineBottomLoaderTableViewCell
                 cell.activityIndicatorView.startAnimating()
@@ -95,20 +82,17 @@ extension ReportSection {
 extension ReportSection {
     
     static func configure(
-        context: AppContext,
         tableView: UITableView,
         cell: ReportStatusTableViewCell,
         viewModel: ReportStatusTableViewCell.ViewModel,
         configuration: Configuration
     ) {
         StatusSection.setupStatusPollDataSource(
-            context: context,
-            authContext: configuration.authContext,
+            authenticationBox: configuration.authenticationBox,
             statusView: cell.statusView
         )
         
-        cell.statusView.viewModel.context = context
-        cell.statusView.viewModel.authContext = configuration.authContext
+        cell.statusView.viewModel.authenticationBox = configuration.authenticationBox
         
         cell.configure(
             tableView: tableView,

@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022-1-22.
 //
 
-import os.log
 import UIKit
 import Combine
 import MastodonSDK
@@ -19,7 +18,6 @@ extension ProfileAboutViewModel {
     ) {
         let diffableDataSource = ProfileFieldSection.diffableDataSource(
             collectionView: collectionView,
-            context: context,
             configuration: ProfileFieldSection.Configuration(
                 profileFieldCollectionViewCellDelegate: profileFieldCollectionViewCellDelegate,
                 profileFieldEditCollectionViewCellDelegate: profileFieldEditCollectionViewCellDelegate
@@ -52,7 +50,7 @@ extension ProfileAboutViewModel {
         diffableDataSource.apply(snapshot)
 
         let fields = Publishers.CombineLatest3(
-            $isEditing.removeDuplicates(),
+            $isEditing,
             profileInfo.$fields.removeDuplicates(),
             profileInfoEditing.$fields.removeDuplicates()
         ).map { isEditing, displayFields, editingFields in
@@ -61,14 +59,15 @@ extension ProfileAboutViewModel {
 
 
         Publishers.CombineLatest4(
-            $isEditing.removeDuplicates(),
+            $isEditing,
             $createdAt.removeDuplicates(),
             fields,
             $emojiMeta.removeDuplicates()
         )
         .throttle(for: 0.3, scheduler: DispatchQueue.main, latest: true)
+        .receive(on: DispatchQueue.main)
         .sink { [weak self] isEditing, createdAt, fields, emojiMeta in
-            guard let self = self else { return }
+            guard let self else { return }
             guard let diffableDataSource = self.diffableDataSource else { return }
 
             var snapshot = NSDiffableDataSourceSnapshot<ProfileFieldSection, ProfileFieldItem>()

@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022-4-12.
 //
 
-import os.log
 import Foundation
 import GameplayKit
 import MastodonSDK
@@ -13,9 +12,6 @@ import MastodonCore
 
 extension DiscoveryPostsViewModel {
     class State: GKState {
-        
-        let logger = Logger(subsystem: "DiscoveryPostsViewModel.State", category: "StateMachine")
-
         let id = UUID()
 
         weak var viewModel: DiscoveryPostsViewModel?
@@ -24,21 +20,9 @@ extension DiscoveryPostsViewModel {
             self.viewModel = viewModel
         }
         
-        override func didEnter(from previousState: GKState?) {
-            super.didEnter(from: previousState)
-            
-            let from = previousState.flatMap { String(describing: $0) } ?? "nil"
-            let to = String(describing: self)
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): \(from) -> \(to)")
-        }
-        
         @MainActor
         func enter(state: State.Type) {
             stateMachine?.enter(state)
-        }
-        
-        deinit {
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): [\(self.id.uuidString)] \(String(describing: self))")
         }
     }
 }
@@ -88,9 +72,7 @@ extension DiscoveryPostsViewModel.State {
             super.didEnter(from: previousState)
             guard let _ = viewModel, let stateMachine = stateMachine else { return }
             
-            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: retry loading 3s later…", ((#file as NSString).lastPathComponent), #line, #function)
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: retry loading", ((#file as NSString).lastPathComponent), #line, #function)
                 stateMachine.enter(Loading.self)
             }
         }
@@ -140,12 +122,13 @@ extension DiscoveryPostsViewModel.State {
             
             Task {
                 do {
-                    let response = try await viewModel.context.apiService.trendStatuses(
-                        domain: viewModel.authContext.mastodonAuthenticationBox.domain,
+                    let response = try await APIService.shared.trendStatuses(
+                        domain: viewModel.authenticationBox.domain,
                         query: Mastodon.API.Trends.StatusQuery(
                             offset: offset,
                             limit: nil
-                        )
+                        ),
+                        authenticationBox: viewModel.authenticationBox
                     )
                     let newOffset: Int? = {
                         guard let offset = response.link?.offset else { return nil }
@@ -160,10 +143,10 @@ extension DiscoveryPostsViewModel.State {
                     self.offset = newOffset
 
                     var hasNewStatusesAppend = false
-                    var statusIDs = isReloading ? [] : viewModel.statusFetchedResultsController.statusIDs
+                    var statusIDs = isReloading ? [] : await viewModel.dataController.records
                     for status in response.value {
-                        guard !statusIDs.contains(status.id) else { continue }
-                        statusIDs.append(status.id)
+                        guard !statusIDs.contains(where: { $0.id == status.id }) else { continue }
+                        statusIDs.append(.fromEntity(status))
                         hasNewStatusesAppend = true
                     }
 
@@ -172,14 +155,17 @@ extension DiscoveryPostsViewModel.State {
                     } else {
                         await enter(state: NoMore.self)
                     }
-                    viewModel.statusFetchedResultsController.statusIDs = statusIDs
+                    await viewModel.dataController.setRecords(statusIDs)
                     viewModel.didLoadLatest.send()
                     
                 } catch {
-                    logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): fetch posts fail: \(error.localizedDescription)")
-                    if let error = error as? Mastodon.API.Error, error.httpResponseStatus.code == 404 {
-                        viewModel.isServerSupportEndpoint = false
-                        await enter(state: NoMore.self)
+                    if let error = error as? Mastodon.API.Error {
+                        if error.httpResponseStatus == .notFound {
+                            viewModel.isServerSupportEndpoint = false
+                            await enter(state: NoMore.self)
+                        } else if error.httpResponseStatus == .unauthorized {
+                            await enter(state: NoMore.self)
+                        }
                     } else {
                         await enter(state: Fail.self)
                     }

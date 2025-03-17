@@ -6,13 +6,15 @@
 //
 
 import UIKit
-import CoreDataStack
+import MastodonSDK
+import MastodonUI
 
 extension ReportStatusTableViewCell {
+    // todo: refactor / remove this
     final class ViewModel {
-        let value: Status
+        let value: MastodonStatus
 
-        init(value: Status) {
+        init(value: MastodonStatus) {
             self.value = value
         }
     }
@@ -27,23 +29,11 @@ extension ReportStatusTableViewCell {
         if statusView.frame == .zero {
             // set status view width
             statusView.frame.size.width = tableView.frame.width - ReportStatusTableViewCell.checkboxLeadingMargin - ReportStatusTableViewCell.checkboxSize.width - ReportStatusTableViewCell.statusViewLeadingSpacing
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): did layout for new cell")
         }
         
-        statusView.configure(status: viewModel.value)
+        let contentDisplayMode = StatusView.ContentConcealViewModel(status: viewModel.value, filterBox: nil, filterContext: nil).byShowingAll().effectiveDisplayMode
         
-        statusView.viewModel.$isContentReveal
-            .removeDuplicates()
-            .dropFirst()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak tableView, weak self] isContentReveal in
-                guard let tableView = tableView else { return }
-                guard let _ = self else { return }
-                
-                tableView.beginUpdates()
-                tableView.endUpdates()
-            }
-            .store(in: &disposeBag)
+        statusView.configure(status: viewModel.value, contentDisplayMode: contentDisplayMode)
     }
     
 }

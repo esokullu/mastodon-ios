@@ -15,10 +15,6 @@
                 "title": "إخفاقٌ فِي التَّصويت",
                 "poll_ended": "اِنتَهَى اِستِطلاعُ الرَّأي"
             },
-            "discard_post_content": {
-                "title": "التخلص من المسودة",
-                "message": "أكِّد للتخلص مِن مُحتوى مَنشور مؤلَّف."
-            },
             "publish_post_failure": {
                 "title": "إخفاق في عمليَّة النشر",
                 "message": "فَشَلَ نَشر المَنشور.\nيُرجى التحقق من اتصالك بالإنترنت.",
@@ -54,8 +50,26 @@
             },
             "translation_failed": {
                 "title": "مُلاحظة",
-                "message": "Translation failed. Maybe the administrator has not enabled translations on this server or this server is running an older version of Mastodon where translations are not yet supported.",
+                "message": "فشلت الترجمة. ربما لم يتمكن مدير الخادم من تفعيل الترجمات على هذا الخادم أو هذا الخادم يقوم بتشغيل نسخة قديمة من ماستدون حيث الترجمات غير مدعومة بعد.",
                 "button": "حسنًا"
+            },
+            "media_missing_alt_text": {
+                "title": "Media Missing Alt Text",
+                "message": "%d of your images are missing alt text.\nPost Anyway?",
+                "cancel": "Cancel",
+                "post": "Post"
+            },
+            "boost_a_post": {
+                "title_boost": "Boost Post?",
+                "title_unboost": "Unboost Post?",
+                "cancel": "Cancel",
+                "boost": "Boost",
+                "unboost": "Unboost"
+            },
+            "unfollow_user": {
+                "title": "Unfollow %@?",
+                "cancel": "Cancel",
+                "unfollow": "Unfollow"
             }
         },
         "controls": {
@@ -80,7 +94,6 @@
                 "save_photo": "حفظ الصورة",
                 "copy_photo": "نسخ الصورة",
                 "sign_in": "تسجيلُ الدخول",
-                "sign_up": "إنشاءُ حِساب",
                 "see_more": "عرض المزيد",
                 "preview": "مُعاينة",
                 "copy": "نَسخ",
@@ -101,13 +114,22 @@
                 "translate_post": {
                     "title": "الترجَمَة مِن %s",
                     "unknown_language": "غير مَعرُوفة"
-                }
+                },
+                "edit_post": "تعديل",
+                "bookmark": "إضافة إلى الفواصل المرجعية",
+                "remove_bookmark": "إزالة الفاصلة المرجعية",
+                "follow": "متابعة %s",
+                "unfollow": "ألغِ متابعة %s"
             },
             "tabs": {
                 "home": "الرَّئِيسَة",
                 "search_and_explore": "البَحث وَالاِستِكشاف",
                 "notifications": "الإشعارات",
-                "profile": "المِلَفُّ التَّعريفِيّ"
+                "profile": "المِلَفُّ التَّعريفِيّ",
+                "a11y": {
+                    "search": "البحث",
+                    "explore": "استكشف"
+                }
             },
             "keyboard": {
                 "common": {
@@ -121,9 +143,9 @@
                     "next_status": "المنشور التالي",
                     "open_status": "فتح المنشور",
                     "open_author_profile": "فتح الملف التعريفي للمؤلف",
-                    "open_reblogger_profile": "فتح الملف التعريفي لمُعيد تدوين المنشور",
+                    "open_reblogger_profile": "Open Booster's Profile",
                     "reply_status": "الرَّد على مَنشور",
-                    "toggle_reblog": "تبديل إعادة تدوين مَنشور",
+                    "toggle_reblog": "Toggle Boost on Post",
                     "toggle_favorite": "تبديل المفضلة لِمنشور",
                     "toggle_content_warning": "تبديل تحذير المُحتَوى",
                     "preview_image": "معاينة الصورة"
@@ -134,7 +156,11 @@
                 }
             },
             "status": {
-                "user_reblogged": "أعادَ %s تَدوينَها",
+                "reply": "Reply",
+                "private_reply": "Private reply",
+                "mention": "Mention",
+                "private_mention": "Private mention",
+                "user_reblogged": "%s boosted",
                 "user_replied_to": "رَدًا على %s",
                 "show_post": "أظْهِر مَنشور",
                 "show_user_profile": "أظْهِر المِلَفَّ التَّعريفِيَّ لِلمُستَخدِم",
@@ -143,7 +169,7 @@
                 "media_content_warning": "اُنقُر لِلكَشف",
                 "tap_to_reveal": "اُنقُر لِلكَشف",
                 "load_embed": "تحميل المُضمَن",
-                "link_via_user": "%s via %s",
+                "link_via_user": "%s عبر %s",
                 "poll": {
                     "vote": "صَوِّت",
                     "closed": "انتهى"
@@ -156,8 +182,8 @@
                 },
                 "actions": {
                     "reply": "الرَّد",
-                    "reblog": "إعادة النشر",
-                    "unreblog": "التراجُع عن إعادة النشر",
+                    "reblog": "Boost",
+                    "unreblog": "Undo boost",
                     "favorite": "التفضيل",
                     "unfavorite": "إزالة التفضيل",
                     "menu": "القائمة",
@@ -166,7 +192,12 @@
                     "show_gif": "أظْهِر GIF",
                     "show_video_player": "أظْهِر مُشَغِّلَ المَقاطِعِ المَرئِيَّة",
                     "share_link_in_post": "مُشارَكَة الرابِط فِي مَنشور",
-                    "tap_then_hold_to_show_menu": "اُنقُر مُطَوَّلًا لِإظْهَارِ القائِمَة"
+                    "tap_then_hold_to_show_menu": "اُنقُر مُطَوَّلًا لِإظْهَارِ القائِمَة",
+                    "a11y_labels": {
+                        "reblog": "Boost",
+                        "unreblog": "Undo boost"
+                    },
+                    "copy_link": "Copy Link"
                 },
                 "tag": {
                     "url": "عنوان URL",
@@ -186,28 +217,53 @@
                     "translated_from": "الترجَمَة مِن %s بِاستِخدَام %s",
                     "unknown_language": "غير مَعرُوفة",
                     "unknown_provider": "غير مَعرُوف",
-                    "show_original": "Shown Original"
+                    "show_original": "إظهار الأصل"
+                },
+                "media": {
+                    "accessibility_label": "%s، مرفق %d من %d",
+                    "expand_image_hint": "Expands the image. Double-tap and hold to show actions",
+                    "expand_gif_hint": "Expands the GIF. Double-tap and hold to show actions",
+                    "expand_video_hint": "Shows the video player. Double-tap and hold to show actions"
+                },
+                "posted_via_application": "%s عبر %s",
+                "buttons": {
+                    "reblogs_title": "Boosts",
+                    "favorites_title": "المفضلة",
+                    "edit_history_title": "سِجِلّ التعديلات",
+                    "edit_history_detail": "آخر تعديل %s"
+                },
+                "edited_at_timestamp_prefix": "عُدّل في %s",
+                "edit_history": {
+                    "title": "سِجِلّ التعديلات",
+                    "original_post": "المنشور الأصلي · %s"
+                },
+                "card": {
+                    "by": "By",
+                    "by_author": "By %s"
                 }
             },
             "friendship": {
                 "follow": "مُتابَعَة",
+                "follow_back": "Follow back",
                 "following": "مُتابَع",
+                "mutual": "Mutual",
                 "request": "إرسال طَلَب",
                 "pending": "قيد المُراجعة",
                 "block": "حظر",
                 "block_user": "حَظرُ %s",
-                "block_domain": "حظر %s",
+                "block_domain": "Block domain %s",
                 "unblock": "رفع الحَظر",
                 "unblock_user": "رفع الحَظر عن %s",
                 "blocked": "محظور",
+                "domain_blocked": "Domain Blocked",
                 "mute": "كَتم",
                 "mute_user": "كَتمُ %s",
                 "unmute": "رفع الكتم",
                 "unmute_user": "رفع الكتم عن %s",
                 "muted": "مكتوم",
                 "edit_info": "تَحريرُ المَعلُومات",
-                "show_reblogs": "إظهار إعادات التدوين",
-                "hide_reblogs": "إخفاء إعادات التدوين"
+                "show_reblogs": "Show Boosts",
+                "hide_reblogs": "Hide Boosts"
             },
             "timeline": {
                 "filtered": "مُصفَّى",
@@ -229,25 +285,49 @@
                     "user_suspended_warning": "لقد أُوقِفَ حِساب %s."
                 }
             }
+        },
+        "user_list": {
+            "no_verified_link": "رابط غير متحقق منه",
+            "followers_count": "%@ متابعين"
         }
     },
     "scene": {
         "welcome": {
-            "slogan": "شبكات التواصل الاجتماعي\nمرة أُخرى بين يديك.",
-            "get_started": "ابدأ الآن",
-            "log_in": "تسجيلُ الدخول"
+            "log_in": "تسجيلُ الدخول",
+            "learn_more": "تعلم المزيد",
+            "join_default_server": "انضم إلى %@",
+            "pick_server": "اختر خادمًا آخر",
+            "separator": {
+                "or": "أو"
+            },
+            "education": {
+                "mastodon": {
+                    "title": "أهلًا بك على ماستدون",
+                    "description": "ماستدون شبكة اجتماعية لامركزية، بمعنى أنه ليس هناك شركة واحدة تتحكم فيها. وهي تتألف من العديد من الخوادم التي تدار بشكل مستقل، وجميعها متصلة معا."
+                },
+                "servers": {
+                    "title": "ما هي الخوادم؟",
+                    "description": "تتم استضافة كل حساب ماستدون على خادم - ولكل منها قيمه وقواعده ومسؤوليه الخاصين. بغض النظر عن الشخص الذي تختاره ، يمكنك متابعة الأشخاص والتفاعل معهم على أي خادم."
+                },
+                "a11y": {
+                    "what_is_mastodon": {
+                        "title": "ما هو ماستدون؟"
+                    }
+                }
+            }
         },
         "login": {
-            "title": "مَرحَبًا بِكَ مُجَدَّدًا",
-            "subtitle": "سَجِّل دُخولَكَ إلى الخادِم الَّذي أنشأتَ حِسابَكَ فيه.",
+            "title": "Welcome Back",
+            "subtitle": "Log in with the server where you created your account.",
             "server_search_field": {
                 "placeholder": "أدخِل عُنوانَ URL أو اِبحَث عَنِ الخادِمِ الخاصّ بِك"
             }
         },
         "server_picker": {
-            "title": "اِختر خادِم،\nأيًّا مِنهُم.",
-            "subtitle": "اِختر خادمًا بناءً على منطقتك، اِهتماماتك أو يُمكنك حتى اِختيارُ مجتمعٍ ذِي غرضٍ عام. بِإمكانِكَ الدردشة مع أي شخص على مَاستودُون، بغض النظر عن الخادم الخاصة بك.",
+            "title": "اختر خادمًا",
             "button": {
+                "language": "اللغة",
+                "signup_speed": "سرعة التسجيل",
                 "category": {
                     "all": "الكُل",
                     "all_accessiblity_description": "الفِئَة: الكُل",
@@ -279,18 +359,41 @@
                 "finding_servers": "يجري إيجاد خوادم متوفِّرَة...",
                 "bad_network": "حدث خطأٌ ما أثناء تحميل البيانات. تحقَّق من اتصالك بالإنترنت.",
                 "no_results": "لا توجد نتائج"
+            },
+            "signup_speed": {
+                "all": "الكل",
+                "instant": "تسجيل فوري",
+                "manually_reviewed": "مراجعة يدوية"
+            },
+            "language": {
+                "all": "الكل"
+            },
+            "search": {
+                "placeholder": "البحث عن اسم أو رابط تشعّبي URL"
+            },
+            "no_server_selected_hint": "سوف نختار خادماً بناءً على لغتك إذا قمت بالمتابعة دون إجراء إختيار."
+        },
+        "privacy": {
+            "title": "Your Privacy",
+            "description": "Although the Mastodon app does not collect any data, the server you sign up through may have a different policy.\n\nIf you disagree with the policy for **%s**, you can go back and pick a different server.",
+            "policy": {
+                "ios": "سياسة الخصوصية - ماستدون لنظام التشغيل iOS",
+                "server": "سياسة الخصوصية - %s"
+            },
+            "button": {
+                "confirm": "أوافق"
             }
         },
         "register": {
-            "title": "أخبرنا عن نفسك.",
-            "lets_get_you_set_up_on_domain": "دَعنا نَبدَأُ بِإعدادِكَ عَلَى %s",
+            "title": "إنشاء حساب",
             "input": {
                 "avatar": {
                     "delete": "حذف"
                 },
                 "username": {
                     "placeholder": "اِسمُ مُستَخدِم",
-                    "duplicate_prompt": "اِسم المُستَخدِم هذا مأخوذٌ بالفعل."
+                    "duplicate_prompt": "اِسم المُستَخدِم هذا مأخوذٌ بالفعل.",
+                    "suggestion": "مذهل_%@"
                 },
                 "display_name": {
                     "placeholder": "اِسمُ عَرض"
@@ -300,6 +403,7 @@
                 },
                 "password": {
                     "placeholder": "رمز سري",
+                    "confirmation_placeholder": "أكّد كلمة السر",
                     "require": "رمز المرور الخاص بك يجب أن يحتوي على الأقل:",
                     "character_limit": "ثمانيةُ خانات",
                     "accessibility": {
@@ -324,7 +428,7 @@
                 "reason": {
                     "blocked": "يحتوي %s على موفِّر خدمة بريد إلكتروني غير مسموح به",
                     "unreachable": "يبدوا أنَّ %s غير موجود",
-                    "taken": "إنَّ %s مُستخدَمٌ بالفعل",
+                    "taken": "%s مأخوذ بالفعل. ماذا عن:",
                     "reserved": "إنَّ %s عبارة عن كلمة مفتاحيَّة محجوزة",
                     "accepted": "يجب أن يُقبل %s",
                     "blank": "%s مَطلوب",
@@ -342,21 +446,20 @@
             }
         },
         "server_rules": {
-            "title": "بعض القواعد الأساسية.",
-            "subtitle": "سُنَّت هذه القواعد من قِبل مشرفي %s.",
+            "title": "Server Rules",
+            "subtitle": "By continuing, you agree to follow by the following rules set and enforced by the **%s** moderators.",
             "prompt": "في حال إختيارك للمواصلة، أنت تخضع لشروط الخدمة وسياسة الخصوصية لِـ%s.",
             "terms_of_service": "شُرُوط الخِدمَة",
             "privacy_policy": "سِياسَة الخُصُوصيَّة",
             "button": {
-                "confirm": "أنا مُوافِق"
+                "confirm": "أوافق",
+                "disagree": "Disagree"
             }
         },
         "confirm_email": {
-            "title": "شيءٌ أخير.",
-            "subtitle": "أنقر على الرابط المرسل إليك لاستيثاق حسابك.",
-            "tap_the_link_we_emailed_to_you_to_verify_your_account": "اُنقُر عَلَى الرَّابِطِ الَّذي أرسَلناهُ إليكَ عَبرَ البَريدِ الإلِكتُرُونيّ لِلتَّحَقُقِ مِن حِسابِك",
+            "title": "تحقَّق من بريدك الوارِد",
+            "tap_the_link_we_emailed_to_you_to_verify_your_account": "اضغط على الرابط الذي أرسلناه إليك للتحقق من %@. سننتظر هنا.",
             "button": {
-                "open_email_app": "فتح تطبيق البريد الإلكتروني",
                 "resend": "إعادَةُ الإرسال"
             },
             "dont_receive_email": {
@@ -369,29 +472,45 @@
                 "description": "لقد أرسلنا لك بريدًا إلكترونيًا للتو. تحقق من مجلد البريد غير الهام الخاص بك إذا لم تكن قد فعلت ذلك.",
                 "mail": "البريد",
                 "open_email_client": "فتح عميل البريد الإلكتروني"
+            },
+            "didnt_get_link": {
+                "prefix": "ألم تحصل على رابط؟",
+                "resend_in": "إعادة إرسال (%@)",
+                "resend_now": "أعد الإرسال الآن."
             }
         },
         "home_timeline": {
             "title": "الرَّئِيسَة",
-            "navigation_bar_state": {
-                "offline": "غَير مُتَّصِل",
-                "new_posts": "إظهار منشورات جديدة",
-                "published": "تمَّ النَّشر!",
-                "Publishing": "يَجري نَشر المُشارَكَة...",
-                "accessibility": {
-                    "logo_label": "ُّزِرُّ الشِّعار",
-                    "logo_hint": "اُنقُر لِلتمريرِ لأعلى واُنقُر مَرّةً أُخرَى لِلذَّهابِ إلَى المَوقِعِ السَّابِق"
+            "timeline_menu": {
+                "following": "Following",
+                "local_community": "Local",
+                "lists": {
+                    "title": "Lists",
+                    "empty_message": "You don't have any Lists"
+                },
+                "hashtags": {
+                    "title": "Followed Hashtags",
+                    "empty_message": "You don't follow any Hashtags"
                 }
+            },
+            "timeline_pill": {
+                "offline": "Offline",
+                "new_posts": "New Posts",
+                "post_sent": "Post Sent"
+            },
+            "empty_state": {
+                "list_empty_message_title": "This list is empty"
             }
         },
         "suggestion_account": {
-            "title": "ابحث عن أشخاص لمتابعتهم",
-            "follow_explain": "عِندَ مُتابَعَتِكَ لأحدِهِم، سَوف تَرى مَنشوراته في تغذيَتِكَ الرئيسة."
+            "title": "رائج على ماستدون",
+            "follow_all": "اتبع الكل"
         },
         "compose": {
             "title": {
                 "new_post": "مَنشُورٌ جَديد",
-                "new_reply": "رَدٌّ جديد"
+                "new_reply": "رَدٌّ جديد",
+                "edit_post": "تعديل المنشور"
             },
             "media_selection": {
                 "camera": "اِلتِقاطُ صُورَة",
@@ -415,6 +534,7 @@
                 "server_processing_state": "مُعالجة الخادم جارِيَة..."
             },
             "poll": {
+                "title": "استطلاع رأي",
                 "duration_time": "المُدَّة: %s",
                 "thirty_minutes": "ثلاثون دقيقة",
                 "one_hour": "ساعةٌ واحدة",
@@ -424,7 +544,11 @@
                 "seven_days": "سبعةُ أيام",
                 "option_number": "الخيار %ld",
                 "the_poll_is_invalid": "الاِستِطلاعُ غيرُ صالِح",
-                "the_poll_has_empty_option": "يوجَدُ خِيارٌ فارِغٌ فِي الاِستِطلاع"
+                "the_poll_has_empty_option": "يوجَدُ خِيارٌ فارِغٌ فِي الاِستِطلاع",
+                "add_option": "إضافة خيار",
+                "remove_option": "إزالة الخيار",
+                "move_up": "أنقله إلى أعلى",
+                "move_down": "أنقله إلى أسفل"
             },
             "content_warning": {
                 "placeholder": "اكتب تَحذيرًا دَقيقًا هُنا..."
@@ -456,6 +580,12 @@
                 "toggle_content_warning": "تبديل تحذير المُحتَوى",
                 "append_attachment_entry": "إضافة مُرفَق - %s",
                 "select_visibility_entry": "اختر مدى الظهور - %s"
+            },
+            "language": {
+                "title": "لغة النشر",
+                "suggested": "المقترحَة",
+                "recent": "الأخيرة",
+                "other": "لغات أخرى…"
             }
         },
         "profile": {
@@ -468,10 +598,11 @@
                 "my_followers": "مُتابِعُون",
                 "other_posts": "مَنشورات",
                 "other_following": "مُتابَعُون",
-                "other_followers": "مُتابِعُون"
+                "other_followers": "مُتابِعُون",
+                "familiar_followers": "متابعة متبادلة"
             },
             "fields": {
-                "joined": "Joined",
+                "joined": "انضم في",
                 "add_row": "إضافة صف",
                 "placeholder": {
                     "label": "التسمية",
@@ -507,12 +638,20 @@
                     "message": "تأكيدُ رَفع الحَظرِ عَن %s"
                 },
                 "confirm_show_reblogs": {
-                    "title": "إظهار إعادات التدوين",
-                    "message": "التأكيد لِإظهار إعادات التدوين"
+                    "title": "Show Boosts",
+                    "message": "Confirm to show boosts"
                 },
                 "confirm_hide_reblogs": {
-                    "title": "إخفاء إعادات التدوين",
-                    "message": "التأكيد لِإخفاء إعادات التدوين"
+                    "title": "Hide Boosts",
+                    "message": "Confirm to hide boosts"
+                },
+                "confirm_block_domain": {
+                    "title": "Block domain",
+                    "message": "Confirm to block domain %s"
+                },
+                "confirm_unblock_domain": {
+                    "title": "Unblock domain",
+                    "message": "Confirm to unblock domain %s"
                 }
             },
             "accessibility": {
@@ -538,7 +677,7 @@
             "title": "مُفَضَّلٌ مِن قِبَلِ"
         },
         "reblogged_by": {
-            "title": "اُعيدَ تَدوينَهُ بِواسِطَةِ"
+            "title": "Boosted By"
         },
         "search": {
             "title": "البَحث",
@@ -560,16 +699,21 @@
                 }
             },
             "searching": {
-                "segment": {
-                    "all": "الكُل",
-                    "people": "أشخاص",
-                    "hashtags": "وُسُوم",
-                    "posts": "مَنشُورات"
+                "posts": "Posts matching \"%s\"",
+                "people": "People matching \"%s\"",
+                "profile": "Go to @%s@%s",
+                "url": "Open URL in Mastodon",
+                "hashtag": "Go to #%s",
+                "no_user": {
+                    "title": "No User Account Found",
+                    "message": "There's no Useraccount \"%s\" on %s"
                 },
                 "empty_state": {
                     "no_results": "لا تُوجَدُ نتائِج"
                 },
                 "recent_search": "عَمَليَّاُت البَحثِ الأخيرَة",
+                "no_recent_searches": "No recent searches.",
+                "clear_all": "Clear all",
                 "clear": "مَحو"
             }
         },
@@ -584,20 +728,50 @@
             "intro": "هَذِهِ هِيَ المَنشُوراتُ الَّتي تَكْتَسِبُ شَعبِيَّةً فِي الرُّكنِ الخاصِّ بِكَ مِن مَاستُودون."
         },
         "favorite": {
-            "title": "مُفضَّلَتُك"
+            "title": "المفضلة"
         },
         "notification": {
             "title": {
                 "Everything": "كُلُّ شيء",
                 "Mentions": "الإشارات"
             },
+            "headers": {
+                "report": "Report",
+                "sign_up": "Signup",
+                "favourite": "Favorite",
+                "follow": "Follow",
+                "follow_request": "Follow request",
+                "moderation_warning": "Warning",
+                "poll": "Poll",
+                "boost": "Boost",
+                "severed_relationships": "Domain block",
+                "status": "Post",
+                "edit": "Edit"
+            },
+            "grouped_notification_description": {
+                "your_poll_has_ended": "Your poll has ended",
+                "single_name_ran_poll": "%@ ran %@",
+                "single_name_mentioned_you": "%@ mentioned you",
+                "single_name_requested_to_follow_you": "%@ requested to follow you",
+                "single_name_posted": "%@ posted:",
+                "single_name_boosted": "%@ boosted:",
+                "single_name_favourited": "%@ favorited:",
+                "single_name_followed_you": "%@ followed you",
+                "multiple_people_boosted": "%@ boosted:",
+                "multiple_people_favourited": "%@ favorited:",
+                "multiple_people_followed_you": "%@ followed you",
+                "single_name_signed_up": "%@ signed up",
+                "someone_reported_account_for_rule_violation": "Someone reported %@ for rule violation.",
+                "someone_reported_posts_from_account_for_rule_violation": "Someone reported %@ from %@ for rule violation."
+            },
             "notification_description": {
                 "followed_you": "بَدَأ بِمُتابَعَتِك",
                 "favorited_your_post": "فَضَّلَ مَنشُورَك",
-                "reblogged_your_post": "أعادَ تَدوينَ مَنشُورَك",
+                "reblogged_your_post": "boosted your post",
                 "mentioned_you": "أشارَ إليك",
                 "request_to_follow_you": "طَلَبَ مُتابَعتَك",
-                "poll_has_ended": "انتهى استطلاعُ الرأي"
+                "poll_has_ended": "انتهى استطلاعُ الرأي",
+                "relationship_severance": "An admin from %@ has blocked %@, including %@."
             },
             "keyobard": {
                 "show_everything": "أظْهِر كُلَّ شَيء",
@@ -608,6 +782,41 @@
                 "accepted": "مَقبُول",
                 "reject": "رَفض",
                 "rejected": "مَرفُوض"
+            },
+            "warning": {
+                "none": "Your account has received a moderation warning.",
+                "disable": "Your account has been disabled.",
+                "mark_statuses_as_sensitive": "Some of your posts have been marked as sensitive.",
+                "delete_statuses": "Some of your posts have been removed.",
+                "sensitive": "Your posts will be marked as sensitive from now on.",
+                "silence": "Your account has been limited.",
+                "suspend": "Your account has been suspended.",
+                "learn_more": "Learn More"
+            },
+            "learn_more_about_server_blocks": "Learn more about server blocks",
+            "filtered_notification": {
+                "title": "Filtered Notifications",
+                "accept": "Accept",
+                "dismiss": "Dismiss"
+            },
+            "policy": {
+                "title": "Filter Notifications from…",
+                "not_following": {
+                    "title": "People you don't follow",
+                    "subtitle": "Until you manually approve them"
+                },
+                "no_follower": {
+                    "title": "People not following you",
+                    "subtitle": "Including people who have been following you fewer than 3 days"
+                },
+                "new_account": {
+                    "title": "New accounts",
+                    "subtitle": "Created within the past 30 days"
+                },
+                "private_mentions": {
+                    "title": "Unsolicited private mentions",
+                    "subtitle": "Filtered unless it’s in reply to your own mention or if you follow the sender"
+                }
             }
         },
         "thread": {
@@ -615,60 +824,100 @@
             "title": "مَنشور مِن %s"
         },
         "settings": {
-            "title": "الإعدادات",
-            "section": {
-                "appearance": {
-                    "title": "المَظهر",
-                    "automatic": "تلقائي",
-                    "light": "مضيءٌ دائمًا",
-                    "dark": "مظلمٌ دائِمًا"
-                },
-                "look_and_feel": {
-                    "title": "المَظهَرُ وَالشُّعُور",
-                    "use_system": "استخدم النِظام",
-                    "really_dark": "مُظلمٌ حَقًّا",
-                    "sorta_dark": "مُظلمٌ نوعًا ما",
-                    "light": "مُضيء"
-                },
-                "notifications": {
-                    "title": "الإشعارات",
-                    "favorites": "بِالإعْجاب بِمَنشوري",
-                    "follows": "بِمُتابَعَتي",
-                    "boosts": "بِإعادَةِ تدوينِ مَنشوري",
-                    "mentions": "بِالإشارَةِ إليّ",
-                    "trigger": {
-                        "anyone": "أيُّ شخصٍ",
-                        "follower": "مُتابِعٌ",
-                        "follow": "أي شخص أُتابِعُه",
-                        "noone": "لَا أحد",
-                        "title": "أشعِرني عِندما يَقومُ"
-                    }
-                },
-                "preference": {
-                    "title": "التَّفضيلات",
-                    "true_black_dark_mode": "النَّمَطُ الأسوَدُ الداكِنُ الحَقيقي",
-                    "disable_avatar_animation": "تَعطيلُ الصوَرِ الرمزيَّةِ المُتحرِّكَة",
-                    "disable_emoji_animation": "تَعطيلُ الرُموزِ التَّعبيريَّةِ المُتحرِّكَة",
-                    "using_default_browser": "اِستِخدامُ المُتصفِّحِ الاِفتراضي لِفتحِ الرَّوابِط",
-                    "open_links_in_mastodon": "فَتحُ الرَّوابِطِ فِي مَاستودُون"
-                },
-                "boring_zone": {
-                    "title": "المنطِقَةُ المُملَّة",
-                    "account_settings": "إعداداتُ الحِساب",
-                    "terms": "شُرُوطُ الخِدمَة",
-                    "privacy": "سِياسَةُ الخُصوصيَّة"
-                },
-                "spicy_zone": {
-                    "title": "المنطِقَةُ اللَّاذِعَة",
-                    "clear": "مَحوُ ذاكِرَةِ التَّخزينِ المُؤقَّتِ لِلوسائِط",
-                    "signout": "تَسجيلُ الخُروج"
+            "overview": {
+                "title": "Settings",
+                "general": "General",
+                "notifications": "Notifications",
+                "privacy_safety": "Privacy & Safety",
+                "support_mastodon": "Support Mastodon",
+                "about_mastodon": "About Mastodon",
+                "server_details": "Server Details",
+                "logout": "Logout %@"
+            },
+            "about_mastodon": {
+                "title": "About",
+                "more_settings": "Even More Settings",
+                "contribute_to_mastodon": "Contribute to Mastodon",
+                "privacy_policy": "Privacy Policy",
+                "clear_media_storage": "Clear Media Storage"
+            },
+            "server_details": {
+                "about": "About",
+                "rules": "Rules",
+                "about_instance": {
+                    "title": "Administrator",
+                    "message_admin": "Message Admin",
+                    "legal_notice": "A legal notice"
                 }
             },
-            "footer": {
-                "mastodon_description": "ماستودون بَرنامجٌ مَفتُوحُ المَصدَر. يُمكِنُكَ المُساهَمَةُ، أوِ الإبلاغُ عَنِ المُشكِلات عَن طريق مِنصَّة جيت هاب (GitHub) في %s (%s)"
+            "general": {
+                "title": "General",
+                "appearance": {
+                    "section_title": "Appearance",
+                    "dark": "Dark",
+                    "light": "Light",
+                    "system": "Use Device Appearance"
+                },
+                "ask_before": {
+                    "section_title": "Ask before…",
+                    "posting_without_alt_text": "Posting without Alt Text",
+                    "unfollowing_someone": "Unfollowing Someone",
+                    "boosting_a_post": "Boosting a Post",
+                    "deleting_a_post": "Deleting a Post"
+                },
+                "design": {
+                    "section_title": "Design",
+                    "show_animations": "Play Animated Avatars and Emoji"
+                },
+                "language": {
+                    "section_title": "Language",
+                    "default_post_language": "Default Post Language"
+                },
+                "links": {
+                    "section_title": "Links",
+                    "open_in_mastodon": "Open in Mastodon",
+                    "open_in_browser": "Open in Browser"
+                }
             },
-            "keyboard": {
-                "close_settings_window": "إغلاق نافذة الإعدادات"
+            "notifications": {
+                "title": "Notifications",
+                "policy": {
+                    "title": "Get Notifications from",
+                    "anyone": "Anyone",
+                    "followers": "People who follow you",
+                    "follow": "People you follow",
+                    "noone": "No one"
+                },
+                "alert": {
+                    "mentions_and_replies": "Mentions & Replies",
+                    "boosts": "Boosts",
+                    "favorites": "Favorites",
+                    "new_followers": "New Followers"
+                },
+                "disabled": {
+                    "notification_hint": "Turn on notifications from your device settings to see updates on your lock screen.",
+                    "go_to_settings": "Go to Notification Settings"
+                }
+            },
+            "privacy_safety": {
+                "title": "Privacy & Safety",
+                "preset": {
+                    "title": "Preset",
+                    "open_and_public": "Open & Public",
+                    "private_and_restricted": "Private & Restricted",
+                    "custom": "Custom"
+                },
+                "default_post_visibility": {
+                    "title": "Default Post Visibility"
+                },
+                "manually_approve_follow_requests": "Manually Approve Follow Requests",
+                "show_followers_and_following": "Show Followers & Following",
+                "suggest_my_account_to_others": "Suggest My Account to Others",
+                "appear_in_search_engines": "Appear in Search Engines"
+            },
+            "donation": {
+                "title": "Donate to Mastodon",
+                "manage": "Manage donations"
             }
         },
         "report": {
@@ -720,7 +969,7 @@
                 "unfollowed": "أُلغِيَت المُتابَعَة",
                 "unfollow_user": "إلغاءُ مُتابَعَةِ %s",
                 "mute_user": "كَتمُ %s",
-                "you_wont_see_their_posts_or_reblogs_in_your_home_feed_they_wont_know_they_ve_been_muted": "لَن تَرى مُشارَكاتِهِ أو إعادَاتِ تَدوينَهِ فِي تغذيَتِكَ الرَّئيسَة. لَن يَعرِفَ أنَّهُ قَد كُتِمَ أيضًا.",
+                "you_wont_see_their_posts_or_reblogs_in_your_home_feed_they_wont_know_they_ve_been_muted": "You won’t see their posts or boosts in your home feed. They won’t know they’ve been muted.",
                 "block_user": "حَظرُ %s",
                 "they_will_no_longer_be_able_to_follow_or_see_your_posts_but_they_can_see_if_theyve_been_blocked": "لَن يَتمكَّنَ بَعدَ الآنِ مِن مُتابَعَةِ مَنشوراتِكَ أو رُؤيَتِها، وَلكِن يُمكِنَهُ مَعرِفَةُ مَا إذا حُظَرِت عَنه.",
                 "while_we_review_this_you_can_take_action_against_user": "أثناءُ مُراجَعَتِنا لِذلِك، يُمكِنُكَ اِتِّخاذُ إجراءٍ ضِدَّ %s"
@@ -736,12 +985,9 @@
         "account_list": {
             "tab_bar_hint": "المِلَفُّ المُحدَّدُ حالِيًّا: %s. اُنقُر نَقرًا مُزدَوَجًا مَعَ الاِستِمرارِ لِإظهارِ مُبدِّلِ الحِساب",
             "dismiss_account_switcher": "تجاهُل مبدِّل الحِساب",
-            "add_account": "إضافَةُ حِساب"
-        },
-        "wizard": {
-            "new_in_mastodon": "جديد في ماستودون",
-            "multiple_account_switch_intro_description": "بدِّل بين حسابات متعددة عبر الاستمرار بالضغط على زر الملف الشخصي.",
-            "accessibility_hint": "انقر نقرًا مزدوجًا لتجاهُل النافذة المنبثقة"
+            "add_account": "إضافَةُ حِساب",
+            "logout_all_accounts": "Log Out Of All Accounts",
+            "logout": "Logout"
         },
         "bookmark": {
             "title": "العَلاماتُ المَرجعيَّة"
@@ -756,6 +1002,69 @@
             "actions": {
                 "follow": "مُتابَعَة",
                 "unfollow": "إلغاءُ المُتابَعَة"
+            }
+        },
+        "donation": {
+            "picker": {
+                "once_title": "Just once",
+                "monthly_title": "Monthly",
+                "yearly_title": "Yearly"
+            },
+            "donatebuttontitle": "Donate",
+            "currency": "Currency",
+            "success": {
+                "title": "Thank you for your contribution!",
+                "subtitle": "You should receive an email confirming your donation soon.",
+                "server_error_title": "Payment failed",
+                "server_error_message": "We are sorry, an error occurred and we have not been able to process your donation.\n\nPlease retry in a few minutes.",
+                "share_button_title": "Spread the word"
+            }
+        }
+    },
+    "extension": {
+        "open_in": {
+            "invalid_link_error": "لا يبدو أن هذا رابط ماستدون صالح."
+        }
+    },
+    "widget": {
+        "common": {
+            "unsupported_widget_family": "Sorry but this Widget family is unsupported.",
+            "user_not_logged_in": "الرجاء فتح ماستدون لتسجيل الدخول إلى حساب."
+        },
+        "followers_count": {
+            "configuration_display_name": "المتابِعون",
+            "configuration_description": "إظهار عدد المتابعين.",
+            "title": "المتابِعون",
+            "followers_today": "%s followers today"
+        },
+        "multiple_followers": {
+            "configuration_display_name": "متابعين متعددين",
+            "configuration_description": "إظهار عدد المتابعين لحسابات متعددة.",
+            "mock_user": {
+                "display_name": "متابع آخر",
+                "account_name": "another@follower.social"
+            }
+        },
+        "latest_followers": {
+            "configuration_display_name": "أحدث المتابعين",
+            "configuration_description": "إظهار أحدث المتابِعين.",
+            "title": "أحدث المتابعين",
+            "last_update": "آخر تحديث: %s"
+        },
+        "hashtag": {
+            "configuration": {
+                "display_name": "وسم",
+                "description": "Shows a recent post with the selected hashtag."
+            },
+            "not_found": {
+                "account_name": "John Mastodon",
+                "account": "@johnMastodon@no-such.account",
+                "content": "Sorry, we couldn’t find any posts with the hashtag <a>#%@</a>. Please try a <a>#DifferentHashtag</a> or check the widget settings."
+            },
+            "placeholder": {
+                "account_name": "John Mastodon",
+                "account": "@johnMastodon@no-such.account",
+                "content": "This is how a post with a <a>#hashtag</a> would look. Pick whichever <a>#hashtag</a> you want in the widget settings."
             }
         }
     }

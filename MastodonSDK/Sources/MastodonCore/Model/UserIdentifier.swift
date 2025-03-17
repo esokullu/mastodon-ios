@@ -13,6 +13,12 @@ public protocol UserIdentifier {
     var userID: Mastodon.Entity.Account.ID { get }
 }
 
+public extension UserIdentifier {
+    var globallyUniqueUserIdentifier: String {
+        "\(userID)@\(domain)"
+    }
+}
+
 public struct MastodonUserIdentifier: UserIdentifier {
     public let domain: String
     public var userID: Mastodon.Entity.Account.ID
@@ -24,5 +30,10 @@ public struct MastodonUserIdentifier: UserIdentifier {
     ) {
         self.domain = domain
         self.userID = userID
+    }
+    
+    public init(authenticationBox: MastodonAuthenticationBox) {
+        self.domain = authenticationBox.domain
+        self.userID = authenticationBox.userID
     }
 }

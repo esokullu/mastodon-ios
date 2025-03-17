@@ -9,18 +9,25 @@ import UIKit
 import CoreData
 import CoreDataStack
 import MastodonCore
+import MastodonSDK
 
 extension DataSourceFacade {
+    @MainActor
     public static func responseToStatusBookmarkAction(
-        provider: UIViewController & NeedsDependency & AuthContextProvider,
-        status: ManagedObjectRecord<Status>
+        provider: AuthContextProvider & DataSourceProvider,
+        status: MastodonStatus
     ) async throws {
-        let selectionFeedbackGenerator = await UISelectionFeedbackGenerator()
-        await selectionFeedbackGenerator.selectionChanged()
+        FeedbackGenerator.shared.generate(.selectionChanged)
         
-        _ = try await provider.context.apiService.bookmark(
+        let updatedStatus = try await APIService.shared.bookmark(
             record: status,
-            authenticationBox: provider.authContext.mastodonAuthenticationBox
-        )
+            authenticationBox: provider.authenticationBox
+        ).value
+        
+        let newStatus: MastodonStatus = .fromEntity(updatedStatus)
+        newStatus.showDespiteContentWarning = status.showDespiteContentWarning
+        newStatus.showDespiteFilter = status.showDespiteFilter
+        
+        provider.update(status: newStatus, intent: .bookmark(updatedStatus.bookmarked == true))
     }
 }

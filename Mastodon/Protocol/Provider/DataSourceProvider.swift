@@ -6,24 +6,16 @@
 //  Copyright © 2021 Twidere. All rights reserved.
 //
 
-import os.log
 import UIKit
 import CoreDataStack
 import MastodonSDK
-import class CoreDataStack.Notification
 
 enum DataSourceItem: Hashable {
-    case status(record: ManagedObjectRecord<Status>)
-    case user(record: ManagedObjectRecord<MastodonUser>)
-    case hashtag(tag: TagKind)
-    case notification(record: ManagedObjectRecord<Notification>)
-}
-
-extension DataSourceItem {
-    enum TagKind: Hashable {
-        case entity(Mastodon.Entity.Tag)
-        case record(ManagedObjectRecord<Tag>)
-    }
+    case status(record: MastodonStatus)
+    case hashtag(tag: Mastodon.Entity.Tag)
+    case notification(record: MastodonNotification)
+    case notificationBanner(policy: Mastodon.Entity.NotificationPolicy)
+    case account(account: Mastodon.Entity.Account, relationship: Mastodon.Entity.Relationship?)
 }
 
 extension DataSourceItem {
@@ -44,7 +36,10 @@ extension DataSourceItem {
     }
 }
 
-protocol DataSourceProvider: NeedsDependency & UIViewController {
-    var logger: Logger { get }
+protocol DataSourceProvider: UIViewController {
     func item(from source: DataSourceItem.Source) async -> DataSourceItem?
+    func update(status: MastodonStatus, intent: MastodonStatus.UpdateIntent)
+    
+    var filterContext: Mastodon.Entity.FilterContext? { get }
+    func didToggleContentWarningDisplayStatus(status: MastodonStatus)
 }

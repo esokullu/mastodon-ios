@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-4-25.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreData
@@ -23,17 +22,14 @@ public final class SettingFetchedResultController: NSObject {
     // output
     public let settings = CurrentValueSubject<[Setting], Never>([])
     
-    public init(managedObjectContext: NSManagedObjectContext, additionalPredicate: NSPredicate?) {
+    override public init() {
         self.fetchedResultsController = {
             let fetchRequest = Setting.sortedFetchRequest
             fetchRequest.returnsObjectsAsFaults = false
-            if let additionalPredicate = additionalPredicate {
-                fetchRequest.predicate = additionalPredicate
-            }
             fetchRequest.fetchBatchSize = 20
             let controller = NSFetchedResultsController(
                 fetchRequest: fetchRequest,
-                managedObjectContext: managedObjectContext,
+                managedObjectContext: PersistenceManager.shared.mainActorManagedObjectContext,
                 sectionNameKeyPath: nil,
                 cacheName: nil
             )
@@ -56,7 +52,6 @@ public final class SettingFetchedResultController: NSObject {
 // MARK: - NSFetchedResultsControllerDelegate
 extension SettingFetchedResultController: NSFetchedResultsControllerDelegate {
     public func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChangeContentWith snapshot: NSDiffableDataSourceSnapshotReference) {
-        os_log("%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         
         let objects = fetchedResultsController.fetchedObjects ?? []
         self.settings.value = objects

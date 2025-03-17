@@ -7,85 +7,65 @@
 
 import UIKit
 import MastodonAsset
+import MastodonSDK
 import MastodonLocalization
 
-public final class ProfileRelationshipActionButton: RoundedEdgesButton {
-    
-    public let activityIndicatorView: UIActivityIndicatorView = {
-        let activityIndicatorView = UIActivityIndicatorView(style: .medium)
-        activityIndicatorView.color = Asset.Colors.Label.primaryReverse.color
-        return activityIndicatorView
-    }()
-    
-    public override init(frame: CGRect) {
-        super.init(frame: frame)
-        _init()
-    }
-    
-    public required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        _init()
-    }
-    
-}
+public final class ProfileRelationshipActionButton: UIButton {
+    public func configure(relationship: Mastodon.Entity.Relationship?, between account: Mastodon.Entity.Account, and me: Mastodon.Entity.Account, isEditing: Bool = false, isUpdating: Bool = false) {
 
-extension ProfileRelationshipActionButton {
-    private func _init() {
-        cornerRadius = 10
-        titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
-        
-        activityIndicatorView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(activityIndicatorView)
-        NSLayoutConstraint.activate([
-            activityIndicatorView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            activityIndicatorView.centerYAnchor.constraint(equalTo: centerYAnchor),
-        ])
-        
-        activityIndicatorView.hidesWhenStopped = true
-        activityIndicatorView.stopAnimating()
-        
-        configureAppearance()
-    }
-    
-    public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        
-        configureAppearance()
-    }
-}
+        let isMyself = (account == me)
 
-extension ProfileRelationshipActionButton {
-    public func configure(actionOptionSet: RelationshipActionOptionSet) {
-        setTitle(actionOptionSet.title, for: .normal)
-        
-        configureAppearance()
-        
-        titleEdgeInsets = UIEdgeInsets(top: 0, left: 4, bottom: 0, right: 4)
-        
-        activityIndicatorView.stopAnimating()
-        
-        if let option = actionOptionSet.highPriorityAction(except: .editOptions), option == .blocked || option == .suspended {
-            isEnabled = false
-        } else if actionOptionSet.contains(.updating) {
-            isEnabled = false
-            activityIndicatorView.startAnimating()
-        } else {
-            isEnabled = true
+        var configuration = UIButton.Configuration.filled()
+
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4)
+        configuration.baseBackgroundColor = Asset.Scene.Profile.RelationshipButton.background.color
+        configuration.activityIndicatorColorTransformer = UIConfigurationColorTransformer({ _ in return Asset.Colors.Label.primaryReverse.color })
+        configuration.background.cornerRadius = 10
+
+        let title: String
+
+        switch (isMyself, isUpdating, relationship) {
+        case (true, _, _):
+            if isEditing {
+                title = L10n.Common.Controls.Actions.save
+            } else {
+                title = L10n.Common.Controls.Friendship.editInfo
+            }
+            configuration.showsActivityIndicator = false
+        case (_, true, _):
+            title = ""
+            configuration.showsActivityIndicator = true
+        case (false, false, .some(let relationship)):
+            configuration.showsActivityIndicator = false
+
+            if relationship.blocking {
+                title = L10n.Common.Controls.Friendship.blocked
+            } else if relationship.domainBlocking {
+                title = L10n.Common.Controls.Friendship.domainBlocked
+            } else if relationship.requested {
+                title = L10n.Common.Controls.Friendship.pending
+            } else if relationship.muting {
+                title = L10n.Common.Controls.Friendship.muted
+            } else if relationship.following {
+                title = L10n.Common.Controls.Friendship.following
+            } else if account.locked {
+                title = L10n.Common.Controls.Friendship.request
+            } else {
+                title = L10n.Common.Controls.Friendship.follow
+            }
+        case (_, _, nil):
+            title = ""
+            configuration.showsActivityIndicator = false
         }
-    }
-    
-    private func configureAppearance() {
-        setTitleColor(Asset.Colors.Label.primaryReverse.color, for: .normal)
-        setTitleColor(Asset.Colors.Label.primaryReverse.color.withAlphaComponent(0.5), for: .highlighted)
-        switch traitCollection.userInterfaceStyle {
-        case .dark:
-            setBackgroundImage(.placeholder(color: Asset.Scene.Profile.RelationshipButton.backgroundDark.color), for: .normal)
-            setBackgroundImage(.placeholder(color: Asset.Scene.Profile.RelationshipButton.backgroundHighlightedDark.color), for: .highlighted)
-            setBackgroundImage(.placeholder(color: Asset.Scene.Profile.RelationshipButton.backgroundHighlightedDark.color), for: .disabled)
-        default:
-            setBackgroundImage(.placeholder(color: Asset.Scene.Profile.RelationshipButton.backgroundLight.color), for: .normal)
-            setBackgroundImage(.placeholder(color: Asset.Scene.Profile.RelationshipButton.backgroundHighlightedLight.color), for: .highlighted)
-            setBackgroundImage(.placeholder(color: Asset.Scene.Profile.RelationshipButton.backgroundHighlightedLight.color), for: .disabled)
-        }
+
+        configuration.attributedTitle = AttributedString(
+            title,
+            attributes: AttributeContainer([
+                .font: UIFont.systemFont(ofSize: 17, weight: .semibold),
+                .foregroundColor: Asset.Colors.Label.primaryReverse.color
+            ])
+        )
+
+        self.configuration = configuration
     }
 }

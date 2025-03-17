@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-4-9.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreDataStack
@@ -24,11 +23,11 @@ final class ProfileHeaderViewModel {
     var disposeBag = Set<AnyCancellable>()
     
     // input
-    let context: AppContext
-    let authContext: AuthContext
+    let authenticationBox: MastodonAuthenticationBox
     
-    @Published var user: MastodonUser?
-    @Published var relationshipActionOptionSet: RelationshipActionOptionSet = .none
+    @Published var me: Mastodon.Entity.Account
+    @Published var account: Mastodon.Entity.Account
+    @Published var relationship: Mastodon.Entity.Relationship?
 
     @Published var isMyself = false
     @Published var isEditing = false
@@ -45,33 +44,29 @@ final class ProfileHeaderViewModel {
     @Published var isTitleViewDisplaying = false
     @Published var isTitleViewContentOffsetSet = false    
 
-    init(context: AppContext, authContext: AuthContext) {
-        self.context = context
-        self.authContext = authContext
-    
-        $accountForEdit
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] account in
-                guard let self = self else { return }
-                guard let account = account else { return }
-                // banner
-                self.profileInfo.header = nil
-                self.profileInfoEditing.header = nil
-                // avatar
-                self.profileInfo.avatar = nil
-                self.profileInfoEditing.avatar = nil
-                // name
-                let name = account.displayNameWithFallback
-                self.profileInfo.name = name
-                self.profileInfoEditing.name = name
-                // bio
-                let note = ProfileHeaderViewModel.normalize(note: account.note)
-                self.profileInfo.note = note
-                self.profileInfoEditing.note = note
-            }
-            .store(in: &disposeBag)
+    init(authenticationBox: MastodonAuthenticationBox, account: Mastodon.Entity.Account, me: Mastodon.Entity.Account, relationship: Mastodon.Entity.Relationship?) {
+        self.authenticationBox = authenticationBox
+        self.account = account
+        self.me = me
+        self.relationship = relationship
     }
     
+    public func setProfileInfo(accountForEdit: Mastodon.Entity.Account) {
+        // banner
+        profileInfo.header = nil
+        profileInfoEditing.header = nil
+        // avatar
+        profileInfo.avatar = nil
+        profileInfoEditing.avatar = nil
+
+        let name = account.displayNameWithFallback
+        profileInfo.name = name
+        profileInfoEditing.name = name
+        // bio
+        let note = ProfileHeaderViewModel.normalize(note: account.note)
+        profileInfo.note = note
+        profileInfoEditing.note = note
+    }
 }
 
 extension ProfileHeaderViewModel {
@@ -81,6 +76,10 @@ extension ProfileHeaderViewModel {
         @Published var avatar: UIImage?
         @Published var name: String?
         @Published var note: String?
+    }
+    
+    var editedDetails: ProfileHeaderDetails {
+        return ProfileHeaderDetails(bannerImage: profileInfoEditing.header, avatarImage: profileInfoEditing.avatar, displayName: profileInfoEditing.name, bioText: profileInfoEditing.note)
     }
 }
 
@@ -101,7 +100,7 @@ extension ProfileHeaderViewModel {
 }
 
 // MARK: - ProfileViewModelEditable
-extension ProfileHeaderViewModel: ProfileViewModelEditable {
+extension ProfileHeaderViewModel {
     var isEdited: Bool {
         guard isEditing else { return false }
         

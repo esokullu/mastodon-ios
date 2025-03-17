@@ -5,7 +5,6 @@
 //  Created by Cirno MainasuK on 2021-9-22.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreDataStack
@@ -13,18 +12,13 @@ import MastodonCore
 import MastodonUI
 
 protocol SidebarViewControllerDelegate: AnyObject {
-    func sidebarViewController(_ sidebarViewController: SidebarViewController, didSelectTab tab: MainTabBarController.Tab)
+    func sidebarViewController(_ sidebarViewController: SidebarViewController, didSelectTab tab: Tab)
     func sidebarViewController(_ sidebarViewController: SidebarViewController, didLongPressItem item: SidebarViewModel.Item, sourceView: UIView)
     func sidebarViewController(_ sidebarViewController: SidebarViewController, didDoubleTapItem item: SidebarViewModel.Item, sourceView: UIView)
 }
 
-final class SidebarViewController: UIViewController, NeedsDependency {
-    
-    let logger = Logger(subsystem: "SidebarViewController", category: "ViewController")
-    
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
-    
+final class SidebarViewController: UIViewController {
+   
     var disposeBag = Set<AnyCancellable>()
     var observations = Set<NSKeyValueObservation>()
     var viewModel: SidebarViewModel!
@@ -91,14 +85,7 @@ extension SidebarViewController {
         
         navigationController?.setNavigationBarHidden(true, animated: false)
 
-        setupBackground(theme: ThemeService.shared.currentTheme.value)
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.setupBackground(theme: theme)
-            }
-            .store(in: &disposeBag)
+        view.backgroundColor = SystemTheme.sidebarBackgroundColor
         
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(collectionView)
@@ -126,8 +113,7 @@ extension SidebarViewController {
             
             let contentHeight = secondaryCollectionView.contentSize.height
             guard contentHeight > 0 else { return }
-            self.logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): secondaryCollectionView contentSize: \(secondaryCollectionView.contentSize.debugDescription)")
-            
+
             let currentFrameHeight = secondaryCollectionView.frame.height
             guard currentFrameHeight < contentHeight else { return }
             
@@ -140,19 +126,21 @@ extension SidebarViewController {
         sidebarLongPressGestureRecognizer.addTarget(self, action: #selector(SidebarViewController.sidebarLongPressGestureRecognizerHandler(_:)))
         collectionView.addGestureRecognizer(sidebarLongPressGestureRecognizer)
         
-        // todo: reconsider the "double tap to change account" feature -> https://github.com/mastodon/mastodon-ios/issues/628
-//        let sidebarDoubleTapGestureRecognizer = UITapGestureRecognizer()
-//        sidebarDoubleTapGestureRecognizer.numberOfTapsRequired = 2
-//        sidebarDoubleTapGestureRecognizer.addTarget(self, action: #selector(SidebarViewController.sidebarDoubleTapGestureRecognizerHandler(_:)))
-//        sidebarDoubleTapGestureRecognizer.delaysTouchesEnded = false
-//        sidebarDoubleTapGestureRecognizer.cancelsTouchesInView = true
-//        collectionView.addGestureRecognizer(sidebarDoubleTapGestureRecognizer)
+        let sidebarDoubleTapGestureRecognizer = UITapGestureRecognizer()
+        sidebarDoubleTapGestureRecognizer.numberOfTapsRequired = 2
+        sidebarDoubleTapGestureRecognizer.addTarget(self, action: #selector(SidebarViewController.sidebarDoubleTapGestureRecognizerHandler(_:)))
+        sidebarDoubleTapGestureRecognizer.delaysTouchesEnded = false
+        sidebarDoubleTapGestureRecognizer.cancelsTouchesInView = true
+        collectionView.addGestureRecognizer(sidebarDoubleTapGestureRecognizer)
 
-    }
-    
-    private func setupBackground(theme: Theme) {
-        let color: UIColor = theme.sidebarBackgroundColor
-        view.backgroundColor = color
+        NotificationCenter.default.publisher(for: .userFetched)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, let snapshot = self.viewModel.diffableDataSource?.snapshot() else { return }
+
+                self.viewModel.diffableDataSource?.applySnapshotUsingReloadData(snapshot)
+            }
+            .store(in: &disposeBag)
     }
     
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -171,7 +159,6 @@ extension SidebarViewController {
     @objc private func sidebarLongPressGestureRecognizerHandler(_ sender: UILongPressGestureRecognizer) {
         guard sender.state == .began else { return }
         
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
         assert(sender.view === collectionView)
         
         let position = sender.location(in: collectionView)
@@ -185,7 +172,6 @@ extension SidebarViewController {
     @objc private func sidebarDoubleTapGestureRecognizerHandler(_ sender: UITapGestureRecognizer) {
         guard sender.state == .ended else { return }
         
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
         assert(sender.view === collectionView)
         
         let position = sender.location(in: collectionView)
@@ -210,10 +196,9 @@ extension SidebarViewController: UICollectionViewDelegate {
             case .tab(let tab):
                 delegate?.sidebarViewController(self, didSelectTab: tab)
             case .setting:
-                guard let authContext = viewModel.authContext else { return }
-                guard let setting = context.settingService.currentSetting.value else { return }
-                let settingsViewModel = SettingsViewModel(context: context, authContext: authContext, setting: setting)
-                _ = coordinator.present(scene: .settings(viewModel: settingsViewModel), from: self, transition: .modal(animated: true, completion: nil))
+                guard let setting = SettingService.shared.currentSetting.value else { return }
+
+                _ = self.sceneCoordinator?.present(scene: .settings(setting: setting), from: self, transition: .none)
             case .compose:
                 assertionFailure()
             }
@@ -221,15 +206,15 @@ extension SidebarViewController: UICollectionViewDelegate {
             guard let diffableDataSource = viewModel.secondaryDiffableDataSource else { return }
             guard let item = diffableDataSource.itemIdentifier(for: indexPath) else { return }
             
-            guard let authContext = viewModel.authContext else { return }
+            guard let authenticationBox = viewModel.authenticationBox else { return }
             switch item {
             case .compose:
                 let composeViewModel = ComposeViewModel(
-                    context: context,
-                    authContext: authContext,
+                    authenticationBox: authenticationBox,
+                    composeContext: .composeStatus,
                     destination: .topLevel
                 )
-                _ = coordinator.present(scene: .compose(viewModel: composeViewModel), from: self, transition: .modal(animated: true, completion: nil))
+                _ = self.sceneCoordinator?.present(scene: .compose(viewModel: composeViewModel), from: self, transition: .modal(animated: true, completion: nil))
             default:
                 assertionFailure()
             }

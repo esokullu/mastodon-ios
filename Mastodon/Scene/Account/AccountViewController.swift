@@ -5,21 +5,14 @@
 //  Created by Cirno MainasuK on 2021-9-13.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreDataStack
-import PanModal
 import MastodonAsset
 import MastodonLocalization
 import MastodonCore
 
-final class AccountListViewController: UIViewController, NeedsDependency {
-
-    let logger = Logger(subsystem: "AccountListViewController", category: "UI")
-
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+final class AccountListViewController: UIViewController {
 
     var disposeBag = Set<AnyCancellable>()
     var viewModel: AccountListViewModel!
@@ -38,14 +31,14 @@ final class AccountListViewController: UIViewController, NeedsDependency {
         self?.dismiss(animated: true, completion: nil)
     }
 
-    var hasLoaded = false
     private(set) lazy var tableView: UITableView = {
         let tableView = UITableView()
         tableView.register(AccountListTableViewCell.self, forCellReuseIdentifier: String(describing: AccountListTableViewCell.self))
         tableView.register(AddAccountTableViewCell.self, forCellReuseIdentifier: String(describing: AddAccountTableViewCell.self))
+        tableView.register(LogoutOfAllAccountsCell.self, forCellReuseIdentifier: LogoutOfAllAccountsCell.reuseIdentifier)
         tableView.backgroundColor = .clear
-        tableView.separatorStyle = .none
         tableView.tableFooterView = UIView()
+        tableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 0)
         return tableView
     }()
 
@@ -54,46 +47,11 @@ final class AccountListViewController: UIViewController, NeedsDependency {
     }
 }
 
-// MARK: - PanModalPresentable
-extension AccountListViewController: PanModalPresentable {
-    var panScrollable: UIScrollView? { tableView }
-    var showDragIndicator: Bool { false }
-    
-    var shortFormHeight: PanModalHeight {
-        func calculateHeight(of numberOfItems: Int) -> CGFloat {
-            return CGFloat(numberOfItems * 60 + 64)
-        }
-        
-        if hasLoaded {
-            let height = calculateHeight(of: viewModel.diffableDataSource.snapshot().numberOfItems)
-            return .contentHeight(CGFloat(height))
-        }
-        
-        let request = MastodonAuthentication.sortedFetchRequest
-        let authenticationCount = (try? context.managedObjectContext.count(for: request)) ?? 0
-        
-        let count = authenticationCount + 1
-        let height = calculateHeight(of: count)
-        return .contentHeight(height)
-    }
-
-    var longFormHeight: PanModalHeight {
-        return .maxHeightWithTopInset(0)
-    }
-}
-
 extension AccountListViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        setupBackgroundColor(theme: ThemeService.shared.currentTheme.value)
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.setupBackgroundColor(theme: theme)
-            }
-            .store(in: &disposeBag)
+        view.backgroundColor = .secondarySystemGroupedBackground
         navigationItem.rightBarButtonItem = addBarButtonItem
 
         dragIndicatorView.translatesAutoresizingMaskIntoConstraints = false
@@ -115,51 +73,17 @@ extension AccountListViewController {
         ])
 
         tableView.delegate = self
-        viewModel.setupDiffableDataSource(
-            tableView: tableView,
-            managedObjectContext: context.managedObjectContext
-        )
-        
-        viewModel.dataSourceDidUpdate
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self, weak presentingViewController] in
-                guard let self = self else { return }
-                
-                // the presentingViewController may deinit.
-                // Hold it and check the window to prevent PanModel crash
-                guard let _ = presentingViewController else { return }
-                guard self.view.window != nil else { return }
-                
-                self.hasLoaded = true
-                self.panModalSetNeedsLayoutUpdate()     // <<< may crash the app
-                self.panModalTransition(to: .shortForm)
-            }
-            .store(in: &disposeBag)
+        viewModel.setupDiffableDataSource(tableView: tableView)
     }
-
-    private func setupBackgroundColor(theme: Theme) {
-        let backgroundColor = UIColor { traitCollection in
-            switch traitCollection.userInterfaceLevel {
-            case .elevated where traitCollection.userInterfaceStyle == .dark:
-                return theme.systemElevatedBackgroundColor
-            default:
-                return theme.systemBackgroundColor.withAlphaComponent(0.9)
-            }
-        }
-        view.backgroundColor = backgroundColor
-    }
-
 }
 
 extension AccountListViewController {
 
     @objc private func addBarButtonItem(_ sender: UIBarButtonItem) {
-        logger.debug("\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
-        _ = coordinator.present(scene: .welcome, from: self, transition: .modal(animated: true, completion: nil))
+        _ = self.sceneCoordinator?.present(scene: .welcome, from: self, transition: .modal(animated: true, completion: nil))
     }
 
     override func accessibilityPerformEscape() -> Bool {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
         dismiss(animated: true, completion: nil)
         return true
     }
@@ -168,24 +92,84 @@ extension AccountListViewController {
 
 // MARK: - UITableViewDelegate
 extension AccountListViewController: UITableViewDelegate {
+
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard let diffableDataSource = viewModel.diffableDataSource,
+              let item = diffableDataSource.itemIdentifier(for: indexPath) else { return nil }
+
+        switch item {
+        case .authentication(let record):
+            let logoutAction = UIContextualAction(style: .destructive, title: L10n.Scene.AccountList.logout, handler: { [weak self] action, view, completion in
+                guard let self else { return }
+
+                UserDefaults.shared.setNotificationCountWithAccessToken(accessToken: record.userAccessToken, value: 0)
+
+                Task { @MainActor in
+                    do {
+                        let userIdentifier = record
+                        try await AuthenticationServiceProvider.shared.signOutMastodonUser(authentication: record)
+                        PersistenceManager.shared.removeAllCaches(forUser: userIdentifier)
+                       
+                        self.sceneCoordinator?.setup()
+
+                    } catch {
+                        assertionFailure("Failed to delete Authentication: \(error)")
+                    }
+
+                }
+            })
+            logoutAction.image = UIImage(systemName: "rectangle.portrait.and.arrow.forward")
+
+            let swipeConfiguration = UISwipeActionsConfiguration(actions: [logoutAction])
+            swipeConfiguration.performsFirstActionWithFullSwipe = false
+            return swipeConfiguration
+        case .addAccount, .logoutOfAllAccounts:
+            return nil
+        }
+
+    }
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 
-        guard let diffableDataSource = viewModel.diffableDataSource else { return }
-        guard let item = diffableDataSource.itemIdentifier(for: indexPath) else { return }
+        guard let diffableDataSource = viewModel.diffableDataSource,
+              let item = diffableDataSource.itemIdentifier(for: indexPath) else { return }
 
         switch item {
         case .authentication(let record):
             assert(Thread.isMainThread)
-            guard let authentication = record.object(in: context.managedObjectContext) else { return }
             Task { @MainActor in
-                let isActive = try await context.authenticationService.activeMastodonUser(domain: authentication.domain, userID: authentication.userID)
+                let isActive = AuthenticationServiceProvider.shared.activateExistingUser(record.userID, inDomain: record.domain)
                 guard isActive else { return }
-                self.coordinator.setup()
+                self.sceneCoordinator?.setup()
             }   // end Task
         case .addAccount:
             // TODO: add dismiss entry for welcome scene
-            _ = coordinator.present(scene: .welcome, from: self, transition: .modal(animated: true, completion: nil))
+            _ = self.sceneCoordinator?.present(scene: .welcome, from: self, transition: .modal(animated: true, completion: nil))
+        case .logoutOfAllAccounts:
+            let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+
+            let logoutAction = UIAlertAction(title: L10n.Scene.AccountList.logoutAllAccounts, style: .destructive) { _ in
+                Task { @MainActor in
+                    self.sceneCoordinator?.showLoading()
+                    for authenticationBox in AuthenticationServiceProvider.shared.mastodonAuthenticationBoxes {
+                        try? await AuthenticationServiceProvider.shared.signOutMastodonUser(authentication: authenticationBox.authentication)
+                        let userIdentifier = authenticationBox.authentication.userIdentifier()
+                        PersistenceManager.shared.removeAllCaches(forUser: userIdentifier)
+                        self.sceneCoordinator?.setup()
+                    }
+                    self.sceneCoordinator?.hideLoading()
+
+                    self.sceneCoordinator?.setup()
+                }
+            }
+
+            alert.addAction(logoutAction)
+            alert.popoverPresentationController?.sourceView = tableView.cellForRow(at: indexPath)
+
+            let cancelAction = UIAlertAction(title: L10n.Common.Controls.Actions.cancel, style: .default)
+            alert.addAction(cancelAction)
+            present(alert, animated: true)
         }
     }
 }

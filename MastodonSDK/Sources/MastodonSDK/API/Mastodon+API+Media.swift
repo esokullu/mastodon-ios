@@ -70,7 +70,7 @@ extension Mastodon.API.Media {
             .eraseToAnyPublisher()
     }
     
-    public struct UploadMediaQuery: PostQuery, PutQuery {
+    public struct UploadMediaQuery: PostQuery {
         public let file: Mastodon.Query.MediaAttachment?
         public let thumbnail: Mastodon.Query.MediaAttachment?
         public let description: String?
@@ -179,7 +179,7 @@ extension Mastodon.API.Media {
 extension Mastodon.API.Media {
 
     static func updateMediaEndpointURL(domain: String, attachmentID: Mastodon.Entity.Attachment.ID) -> URL {
-        return Mastodon.API.endpointURL(domain: domain).appendingPathComponent("media").appendingPathComponent(attachmentID)
+        Mastodon.API.endpointURL(domain: domain).appendingPathComponent("media").appendingPathComponent(attachmentID)
     }
     
     /// Update attachment

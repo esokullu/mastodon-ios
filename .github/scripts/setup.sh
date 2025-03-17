@@ -1,15 +1,13 @@
 #!/bin/bash
 
-# workaround https://github.com/CocoaPods/CocoaPods/issues/11355
-# sed -i '' $'1s/^/source "https:\\/\\/github.com\\/CocoaPods\\/Specs.git"\\\n\\\n/' Podfile
+brew install swiftgen@6.6.2
+brew install sourcery@2.1.3
 
 # Install Ruby Bundler
-gem install bundler:2.3.11
+gem install bundler:2.5.21
 
 # Install Ruby Gems
 bundle install
 
 # Setup notification endpoint
 bundle exec arkana
-
-bundle exec pod install

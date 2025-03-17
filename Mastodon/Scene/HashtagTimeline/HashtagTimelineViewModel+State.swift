@@ -5,15 +5,14 @@
 //  Created by BradGao on 2021/3/31.
 //
 
-import os.log
 import Foundation
 import GameplayKit
 import CoreDataStack
+import MastodonSDK
+import MastodonCore
 
 extension HashtagTimelineViewModel {
     class State: GKState {
-        
-        let logger = Logger(subsystem: "HashtagTimelineViewModel.LoadOldestState", category: "StateMachine")
         
         let id = UUID()
 
@@ -27,21 +26,9 @@ extension HashtagTimelineViewModel {
             self.viewModel = viewModel
         }
         
-        override func didEnter(from previousState: GKState?) {
-            super.didEnter(from: previousState)
-            
-            let from = previousState.flatMap { String(describing: $0) } ?? "nil"
-            let to = String(describing: self)
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): \(from) -> \(to)")            
-        }
-        
         @MainActor
         func enter(state: State.Type) {
             stateMachine?.enter(state)
-        }
-        
-        deinit {
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): [\(self.id.uuidString)] \(self.name)")
         }
     }
 }
@@ -90,9 +77,7 @@ extension HashtagTimelineViewModel.State {
             super.didEnter(from: previousState)
             guard let _ = viewModel, let stateMachine = stateMachine else { return }
             
-            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: retry loading 3s later…", ((#file as NSString).lastPathComponent), #line, #function)
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: retry loading", ((#file as NSString).lastPathComponent), #line, #function)
                 stateMachine.enter(Loading.self)
             }
         }
@@ -142,11 +127,10 @@ extension HashtagTimelineViewModel.State {
 
             Task {
                 do {
-                    let response = try await viewModel.context.apiService.hashtagTimeline(
-                        domain: viewModel.authContext.mastodonAuthenticationBox.domain,
+                    let response = try await APIService.shared.hashtagTimeline(
                         maxID: maxID,
                         hashtag: viewModel.hashtag,
-                        authenticationBox: viewModel.authContext.mastodonAuthenticationBox
+                        authenticationBox: viewModel.authenticationBox
                     )
                                         
                     let newMaxID: String? = {
@@ -162,10 +146,10 @@ extension HashtagTimelineViewModel.State {
                     self.maxID = newMaxID
                     
                     var hasNewStatusesAppend = false
-                    var statusIDs = isReloading ? [] : viewModel.fetchedResultsController.statusIDs
+                    var statusIDs = isReloading ? [] : await viewModel.dataController.records.map { $0.entity }
                     for status in response.value {
-                        guard !statusIDs.contains(status.id) else { continue }
-                        statusIDs.append(status.id)
+                        guard !statusIDs.contains(status) else { continue }
+                        statusIDs.append(status)
                         hasNewStatusesAppend = true
                     }
 
@@ -175,10 +159,9 @@ extension HashtagTimelineViewModel.State {
                         await enter(state: NoMore.self)
                     }
                     
-                    viewModel.fetchedResultsController.append(statusIDs: statusIDs)
+                    await viewModel.dataController.setRecords(statusIDs.map { MastodonStatus.fromEntity($0) })
                     viewModel.didLoadLatest.send()
                 } catch {
-                    logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): fetch statues failed: \(error.localizedDescription)")
                     await enter(state: Fail.self)
                 }
             }   // end Task

@@ -16,11 +16,6 @@ import MastodonLocalization
 class ActionRequestHandler: NSObject, NSExtensionRequestHandling {
     var extensionContext: NSExtensionContext?
     var cancellables = [AnyCancellable]()
-    
-    /// Capturing a static shared instance of AppContext here as otherwise there
-    /// will be lifecycle issues and we don't want to keep multiple AppContexts around
-    /// in case there another Action Extension process is spawned
-    private static let appContext = AppContext()
         
     func beginRequest(with context: NSExtensionContext) {
         // Do not call super in an Action extension with no user interface
@@ -51,7 +46,9 @@ class ActionRequestHandler: NSObject, NSExtensionRequestHandling {
                 }
                 
                 if let url = results["url"] as? String {
-                    self?.performSearch(for: url)
+                    Task {
+                        await self?.performSearch(for: url)
+                    }
                 } else {
                     self?.doneWithInvalidLink()
                 }
@@ -62,12 +59,9 @@ class ActionRequestHandler: NSObject, NSExtensionRequestHandling {
 
 // Search API
 private extension ActionRequestHandler {
-    func performSearch(for url: String) {
+    func performSearch(for url: String) async {
         guard
-            let activeAuthenticationBox = Self.appContext
-                .authenticationService
-                .mastodonAuthenticationBoxes
-                .first
+            let activeAuthenticationBox = await AuthenticationServiceProvider.shared.currentActiveUser.value
         else {
             return doneWithResults(nil)
         }
@@ -95,9 +89,13 @@ private extension ActionRequestHandler {
                         "openURL": "mastodon://status/\(foundStatus.id)"
                     ])
                 } else if let foundHashtag = value.hashtags.first {
-                    self?.continueWithSearch(foundHashtag.name)
+                    Task { [weak self] in
+                        await self?.continueWithSearch(foundHashtag.name)
+                    }
                 } else {
-                    self?.continueWithSearch(url)
+                    Task { [weak self] in
+                        await self?.continueWithSearch(url)
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -107,10 +105,12 @@ private extension ActionRequestHandler {
 
 // Fallback to In-App Search
 private extension ActionRequestHandler {
-    func continueWithSearch(_ query: String) {
+    func continueWithSearch(_ query: String) async {
         guard
             let url = URL(string: query),
-            let host = url.host
+            let host = url.host,
+            let activeAuthenticationBox = await AuthenticationServiceProvider.shared.currentActiveUser.value
+
         else {
             return doneWithInvalidLink()
         }
@@ -119,6 +119,7 @@ private extension ActionRequestHandler {
             .Instance
             .instance(
                 session: .shared,
+                authorization: activeAuthenticationBox.userAuthorization,
                 domain: host
             )
             .receive(on: DispatchQueue.main)

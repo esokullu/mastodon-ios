@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-4-28.
 //
 
-import os.log
 import UIKit
 import Combine
 import MastodonAsset
@@ -15,7 +14,6 @@ import VisionKit
 
 protocol MediaPreviewImageViewControllerDelegate: AnyObject {
     func mediaPreviewImageViewController(_ viewController: MediaPreviewImageViewController, tapGestureRecognizerDidTrigger tapGestureRecognizer: UITapGestureRecognizer)
-    func mediaPreviewImageViewController(_ viewController: MediaPreviewImageViewController, longPressGestureRecognizerDidTrigger longPressGestureRecognizer: UILongPressGestureRecognizer)
     func mediaPreviewImageViewController(_ viewController: MediaPreviewImageViewController, contextMenuActionPerform action: MediaPreviewImageViewController.ContextMenuAction)
 }
 
@@ -31,10 +29,8 @@ final class MediaPreviewImageViewController: UIViewController {
     let previewImageView = MediaPreviewImageView()
 
     let tapGestureRecognizer = UITapGestureRecognizer.singleTapGestureRecognizer
-    let longPressGestureRecognizer = UILongPressGestureRecognizer()
 
     deinit {
-        os_log("%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         previewImageView.imageView.af.cancelImageRequest()
     }
 }
@@ -44,9 +40,7 @@ extension MediaPreviewImageViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if #available(iOS 16.0, *) {
-            previewImageView.liveTextInteraction.delegate = self
-        }
+        previewImageView.liveTextInteraction.delegate = self
         previewImageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(previewImageView)
         NSLayoutConstraint.activate([
@@ -58,13 +52,9 @@ extension MediaPreviewImageViewController {
 
         tapGestureRecognizer.addTarget(self, action: #selector(MediaPreviewImageViewController.tapGestureRecognizerHandler(_:)))
         tapGestureRecognizer.delegate = self
-        longPressGestureRecognizer.addTarget(self, action: #selector(MediaPreviewImageViewController.longPressGestureRecognizerHandler(_:)))
-        longPressGestureRecognizer.delegate = self
         tapGestureRecognizer.require(toFail: previewImageView.doubleTapGestureRecognizer)
-        tapGestureRecognizer.require(toFail: longPressGestureRecognizer)
         previewImageView.addGestureRecognizer(tapGestureRecognizer)
-        previewImageView.addGestureRecognizer(longPressGestureRecognizer)
-        
+
         let previewImageViewContextMenuInteraction = UIContextMenuInteraction(delegate: self)
         previewImageView.addInteraction(previewImageViewContextMenuInteraction)
 
@@ -91,29 +81,20 @@ extension MediaPreviewImageViewController {
 extension MediaPreviewImageViewController {
     
     @objc private func tapGestureRecognizerHandler(_ sender: UITapGestureRecognizer) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         delegate?.mediaPreviewImageViewController(self, tapGestureRecognizerDidTrigger: sender)
-    }
-    
-    @objc private func longPressGestureRecognizerHandler(_ sender: UILongPressGestureRecognizer) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-        delegate?.mediaPreviewImageViewController(self, longPressGestureRecognizerDidTrigger: sender)
     }
     
 }
 
 extension MediaPreviewImageViewController: MediaPreviewPage {
     func setShowingChrome(_ showingChrome: Bool) {
-        if #available(iOS 16.0, *) {
-            UIView.animate(withDuration: 0.3) {
-                self.previewImageView.liveTextInteraction.setSupplementaryInterfaceHidden(!showingChrome, animated: true)
-            }
+        UIView.animate(withDuration: 0.3) {
+            self.previewImageView.liveTextInteraction.setSupplementaryInterfaceHidden(!showingChrome, animated: true)
         }
     }
 }
 
 // MARK: - ImageAnalysisInteractionDelegate
-@available(iOS 16.0, *)
 extension MediaPreviewImageViewController: ImageAnalysisInteractionDelegate {
     func presentingViewController(for interaction: ImageAnalysisInteraction) -> UIViewController? {
         self
@@ -123,18 +104,14 @@ extension MediaPreviewImageViewController: ImageAnalysisInteractionDelegate {
 // MARK: - UIGestureRecognizerDelegate
 extension MediaPreviewImageViewController: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        if #available(iOS 16.0, *) {
-            let location = touch.location(in: previewImageView.imageView)
-            // for tap gestures, only items that can be tapped are relevant
-            if gestureRecognizer is UITapGestureRecognizer {
-                return !previewImageView.liveTextInteraction.hasSupplementaryInterface(at: location)
-                    && !previewImageView.liveTextInteraction.hasDataDetector(at: location)
-            } else {
-                // for long press, block out everything
-                return !previewImageView.liveTextInteraction.hasInteractiveItem(at: location)
-            }
+        let location = touch.location(in: previewImageView.imageView)
+        // for tap gestures, only items that can be tapped are relevant
+        if gestureRecognizer is UITapGestureRecognizer {
+            return !previewImageView.liveTextInteraction.hasSupplementaryInterface(at: location)
+            && !previewImageView.liveTextInteraction.hasDataDetector(at: location)
         } else {
-            return true
+            // for long press, block out everything
+            return !previewImageView.liveTextInteraction.hasInteractiveItem(at: location)
         }
     }
 }
@@ -142,12 +119,9 @@ extension MediaPreviewImageViewController: UIGestureRecognizerDelegate {
 // MARK: - UIContextMenuInteractionDelegate
 extension MediaPreviewImageViewController: UIContextMenuInteractionDelegate {
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
 
-        if #available(iOS 16.0, *) {
-            if previewImageView.liveTextInteraction.hasInteractiveItem(at: previewImageView.imageView.convert(location, from: previewImageView)) {
-                return nil
-            }
+        if previewImageView.liveTextInteraction.hasInteractiveItem(at: previewImageView.imageView.convert(location, from: previewImageView)) {
+            return nil
         }
 
         
@@ -158,7 +132,6 @@ extension MediaPreviewImageViewController: UIContextMenuInteractionDelegate {
         let saveAction = UIAction(
             title: L10n.Common.Controls.Actions.savePhoto, image: UIImage(systemName: "square.and.arrow.down")!, identifier: nil, discoverabilityTitle: nil, attributes: [], state: .off
         ) { [weak self] _ in
-            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: save photo", ((#file as NSString).lastPathComponent), #line, #function)
             guard let self = self else { return }
             self.delegate?.mediaPreviewImageViewController(self, contextMenuActionPerform: .savePhoto)
         }
@@ -166,7 +139,6 @@ extension MediaPreviewImageViewController: UIContextMenuInteractionDelegate {
         let copyAction = UIAction(
             title: L10n.Common.Controls.Actions.copyPhoto, image: UIImage(systemName: "doc.on.doc")!, identifier: nil, discoverabilityTitle: nil, attributes: [], state: .off
         ) { [weak self] _ in
-            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: copy photo", ((#file as NSString).lastPathComponent), #line, #function)
             guard let self = self else { return }
             self.delegate?.mediaPreviewImageViewController(self, contextMenuActionPerform: .copyPhoto)
         }
@@ -174,7 +146,6 @@ extension MediaPreviewImageViewController: UIContextMenuInteractionDelegate {
         let shareAction = UIAction(
             title: L10n.Common.Controls.Actions.share, image: UIImage(systemName: "square.and.arrow.up")!, identifier: nil, discoverabilityTitle: nil, attributes: [], state: .off
         ) { [weak self] _ in
-            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: share", ((#file as NSString).lastPathComponent), #line, #function)
             guard let self = self else { return }
             self.delegate?.mediaPreviewImageViewController(self, contextMenuActionPerform: .share)
         }
@@ -209,7 +180,10 @@ extension MediaPreviewImageViewController {
 extension MediaPreviewImageViewController: MediaPreviewTransitionViewController {
     var mediaPreviewTransitionContext: MediaPreviewTransitionContext? {
         let imageView = previewImageView.imageView
-        let _snapshot: UIView? = imageView.snapshotView(afterScreenUpdates: false)
+        // We must hide liveTextInteraction's view from snapshot
+        previewImageView.liveTextInteraction.setSupplementaryInterfaceHidden(true, animated: false)
+        let _snapshot: UIView? = imageView.snapshotView(afterScreenUpdates: true)
+        previewImageView.liveTextInteraction.setSupplementaryInterfaceHidden(false, animated: false)
         
         guard let snapshot = _snapshot else {
             return nil

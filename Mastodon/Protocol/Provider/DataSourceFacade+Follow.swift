@@ -7,139 +7,158 @@
 
 import UIKit
 import CoreDataStack
-import class CoreDataStack.Notification
 import MastodonCore
 import MastodonSDK
 import MastodonLocalization
 
 extension DataSourceFacade {
+    @MainActor
     static func responseToUserFollowAction(
-        dependency: NeedsDependency & AuthContextProvider,
-        user: ManagedObjectRecord<MastodonUser>
-    ) async throws {
-        let selectionFeedbackGenerator = await UISelectionFeedbackGenerator()
-        await selectionFeedbackGenerator.selectionChanged()
-    
-        _ = try await dependency.context.apiService.toggleFollow(
-            user: user,
-            authenticationBox: dependency.authContext.mastodonAuthenticationBox
-        )
-    }   // end func
+        dependency: UIViewController & AuthContextProvider,
+        account: Mastodon.Entity.Account
+    ) async throws -> Mastodon.Entity.Relationship {
+        let authBox = dependency.authenticationBox
+        let relationship = try await APIService.shared.relationship(
+            forAccounts: [account], authenticationBox: authBox
+        ).value.first
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            Task { @MainActor in
+                let performAction = {
+                    FeedbackGenerator.shared.generate(.selectionChanged)
+
+                    let response = try await APIService.shared.toggleFollow(
+                        account: account,
+                        authenticationBox: dependency.authenticationBox
+                    ).value
+
+                    AuthenticationServiceProvider.shared.fetchFollowingAndBlockedAsync()
+                    
+
+                    NotificationCenter.default.post(name: .relationshipChanged, object: nil, userInfo: [
+                        UserInfoKey.relationship: response
+                    ])
+                    
+                    continuation.resume(returning: response)
+                }
+
+                if relationship?.following == true {
+                    let alert = UIAlertController(
+                        title: L10n.Common.Alerts.UnfollowUser.title("@\(account.username)"),
+                        message: nil,
+                        preferredStyle: .alert
+                    )
+                    let cancel = UIAlertAction(title: L10n.Common.Alerts.UnfollowUser.cancel, style: .default) { _ in
+                        if let relationship {
+                            NotificationCenter.default.post(name: .relationshipChanged, object: nil, userInfo: [
+                                UserInfoKey.relationship: relationship
+                            ])
+                            
+                            continuation.resume(returning: relationship)
+                        } else {
+                            continuation.resume(throwing: AppError.unexpected())
+                        }
+                    }
+                    alert.addAction(cancel)
+                    let unfollow = UIAlertAction(title: L10n.Common.Alerts.UnfollowUser.unfollow, style: .destructive) { _ in
+                        Task {
+                            try await performAction()
+                        }
+                    }
+                    alert.addAction(unfollow)
+                    dependency.present(alert, animated: true)
+                } else {
+                    try await performAction()
+                }
+            }
+        }
+    }
+
 }
 
 extension DataSourceFacade {
     static func responseToUserFollowRequestAction(
-        dependency: NeedsDependency & AuthContextProvider,
-        notification: ManagedObjectRecord<Notification>,
-        query: Mastodon.API.Account.FollowReqeustQuery
+        dependency: UIViewController & AuthContextProvider,
+        notification: MastodonNotification,
+        notificationView: NotificationView,
+        query: Mastodon.API.Account.FollowRequestQuery
     ) async throws {
-        let selectionFeedbackGenerator = await UISelectionFeedbackGenerator()
-        await selectionFeedbackGenerator.selectionChanged()
-    
-        let managedObjectContext = dependency.context.managedObjectContext
-        let _userID: MastodonUser.ID? = try await managedObjectContext.perform {
-            guard let notification = notification.object(in: managedObjectContext) else { return nil }
-            return notification.account.id
-        }
+        FeedbackGenerator.shared.generate(.selectionChanged)
+
+        let userID = notification.account.id
+        let state: MastodonFollowRequestState = notification.followRequestState
         
-        guard let userID = _userID else {
-            assertionFailure()
-            throw APIService.APIError.implicit(.badRequest)
+        guard state.state == .none else { return }
+
+        switch query {
+        case .accept:
+            notification.transientFollowRequestState = .init(state: .isAccepting)
+        case .reject:
+            notification.transientFollowRequestState = .init(state: .isRejecting)
         }
-        
-        let state: MastodonFollowRequestState = try await managedObjectContext.perform {
-            guard let notification = notification.object(in: managedObjectContext) else { return .init(state: .none) }
-            return notification.followRequestState
-        }
-        
-        guard state.state == .none else {
-            return
-        }
-        
-        try? await managedObjectContext.performChanges {
-            guard let notification = notification.object(in: managedObjectContext) else { return }
-            switch query {
-            case .accept:
-                notification.transientFollowRequestState = .init(state: .isAccepting)
-            case .reject:
-                notification.transientFollowRequestState = .init(state: .isRejecting)
-            }
-        }
-        
+
+        await notificationView.configure(notification: notification)
+
         do {
-            _ = try await dependency.context.apiService.followRequest(
+            let newRelationship = try await APIService.shared.followRequest(
                 userID: userID,
                 query: query,
-                authenticationBox: dependency.authContext.mastodonAuthenticationBox
-            )
+                authenticationBox: dependency.authenticationBox
+            ).value
+
+            switch query {
+            case .accept:
+                notification.transientFollowRequestState = .init(state: .isAccept)
+                notification.followRequestState = .init(state: .isAccept)
+            case .reject:
+                break
+            }
+
+            NotificationCenter.default.post(name: .relationshipChanged, object: nil, userInfo: [
+                UserInfoKey.relationship: newRelationship
+            ])
+
+            await notificationView.configure(notification: notification)
         } catch {
             // reset state when failure
-            try? await managedObjectContext.performChanges {
-                guard let notification = notification.object(in: managedObjectContext) else { return }
-                notification.transientFollowRequestState = .init(state: .none)
-            }
+            notification.transientFollowRequestState = .init(state: .none)
+            await notificationView.configure(notification: notification)
 
             if let error = error as? Mastodon.API.Error {
                 switch error.httpResponseStatus {
                 case .notFound:
-                    let backgroundManagedObjectContext = dependency.context.backgroundManagedObjectContext
-                    try await backgroundManagedObjectContext.performChanges {
-                        guard let notification = notification.object(in: backgroundManagedObjectContext) else { return }
-                        for feed in notification.feeds {
-                            backgroundManagedObjectContext.delete(feed)
-                        }
-                        backgroundManagedObjectContext.delete(notification)
-                    }
+                    break
                 default:
+                    guard let coordinator = await dependency.sceneCoordinator else { return }
                     let alertController = await UIAlertController(for: error, title: nil, preferredStyle: .alert)
                     let okAction = await UIAlertAction(title: L10n.Common.Controls.Actions.ok, style: .default)
                     await alertController.addAction(okAction)
-                    _ = await dependency.coordinator.present(
+                    _ = await coordinator.present(
                         scene: .alertController(alertController: alertController),
                         from: nil,
                         transition: .alertController(animated: true, completion: nil)
                     )
                 }
             }
-            
-            return
         }
         
-        try? await managedObjectContext.performChanges {
-            guard let notification = notification.object(in: managedObjectContext) else { return }
-            switch query {
-            case .accept:
-                notification.transientFollowRequestState = .init(state: .isAccept)
-            case .reject:
-                // do nothing due to will delete notification
-                break
-            }
-        }
-        
-        let backgroundManagedObjectContext = dependency.context.backgroundManagedObjectContext
-        try? await backgroundManagedObjectContext.performChanges {
-            guard let notification = notification.object(in: backgroundManagedObjectContext) else { return }
-            switch query {
-            case .accept:
-                notification.followRequestState = .init(state: .isAccept)
-            case .reject:
-                // delete notification
-                for feed in notification.feeds {
-                    backgroundManagedObjectContext.delete(feed)
-                }
-                backgroundManagedObjectContext.delete(notification)
-            }
-        }
-    }   // end func
+    }
 }
 
 extension DataSourceFacade {
-  static func responseToShowHideReblogAction(
-    dependency: NeedsDependency & AuthContextProvider,
-    user: ManagedObjectRecord<MastodonUser>
-  ) async throws {
-    _ = try await dependency.context.apiService.toggleShowReblogs(
-      for: user,
-      authenticationBox: dependency.authContext.mastodonAuthenticationBox)
-  }
+    static func responseToShowHideReblogAction(
+        dependency: AuthContextProvider,
+        account: Mastodon.Entity.Account
+    ) async throws {
+        let newRelationship = try await APIService.shared.toggleShowReblogs(
+            for: account,
+            authenticationBox: dependency.authenticationBox
+        )
+
+        let userInfo = [
+            UserInfoKey.relationship: newRelationship,
+        ]
+
+        NotificationCenter.default.post(name: .relationshipChanged, object: self, userInfo: userInfo)
+    }
 }

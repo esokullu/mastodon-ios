@@ -5,10 +5,7 @@
 //  Created by sxiaojian on 2021/2/5.
 //
 
-import os.log
-import func AVFoundation.AVMakeRect
 import UIKit
-import AVKit
 import Combine
 import CoreData
 import CoreDataStack
@@ -16,34 +13,48 @@ import GameplayKit
 import AlamofireImage
 import MastodonCore
 import MastodonUI
+import MastodonSDK
 
+@MainActor
 final class HomeTimelineViewModel: NSObject {
-    
-    let logger = Logger(subsystem: "HomeTimelineViewModel", category: "ViewModel")
-    
     var disposeBag = Set<AnyCancellable>()
     var observations = Set<NSKeyValueObservation>()
     
     // input
-    let context: AppContext
-    let authContext: AuthContext
-    let fetchedResultsController: FeedFetchedResultsController
-    let homeTimelineNavigationBarTitleViewModel: HomeTimelineNavigationBarTitleViewModel
-    let listBatchFetchViewModel = ListBatchFetchViewModel()
-    let viewDidAppear = PassthroughSubject<Void, Never>()
+    let authenticationBox: MastodonAuthenticationBox
+    let dataController: FeedDataController
+
+    var presentedSuggestions = false
 
     @Published var lastAutomaticFetchTimestamp: Date? = nil
     @Published var scrollPositionRecord: ScrollPositionRecord? = nil
     @Published var displaySettingBarButtonItem = true
+    @Published var hasPendingStatusEditReload = false
+    let hasNewPosts = CurrentValueSubject<Bool, Never>(false)
+
+    /// Becomes `true` if `networkErrorCount` is bigger than 5
+    let isOffline = CurrentValueSubject<Bool, Never>(false)
+    var networkErrorCount = CurrentValueSubject<Int, Never>(0)
+    var onPresentDonationCampaign = PassthroughSubject<Mastodon.Entity.DonationCampaign, Never>()
+
+    var timelineContext: MastodonFeed.Kind.TimelineContext = .home {
+        didSet {
+            hasNewPosts.send(false)
+        }
+    }
     
+    enum EmptyViewState {
+        case timeline, list
+    }
+
     weak var tableView: UITableView?
     weak var timelineMiddleLoaderTableViewCellDelegate: TimelineMiddleLoaderTableViewCellDelegate?
     
-    let timelineIsEmpty = CurrentValueSubject<Bool, Never>(false)
+    let timelineIsEmpty = CurrentValueSubject<EmptyViewState?, Never>(nil)
     let homeTimelineNeedRefresh = PassthroughSubject<Void, Never>()
     
     // output
-    var diffableDataSource: UITableViewDiffableDataSource<StatusSection, StatusItem>?
+    var diffableDataSource: UITableViewDiffableDataSource<StatusSection, MastodonItemIdentifier>?
     let didLoadLatest = PassthroughSubject<Void, Never>()
 
     // top loader
@@ -55,11 +66,11 @@ final class HomeTimelineViewModel: NSObject {
             LoadLatestState.LoadingManually(viewModel: self),
             LoadLatestState.Fail(viewModel: self),
             LoadLatestState.Idle(viewModel: self),
+            LoadLatestState.ContextSwitch(viewModel: self),
         ])
         stateMachine.enter(LoadLatestState.Initial.self)
         return stateMachine
     }()
-    lazy var loadLatestStateMachinePublisher = CurrentValueSubject<LoadLatestState?, Never>(nil)
     
     // bottom loader
     private(set) lazy var loadOldestStateMachine: GKStateMachine = {
@@ -74,47 +85,67 @@ final class HomeTimelineViewModel: NSObject {
         stateMachine.enter(LoadOldestState.Initial.self)
         return stateMachine
     }()
-    lazy var loadOldestStateMachinePublisher = CurrentValueSubject<LoadOldestState?, Never>(nil)
 
     var cellFrameCache = NSCache<NSNumber, NSValue>()
-    
-    init(context: AppContext, authContext: AuthContext) {
-        self.context  = context
-        self.authContext = authContext
-        self.fetchedResultsController = FeedFetchedResultsController(managedObjectContext: context.managedObjectContext)
-        self.homeTimelineNavigationBarTitleViewModel = HomeTimelineNavigationBarTitleViewModel(context: context)
+
+    init(authenticationBox: MastodonAuthenticationBox) {
+        self.authenticationBox = authenticationBox
+        self.dataController = FeedDataController(authenticationBox: authenticationBox, kind: .home(timeline: timelineContext))
         super.init()
+        let initialRecords = (try? PersistenceManager.shared.cached(.homeTimeline(authenticationBox)).map {
+            MastodonFeed.fromStatus(MastodonStatus.fromEntity($0), kind: .home)
+        }) ?? []
+        Task {
+            await self.dataController.setRecordsAfterFiltering(initialRecords)
+        }
         
-        fetchedResultsController.predicate = Feed.predicate(
-            kind: .home,
-            acct: .mastodon(domain: authContext.mastodonAuthenticationBox.domain, userID: authContext.mastodonAuthenticationBox.userID)
-        )
+        authenticationBox.inMemoryCache.$followingUserIds.sink { [weak self] _ in
+            self?.homeTimelineNeedRefresh.send()
+        }.store(in: &disposeBag)
         
         homeTimelineNeedRefresh
             .sink { [weak self] _ in
                 self?.loadLatestStateMachine.enter(LoadLatestState.Loading.self)
             }
             .store(in: &disposeBag)
+        self.dataController.$records
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] feeds in
+                guard let self, self.timelineContext == .home else { return }
 
-        // refresh after publish post
-        homeTimelineNavigationBarTitleViewModel.isPublished
-            .delay(for: 2, scheduler: DispatchQueue.main)
-            .sink { [weak self] isPublished in
-                guard let self = self else { return }
-                self.homeTimelineNeedRefresh.send()
-            }
+                let items: [MastodonStatus] = feeds.compactMap { feed -> MastodonStatus? in
+                    guard let status = feed.status else { return nil }
+                    return status
+                }
+                FileManager.default.cacheHomeTimeline(items: items, for: authenticationBox)
+            })
             .store(in: &disposeBag)
+        
+        networkErrorCount
+            .receive(on: DispatchQueue.main)
+            .map { errorCount in
+                return errorCount >= 5
+            }
+            .assign(to: \.value, on: isOffline)
+            .store(in: &disposeBag)
+
+        self.dataController.loadInitial(kind: .home(timeline: timelineContext))
     }
-    
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s:", ((#file as NSString).lastPathComponent), #line, #function)
+
+    func receiveLoadingStateCompletion(_ completion: Subscribers.Completion<Error>) {
+        switch completion {
+        case .failure:
+            networkErrorCount.value = networkErrorCount.value + 1
+        case .finished:
+            networkErrorCount.value = 0
+        }
     }
-    
 }
 
 extension HomeTimelineViewModel {
     struct ScrollPositionRecord {
-        let item: StatusItem
+        let item: MastodonItemIdentifier
         let offset: CGFloat
         let timestamp: Date
     }
@@ -122,64 +153,92 @@ extension HomeTimelineViewModel {
 
 extension HomeTimelineViewModel {
     func timelineDidReachEnd() {
-        fetchedResultsController.fetchNextBatch()
+        dataController.loadNext(kind: .home(timeline: timelineContext))
     }
 }
 
 extension HomeTimelineViewModel {
 
     // load timeline gap
-    func loadMore(item: StatusItem) async {
-        guard case let .feedLoader(record) = item else { return }
-        guard let diffableDataSource = diffableDataSource else { return }
-        var snapshot = diffableDataSource.snapshot()
+    @MainActor
+    func loadMore(item: MastodonItemIdentifier, at indexPath: IndexPath) async {
+        guard case let .feedLoader(feedItem) = item else { return }
 
-        let managedObjectContext = context.managedObjectContext
-        let key = "LoadMore@\(record.objectID)"
-        
-        guard let feed = record.object(in: managedObjectContext) else { return }
-        guard let status = feed.status else { return }
-        
-        // keep transient property live
-        managedObjectContext.cache(feed, key: key)
-        defer {
-            managedObjectContext.cache(nil, key: key)
-        }
-        do {
-            // update state
-            try await managedObjectContext.performChanges {
-                feed.update(isLoadingMore: true)
-            }
-        } catch {
-            assertionFailure(error.localizedDescription)
-        }
-        
-        // reconfigure item
-        snapshot.reconfigureItems([item])
-        await updateSnapshotUsingReloadData(snapshot: snapshot)
-        
+        guard let status = feedItem.status else { return }
+        feedItem.isLoadingMore = true
+
+        await AuthenticationServiceProvider.shared.fetchAccounts(onlyIfItHasBeenAwhile: true)
+
         // fetch data
-        do {
-            let maxID = status.id
-            _ = try await context.apiService.homeTimeline(
-                maxID: maxID,
-                authenticationBox: authContext.mastodonAuthenticationBox
+        let response: Mastodon.Response.Content<[Mastodon.Entity.Status]>?
+        
+        switch timelineContext {
+        case .home:
+            response = try? await APIService.shared.homeTimeline(
+               maxID: status.id,
+               authenticationBox: authenticationBox
+           )
+        case .public:
+            response = try? await APIService.shared.publicTimeline(
+                query: .init(local: true, maxID: status.id),
+                authenticationBox: authenticationBox
             )
-        } catch {
-            do {
-                // restore state
-                try await managedObjectContext.performChanges {
-                    feed.update(isLoadingMore: false)
-                }
-            } catch {
-                assertionFailure(error.localizedDescription)
-            }
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): fetch more failure: \(error.localizedDescription)")
+        case let .list(id):
+            response = try? await APIService.shared.listTimeline(
+                id: id,
+                query: .init(local: true, maxID: status.id),
+                authenticationBox: authenticationBox
+            )
+        case let .hashtag(tag):
+            response = try? await APIService.shared.hashtagTimeline(
+                hashtag: tag,
+                authenticationBox: authenticationBox
+            )
         }
         
-        // reconfigure item again
-        snapshot.reconfigureItems([item])
-        await updateSnapshotUsingReloadData(snapshot: snapshot)
+        // insert missing items
+        guard let items = response?.value else {
+            feedItem.isLoadingMore = false
+            return
+        }
+        
+        let firstIndex = indexPath.row
+        let oldRecords = dataController.records
+        let count = oldRecords.count
+        let head = oldRecords[..<firstIndex]
+        let tail = oldRecords[firstIndex..<count]
+        
+        var feedItems = [MastodonFeed]()
+        
+        /// See HomeTimelineViewModel+LoadLatestState.swift for the "Load More"-counterpart when fetching new timeline items
+        for (index, item) in items.enumerated() {
+            let hasMore: Bool
+            
+            /// there can only be a gap after the last items
+            if index < items.count - 1 {
+                hasMore = false
+            } else {
+                /// if fetched items and first item after gap don't match -> we got another gap
+                if let entity = head.first?.status?.entity {
+                    hasMore = item.id != entity.id
+                } else {
+                    hasMore = false
+                }
+            }
+
+            feedItems.append(
+                .fromStatus(item.asMastodonStatus, kind: .home, hasMore: hasMore)
+            )
+        }
+
+        let combinedRecords = Array(head + feedItems + tail)
+        
+        Task {
+            await dataController.setRecordsAfterFiltering(combinedRecords)
+            
+            feedItem.isLoadingMore = false
+            feedItem.hasMore = false
+        }
     }
     
 }

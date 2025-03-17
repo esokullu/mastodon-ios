@@ -5,18 +5,16 @@
 //  Created by MainasuK on 2022-2-7.
 //
 
-import os.log
 import func QuartzCore.CACurrentMediaTime
 import Foundation
 import CoreData
 import CoreDataStack
 import GameplayKit
+import MastodonCore
 
 extension ReportStatusViewModel {
     class State: GKState {
         
-        let logger = Logger(subsystem: "ReportViewModel.State", category: "StateMachine")
-
         let id = UUID()
 
         var name: String {
@@ -29,19 +27,9 @@ extension ReportStatusViewModel {
             self.viewModel = viewModel
         }
         
-        override func didEnter(from previousState: GKState?) {
-            super.didEnter(from: previousState)
-            let previousState = previousState as? ReportStatusViewModel.State
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): [\(self.id.uuidString)] enter \(self.name), previous: \(previousState?.name  ?? "<nil>")")
-        }
-        
         @MainActor
         func enter(state: State.Type) {
             stateMachine?.enter(state)
-        }
-        
-        deinit {
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): [\(self.id.uuidString)] \(self.name)")
         }
     }
 }
@@ -77,35 +65,26 @@ extension ReportStatusViewModel.State {
             super.didEnter(from: previousState)
             guard let viewModel else { return }
             
-            let maxID = viewModel.statusFetchedResultsController.statusIDs.last
             
             Task {
-                let managedObjectContext = viewModel.context.managedObjectContext
-                let _userID: MastodonUser.ID? = try await managedObjectContext.perform {
-                    guard let user = viewModel.user.object(in: managedObjectContext) else { return nil }
-                    return user.id
-                }
-                guard let userID = _userID else {
-                    await enter(state: Fail.self)
-                    return
-                }
+                let maxID = await viewModel.dataController.records.last?.id
 
                 do {
-                    let response = try await viewModel.context.apiService.userTimeline(
-                        accountID: userID,
+                    let response = try await APIService.shared.userTimeline(
+                        accountID: viewModel.account.id,
                         maxID: maxID,
                         sinceID: nil,
                         excludeReplies: true,
                         excludeReblogs: true,
                         onlyMedia: false,
-                        authenticationBox: viewModel.authContext.mastodonAuthenticationBox
+                        authenticationBox: viewModel.authenticationBox
                     )
                     
                     var hasNewStatusesAppend = false
-                    var statusIDs = viewModel.statusFetchedResultsController.statusIDs
+                    var statusIDs = await viewModel.dataController.records
                     for status in response.value {
-                        guard !statusIDs.contains(status.id) else { continue }
-                        statusIDs.append(status.id)
+                        guard !statusIDs.contains(where: { $0.id == status.id }) else { continue }
+                        statusIDs.append(.fromEntity(status))
                         hasNewStatusesAppend = true
                     }
                     
@@ -114,10 +93,9 @@ extension ReportStatusViewModel.State {
                     } else {
                         await enter(state: NoMore.self)
                     }
-                    viewModel.statusFetchedResultsController.statusIDs = statusIDs
+                    await viewModel.dataController.setRecords(statusIDs)
 
                 } catch {
-                    logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): fetch user timeline fail: \(error.localizedDescription)")
                     await enter(state: Fail.self)
                 }
             }

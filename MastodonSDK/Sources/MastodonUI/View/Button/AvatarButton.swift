@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-7-21.
 //
 
-import os.log
 import UIKit
 import MastodonLocalization
 
@@ -18,17 +17,9 @@ open class AvatarButton: UIControl {
     public var size = CGSize(width: 46, height: 46)
     public let avatarImageView = AvatarImageView()
 
-    public override init(frame: CGRect) {
-        super.init(frame: frame)
-        _init()
-    }
-
-    public required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        _init()
-    }
-
-    open func _init() {
+    public init(avatarPlaceholder: UIImage? = UIImage.placeholder(color: .systemFill)) {
+        super.init(frame: .zero)
+        avatarImageView.image = avatarPlaceholder
         avatarImageView.frame = bounds
         avatarImageView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(avatarImageView)
@@ -38,7 +29,9 @@ open class AvatarButton: UIControl {
         accessibilityLabel = L10n.Common.Controls.Status.showUserProfile
         accessibilityTraits.insert(.image)
     }
-    
+
+    public required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented")}
+
     public override func layoutSubviews() {
         super.layoutSubviews()
         
@@ -117,26 +110,3 @@ extension AvatarButton {
     }
 
 }
-
-#if canImport(SwiftUI) && DEBUG
-import SwiftUI
-
-struct AvatarButton_Previews: PreviewProvider {
-
-    static var previews: some View {
-        UIViewPreview(width: 42) {
-            let avatarButton = AvatarButton()
-            avatarButton.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                avatarButton.widthAnchor.constraint(equalToConstant: 42),
-                avatarButton.heightAnchor.constraint(equalToConstant: 42),
-            ])
-            return avatarButton
-        }
-        .previewLayout(.fixed(width: 42, height: 42))
-    }
-
-}
-
-#endif
-

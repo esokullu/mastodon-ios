@@ -5,7 +5,6 @@
 //  Created by xiaojian sun on 2021/1/25.
 //
 
-import os.log
 import Foundation
 import enum NIOHTTP1.HTTPResponseStatus
 
@@ -96,6 +95,14 @@ extension Mastodon.API {
     public static func privacyURL(domain: String) -> URL {
         return URL(string: "\(URL.httpScheme(domain: domain))://" + domain + "/terms")!
     }
+
+    public static func profileSettingsURL(domain: String) -> URL {
+        return URL(string: "\(URL.httpScheme(domain: domain))://" + domain + "/auth/edit")!
+    }
+
+    public static func webURL(domain: String) -> URL {
+        return URL(string: "\(URL.httpScheme(domain: domain))://" + domain + "/")!
+    }
 }
 
 extension Mastodon.API {
@@ -106,6 +113,7 @@ extension Mastodon.API {
     public enum CustomEmojis { }
     public enum Favorites { }
     public enum Instance { }
+    public enum Marker { }
     public enum Media { }
     public enum OAuth { }
     public enum Onboarding { }
@@ -120,6 +128,7 @@ extension Mastodon.API {
     public enum Subscriptions { }
     public enum Reports { }
     public enum DomainBlock { }
+    public enum Lists { }
 }
 
 extension Mastodon.API.V2 {
@@ -133,16 +142,16 @@ extension Mastodon.API {
     
     static func get(
         url: URL,
-        query: GetQuery?,
-        authorization: OAuth.Authorization?
+        query: GetQuery? = nil,
+        authorization: OAuth.Authorization? = nil
     ) -> URLRequest {
         return buildRequest(url: url, method: .GET, query: query, authorization: authorization)
     }
     
     static func post(
         url: URL,
-        query: PostQuery?,
-        authorization: OAuth.Authorization?
+        query: PostQuery? = nil,
+        authorization: OAuth.Authorization? = nil
     ) -> URLRequest {
         return buildRequest(url: url, method: .POST, query: query, authorization: authorization)
     }
@@ -150,15 +159,15 @@ extension Mastodon.API {
     static func patch(
         url: URL,
         query: PatchQuery?,
-        authorization: OAuth.Authorization?
+        authorization: OAuth.Authorization? = nil
     ) -> URLRequest {
         return buildRequest(url: url, method: .PATCH, query: query, authorization: authorization)
     }
     
     static func put(
         url: URL,
-        query: PutQuery?,
-        authorization: OAuth.Authorization?
+        query: PutQuery? = nil,
+        authorization: OAuth.Authorization? = nil
     ) -> URLRequest {
         return buildRequest(url: url, method: .PUT, query: query, authorization: authorization)
     }
@@ -166,7 +175,7 @@ extension Mastodon.API {
     static func delete(
         url: URL,
         query: DeleteQuery?,
-        authorization: OAuth.Authorization?
+        authorization: OAuth.Authorization? = nil
     ) -> URLRequest {
         return buildRequest(url: url, method: .DELETE, query: query, authorization: authorization)
     }
@@ -208,8 +217,7 @@ extension Mastodon.API {
             return try Mastodon.API.decoder.decode(type, from: data)
         } catch let decodeError {
             #if DEBUG
-            os_log(.info, "%{public}s[%{public}ld], %{public}s: decode fail. content %s", ((#file as NSString).lastPathComponent), #line, #function, String(data: data, encoding: .utf8) ?? "<nil>")
-            debugPrint(decodeError)
+            debugPrint("URL: \(String(describing: response.url))\nData: \(String(data: data, encoding: .utf8) ?? "-")\nError:\(decodeError)\n----\n")
             #endif
             
             guard let httpURLResponse = response as? HTTPURLResponse else {

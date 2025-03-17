@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-4-28.
 //
 
-import os.log
 import UIKit
 import Combine
 import Pageboy
@@ -14,10 +13,7 @@ import MastodonCore
 import MastodonUI
 import MastodonLocalization
 
-final class MediaPreviewViewController: UIViewController, NeedsDependency {
-    
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+final class MediaPreviewViewController: UIViewController {
     
     var disposeBag = Set<AnyCancellable>()
     var viewModel: MediaPreviewViewModel!
@@ -42,9 +38,6 @@ final class MediaPreviewViewController: UIViewController, NeedsDependency {
         button.setTitle("ALT", for: .normal)
     }
 
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
     
 }
 
@@ -113,12 +106,11 @@ extension MediaPreviewViewController {
                 guard let self = self else { return }
                 switch self.viewModel.item {
                 case .attachment(let previewContext):
-                    let needsHideCloseButton: Bool = {
+                    self.topToolbar.isHidden = {
                         guard index < previewContext.attachments.count else { return false }
                         let attachment = previewContext.attachments[index]
-                        return attachment.kind == .video    // not hide buttno for audio
+                        return attachment.kind == .video || attachment.kind == .audio
                     }()
-                    self.closeButton.isHidden = needsHideCloseButton
                 default:
                     break
                 }
@@ -186,7 +178,7 @@ extension MediaPreviewViewController {
     @objc private func altButtonPressed(_ sender: UIButton) {
         guard let alt = viewModel.altText else { return }
 
-        present(AltViewController(alt: alt, sourceView: sender), animated: true)
+        present(AltTextViewController(alt: alt, sourceView: sender), animated: true)
     }
 }
 
@@ -204,7 +196,6 @@ extension MediaPreviewViewController: MediaPreviewingViewController {
             let safeAreaInsets = previewImageView.safeAreaInsets
             let statusBarFrameHeight = view.window?.windowScene?.statusBarManager?.statusBarFrame.height ?? 0
             let dismissible = previewImageView.contentOffset.y <= -(safeAreaInsets.top - statusBarFrameHeight) + 3 // add 3pt tolerance
-            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: dismissible %s", ((#file as NSString).lastPathComponent), #line, #function, dismissible ? "true" : "false")
             return dismissible
         }
         
@@ -212,7 +203,6 @@ extension MediaPreviewViewController: MediaPreviewingViewController {
             return true
         }
 
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: dismissible false", ((#file as NSString).lastPathComponent), #line, #function)
         return false
     }
     
@@ -265,17 +255,13 @@ extension MediaPreviewViewController: MediaPreviewImageViewControllerDelegate {
     
     func mediaPreviewImageViewController(_ viewController: MediaPreviewImageViewController, tapGestureRecognizerDidTrigger tapGestureRecognizer: UITapGestureRecognizer) {
         let location = tapGestureRecognizer.location(in: viewController.previewImageView.imageView)
-        let isContainsTap = viewController.previewImageView.imageView.frame.contains(location)
+        let isContainsTap = viewController.previewImageView.imageView.bounds.contains(location)
         
         if isContainsTap {
             self.viewModel.showingChrome.toggle()
         } else {
             dismiss(animated: true, completion: nil)
         }
-    }
-    
-    func mediaPreviewImageViewController(_ viewController: MediaPreviewImageViewController, longPressGestureRecognizerDidTrigger longPressGestureRecognizer: UILongPressGestureRecognizer) {
-        // do nothing
     }
     
     func mediaPreviewImageViewController(
@@ -285,7 +271,7 @@ extension MediaPreviewViewController: MediaPreviewImageViewControllerDelegate {
         switch action {
         case .savePhoto:
             guard let assetURL = viewController.viewModel.item.assetURL else { return }
-            context.photoLibraryService.save(imageSource: .url(assetURL))
+            PhotoLibraryService.shared.save(imageSource: .url(assetURL))
                 .sink { [weak self] completion in
                     guard let self = self else { return }
                     switch completion {
@@ -296,7 +282,7 @@ extension MediaPreviewViewController: MediaPreviewImageViewControllerDelegate {
                             title: L10n.Common.Alerts.SavePhotoFailure.title,
                             message: L10n.Common.Alerts.SavePhotoFailure.message
                         )
-                        _ = self.coordinator.present(
+                        _ = self.sceneCoordinator?.present(
                             scene: .alertController(alertController: alertController),
                             from: self,
                             transition: .alertController(animated: true, completion: nil)
@@ -307,25 +293,25 @@ extension MediaPreviewViewController: MediaPreviewImageViewControllerDelegate {
                 } receiveValue: { _ in
                     // do nothing
                 }
-                .store(in: &context.disposeBag)
+                .store(in: &AppContext.shared.disposeBag)
         case .copyPhoto:
             guard let assetURL = viewController.viewModel.item.assetURL else { return }
 
-            context.photoLibraryService.copy(imageSource: .url(assetURL))
+            PhotoLibraryService.shared.copy(imageSource: .url(assetURL))
                 .sink { completion in
                     switch completion {
-                    case .failure(let error):
-                        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: copy photo fail: %s", ((#file as NSString).lastPathComponent), #line, #function, error.localizedDescription)
+                    case .failure(_):
+                        break
                     case .finished:
                         break
                     }
                 } receiveValue: { _ in
                     // do nothing
                 }
-                .store(in: &context.disposeBag)
+                .store(in: &AppContext.shared.disposeBag)
         case .share:
             let applicationActivities: [UIActivity] = [
-                SafariActivity(sceneCoordinator: self.coordinator)
+                SafariActivity(sceneCoordinator: self.sceneCoordinator)
             ]
             let activityViewController = UIActivityViewController(
                 activityItems: {

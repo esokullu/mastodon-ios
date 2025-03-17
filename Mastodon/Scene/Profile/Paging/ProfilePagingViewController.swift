@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-3-29.
 //
 
-import os.log
 import UIKit
 import Combine
 import XLPagerTabStrip
@@ -13,6 +12,10 @@ import TabBarPager
 import MastodonAsset
 import MastodonCore
 import MastodonUI
+
+protocol StatusReloadable {
+    func reloadData()
+}
 
 protocol ProfilePagingViewControllerDelegate: AnyObject {
     func profilePagingViewController(_ viewController: ProfilePagingViewController, didScrollToPostCustomScrollViewContainerController customScrollViewContainerController: ScrollViewContainer, atIndex index: Int)
@@ -24,15 +27,23 @@ final class ProfilePagingViewController: ButtonBarPagerTabStripViewController, T
     weak var pagingDelegate: ProfilePagingViewControllerDelegate?
     
     var disposeBag = Set<AnyCancellable>()
-    var viewModel: ProfilePagingViewModel!
+    var viewModel: ProfilePagingViewModel?
     
     let buttonBarShadowView = UIView()
     private var buttonBarShadowAlpha: CGFloat = 0.0
+    
+    public func reloadTables() {
+        for viewController in viewControllers {
+            if let vc = viewController as? StatusReloadable {
+                vc.reloadData()
+            }
+        }
+    }
 
     // MARK: - TabBarPageViewController
     
     var currentPage: TabBarPage? {
-        return viewModel.viewControllers[currentIndex]
+        return viewModel?.viewControllers[currentIndex]
     }
     
     var currentPageIndex: Int? {
@@ -42,13 +53,13 @@ final class ProfilePagingViewController: ButtonBarPagerTabStripViewController, T
     // MARK: - ButtonBarPagerTabStripViewController
     
     override func viewControllers(for pagerTabStripController: PagerTabStripViewController) -> [UIViewController] {
-        return viewModel.viewControllers
+        return viewModel?.viewControllers ?? []
     }
     
     override func updateIndicator(for viewController: PagerTabStripViewController, fromIndex: Int, toIndex: Int, withProgressPercentage progressPercentage: CGFloat, indexWasChanged: Bool) {
         super.updateIndicator(for: viewController, fromIndex: fromIndex, toIndex: toIndex, withProgressPercentage: progressPercentage, indexWasChanged: indexWasChanged)
         
-        guard indexWasChanged else { return }
+        guard indexWasChanged, let viewModel = viewModel else { return }
         let page = viewModel.viewControllers[toIndex]
         tabBarPageViewDelegate?.pageViewController(self, didPresentingTabBarPage: page, at: toIndex)
     }
@@ -58,9 +69,6 @@ final class ProfilePagingViewController: ButtonBarPagerTabStripViewController, T
         return true
     }
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
     
 }
 
@@ -68,7 +76,7 @@ extension ProfilePagingViewController {
     
     override func viewDidLoad() {
         // configure style before viewDidLoad
-        settings.style.buttonBarBackgroundColor = ThemeService.shared.currentTheme.value.systemBackgroundColor
+        settings.style.buttonBarBackgroundColor = .systemBackground
         settings.style.buttonBarItemBackgroundColor = .clear
         settings.style.buttonBarItemsShouldFillAvailableWidth = false   // alignment from leading to trailing
         settings.style.selectedBarHeight = 3
@@ -84,24 +92,15 @@ extension ProfilePagingViewController {
     
         super.viewDidLoad()
         
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.settings.style.buttonBarBackgroundColor = theme.systemBackgroundColor
-                self.buttonBarView.backgroundColor = self.settings.style.buttonBarBackgroundColor
-                self.barButtonLayout?.invalidateLayout()
-            }
-            .store(in: &disposeBag)
-        
         updateBarButtonInsets()
         
         if let buttonBarView = self.buttonBarView {
             buttonBarShadowView.translatesAutoresizingMaskIntoConstraints = false
             view.insertSubview(buttonBarShadowView, belowSubview: buttonBarView)
+            buttonBarView.backgroundColor = .systemBackground
             buttonBarShadowView.pinTo(to: buttonBarView)
             
-            viewModel.$needsSetupBottomShadow
+            viewModel?.$needsSetupBottomShadow
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] needsSetupBottomShadow in
                     guard let self = self else { return }
@@ -137,11 +136,9 @@ extension ProfilePagingViewController {
         let margin: CGFloat = {
             switch traitCollection.userInterfaceIdiom {
             case .phone:
-                return ProfileViewController.containerViewMarginForCompactHorizontalSizeClass
+                return ProfileViewController.containerViewMargin(forHorizontalSizeClass: .compact)
             default:
-                return traitCollection.horizontalSizeClass == .regular ?
-                    ProfileViewController.containerViewMarginForRegularHorizontalSizeClass :
-                    ProfileViewController.containerViewMarginForCompactHorizontalSizeClass
+                return ProfileViewController.containerViewMargin(forHorizontalSizeClass: traitCollection.horizontalSizeClass)
             }
         }()
 
@@ -158,7 +155,7 @@ extension ProfilePagingViewController {
     }
     
     func setupBottomShadow() {
-        guard viewModel.needsSetupBottomShadow else {
+        guard let viewModel = viewModel, viewModel.needsSetupBottomShadow else {
             buttonBarShadowView.layer.shadowColor = nil
             buttonBarShadowView.layer.shadowRadius = 0
             return
@@ -189,6 +186,7 @@ extension ProfilePagingViewController {
 extension ProfilePagingViewController {
     
     var currentViewController: (UIViewController & TabBarPage)? {
+        guard let viewModel = viewModel else { return nil }
         guard !viewModel.viewControllers.isEmpty,
               currentIndex < viewModel.viewControllers.count
         else { return nil }

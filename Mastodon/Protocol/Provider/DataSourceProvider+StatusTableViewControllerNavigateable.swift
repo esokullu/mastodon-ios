@@ -5,10 +5,10 @@
 //  Created by MainasuK on 2022-2-16.
 //
 
-import os.log
 import UIKit
 import CoreDataStack
 import MastodonCore
+import MastodonSDK
 
 extension StatusTableViewControllerNavigateableCore where Self: DataSourceProvider & StatusTableViewControllerNavigateableRelay {
 
@@ -37,7 +37,6 @@ extension StatusTableViewControllerNavigateableCore where Self: DataSourceProvid
         guard let rawValue = sender.propertyList as? String,
               let navigation = StatusTableViewNavigation(rawValue: rawValue) else { return }
         
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: %s", ((#file as NSString).lastPathComponent), #line, #function, navigation.title)
         Task {
             switch navigation {
             case .openAuthorProfile:    await openAuthorProfile(target: .status)
@@ -57,7 +56,7 @@ extension StatusTableViewControllerNavigateableCore where Self: DataSourceProvid
 extension StatusTableViewControllerNavigateableCore where Self: DataSourceProvider & AuthContextProvider {
     
     @MainActor
-    private func statusRecord() async -> ManagedObjectRecord<Status>? {
+    private func statusRecord() async -> MastodonStatus? {
         guard let indexPathForSelectedRow = tableView.indexPathForSelectedRow else { return nil }
         let source = DataSourceItem.Source(indexPath: indexPathForSelectedRow)
         guard let item = await item(from: source) else { return nil }
@@ -66,15 +65,7 @@ extension StatusTableViewControllerNavigateableCore where Self: DataSourceProvid
         case .status(let record):
             return record
         case .notification(let record):
-            let _statusRecord: ManagedObjectRecord<Status>? = try? await context.managedObjectContext.perform {
-                guard let notification = record.object(in: self.context.managedObjectContext) else { return nil }
-                guard let status = notification.status else { return nil }
-                return .init(objectID: status.objectID)
-            }
-            guard let statusRecord = _statusRecord else {
-                return nil
-            }
-            return statusRecord
+            return record.status
         default:
             return nil
         }
@@ -94,15 +85,14 @@ extension StatusTableViewControllerNavigateableCore where Self: DataSourceProvid
     private func replyStatus() async {
         guard let status = await statusRecord() else { return }
         
-        let selectionFeedbackGenerator = UISelectionFeedbackGenerator()
-        selectionFeedbackGenerator.selectionChanged()
-        
+        FeedbackGenerator.shared.generate(.selectionChanged)
+
         let composeViewModel = ComposeViewModel(
-            context: self.context,
-            authContext: authContext,
+            authenticationBox: authenticationBox,
+            composeContext: .composeStatus,
             destination: .reply(parent: status)
         )
-        _ = self.coordinator.present(
+        _ = self.sceneCoordinator?.present(
             scene: .compose(viewModel: composeViewModel),
             from: self,
             transition: .modal(animated: true, completion: nil)

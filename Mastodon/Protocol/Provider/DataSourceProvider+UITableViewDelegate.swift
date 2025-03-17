@@ -5,33 +5,30 @@
 //  Created by MainasuK on 2022-1-17.
 //
 
-import os.log
 import UIKit
 import CoreDataStack
 import MastodonCore
 import MastodonUI
 import MastodonLocalization
+import MastodonSDK
 
 extension UITableViewDelegate where Self: DataSourceProvider & AuthContextProvider {
 
     func aspectTableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): indexPath: \(indexPath.debugDescription)")
+        tableView.deselectRow(at: indexPath, animated: true)
         Task {
             let source = DataSourceItem.Source(tableViewCell: nil, indexPath: indexPath)
             guard let item = await item(from: source) else {
                 return
             }
             switch item {
+            case .account(let account, relationship: _):
+                await DataSourceFacade.coordinateToProfileScene(provider: self, account: account)
             case .status(let status):
                 await DataSourceFacade.coordinateToStatusThreadScene(
                     provider: self,
                     target: .status,    // remove reblog wrapper
                     status: status
-                )
-            case .user(let user):
-                await DataSourceFacade.coordinateToProfileScene(
-                    provider: self,
-                    user: user
                 )
             case .hashtag(let tag):
                 await DataSourceFacade.coordinateToHashtagScene(
@@ -39,35 +36,31 @@ extension UITableViewDelegate where Self: DataSourceProvider & AuthContextProvid
                     tag: tag
                 )
             case .notification(let notification):
-                let managedObjectContext = context.managedObjectContext
-                
-                let _status: ManagedObjectRecord<Status>? = try await managedObjectContext.perform {
-                    guard let notification = notification.object(in: managedObjectContext) else { return nil }
-                    guard let status = notification.status else { return nil }
-                    return .init(objectID: status.objectID)
-                }
+                let _status: MastodonStatus? = notification.status
                 if let status = _status {
                     await DataSourceFacade.coordinateToStatusThreadScene(
                         provider: self,
-                        target: .status,        // remove reblog wrapper
+                        target: .status,    // remove reblog wrapper
                         status: status
                     )
+                } else if let accountWarning = notification.entity.accountWarning {
+                    let url = Mastodon.API.disputesEndpoint(domain: authenticationBox.domain, strikeId: accountWarning.id)
+                    self.sceneCoordinator?.present(
+                        scene: .safari(url: url),
+                        from: self,
+                        transition: .safariPresent(animated: true, completion: nil)
+                    )
                 } else {
-                    let _author: ManagedObjectRecord<MastodonUser>? = try await managedObjectContext.perform {
-                        guard let notification = notification.object(in: managedObjectContext) else { return nil }
-                        return .init(objectID: notification.account.objectID)
-                    }
-                    if let author = _author {
-                        await DataSourceFacade.coordinateToProfileScene(
-                            provider: self,
-                            user: author
-                        )
-                    }
+                    await DataSourceFacade.coordinateToProfileScene(
+                        provider: self,
+                        account: notification.entity.account
+                    )
                 }
+            case .notificationBanner(let policy):
+                await DataSourceFacade.coordinateToNotificationRequests(provider: self)
             }
-        }   // end Task
-    }   // end func
-    
+        }
+    }
 }
 
 extension UITableViewDelegate where Self: DataSourceProvider & MediaPreviewableViewController {
@@ -77,7 +70,6 @@ extension UITableViewDelegate where Self: DataSourceProvider & MediaPreviewableV
         contextMenuConfigurationForRowAt
         indexPath: IndexPath, point: CGPoint
     ) -> UIContextMenuConfiguration? {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
 
         guard let cell = tableView.cellForRow(at: indexPath) as? StatusViewContainerTableViewCell else { return nil }
 
@@ -128,11 +120,10 @@ extension UITableViewDelegate where Self: DataSourceProvider & MediaPreviewableV
                             attributes: [],
                             state: .off
                         ) { [weak self] _ in
-                            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: save photo", ((#file as NSString).lastPathComponent), #line, #function)
                             guard let self = self else { return }
                             Task { @MainActor in
                                 do {
-                                    try await self.context.photoLibraryService.save(
+                                    try await PhotoLibraryService.shared.save(
                                         imageSource: .url(assetURL)
                                     ).singleOutput()
                                 } catch {
@@ -143,7 +134,7 @@ extension UITableViewDelegate where Self: DataSourceProvider & MediaPreviewableV
                                         title: L10n.Common.Alerts.SavePhotoFailure.title,
                                         message: L10n.Common.Alerts.SavePhotoFailure.message
                                     )
-                                    _ = self.coordinator.present(
+                                    self.sceneCoordinator?.present(
                                         scene: .alertController(alertController: alertController),
                                         from: self,
                                         transition: .alertController(animated: true, completion: nil)
@@ -159,10 +150,9 @@ extension UITableViewDelegate where Self: DataSourceProvider & MediaPreviewableV
                             attributes: [],
                             state: .off
                         ) { [weak self] _ in
-                            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: copy photo", ((#file as NSString).lastPathComponent), #line, #function)
                             guard let self = self else { return }
                             Task {
-                                try await self.context.photoLibraryService.copy(
+                                try await PhotoLibraryService.shared.copy(
                                     imageSource: .url(assetURL)
                                 ).singleOutput()
                             }
@@ -175,11 +165,10 @@ extension UITableViewDelegate where Self: DataSourceProvider & MediaPreviewableV
                             attributes: [],
                             state: .off
                         ) { [weak self] _ in
-                            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: share", ((#file as NSString).lastPathComponent), #line, #function)
-                            guard let self = self else { return }
+                            guard let self = self, let coordinator = self.sceneCoordinator else { return }
                             Task {
                                 let applicationActivities: [UIActivity] = [
-                                    SafariActivity(sceneCoordinator: self.coordinator)
+                                    SafariActivity(sceneCoordinator: coordinator)
                                 ]
                                 let activityViewController = UIActivityViewController(
                                     activityItems: [assetURL],
@@ -238,7 +227,6 @@ extension UITableViewDelegate where Self: DataSourceProvider & MediaPreviewableV
         willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration,
         animator: UIContextMenuInteractionCommitAnimating
     ) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
 
         guard let configuration = configuration as? TimelineTableViewCellContextMenuConfiguration else { return }
         guard let indexPath = configuration.indexPath, let index = configuration.index else { return }

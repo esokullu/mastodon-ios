@@ -6,7 +6,6 @@
 //  Copyright © 2021 Twidere. All rights reserved.
 //
 
-import os.log
 import UIKit
 import func AVFoundation.AVMakeRect
 
@@ -17,10 +16,9 @@ public protocol MediaGridContainerViewDelegate: AnyObject {
 
 public final class MediaGridContainerView: UIView {
     
+    private var overlayHeightConstraint: NSLayoutConstraint?
     static let sensitiveToggleButtonSize = CGSize(width: 34, height: 34)
     public static let maxCount = 9
-    
-    let logger = Logger(subsystem: "MediaGridContainerView", category: "UI")
     
     public weak var delegate: MediaGridContainerViewDelegate?
     public private(set) lazy var viewModel: ViewModel = {
@@ -48,7 +46,20 @@ public final class MediaGridContainerView: UIView {
         return mediaViews
     }()
     
-    let contentWarningOverlay = ContentWarningOverlayView()
+    private let contentWarningOverlay = ContentWarningOverlayView()
+    public func hideContentWarning(_ hide: Bool) {
+        Task { @MainActor in
+            if overlayHeightConstraint == nil {
+                overlayHeightConstraint = contentWarningOverlay.heightAnchor.constraint(equalToConstant: 100)
+            }
+            contentWarningOverlay.isHidden = hide
+            if hide {
+                overlayHeightConstraint?.deactivate()
+            } else {
+                overlayHeightConstraint?.activate()
+            }
+        }
+    }
     
     public override init(frame: CGRect) {
         super.init(frame: frame)
@@ -79,13 +90,11 @@ extension MediaGridContainerView {
 extension MediaGridContainerView {
     @objc private func mediaViewTapGestureRecognizerHandler(_ sender: UITapGestureRecognizer) {
         guard let index = _mediaViews.firstIndex(where: { $0.container === sender.view }) else { return }
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): \(index)")
         let mediaView = _mediaViews[index]
         delegate?.mediaGridContainerView(self, didTapMediaView: mediaView, at: index)
     }
 
     @objc private func sensitiveToggleButtonDidPressed(_ sender: UIButton) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
         delegate?.mediaGridContainerView(self, mediaSensitiveButtonDidPressed: sender)
     }
 }

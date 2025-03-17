@@ -5,10 +5,8 @@
 //  Created by MainasuK on 22/9/30.
 //
 
-import os.log
 import UIKit
 import Combine
-import CoreDataStack
 import Meta
 import MetaTextKit
 import MastodonMeta
@@ -20,9 +18,13 @@ public protocol ComposeContentViewModelDelegate: AnyObject {
     func composeContentViewModel(_ viewModel: ComposeContentViewModel, handleAutoComplete info: ComposeContentViewModel.AutoCompleteInfo) -> Bool
 }
 
+@MainActor
 public final class ComposeContentViewModel: NSObject, ObservableObject {
-    
-    let logger = Logger(subsystem: "ComposeContentViewModel", category: "ViewModel")
+
+    public enum ComposeContext {
+        case composeStatus
+        case editStatus(status: MastodonStatus, statusSource: Mastodon.Entity.StatusSource)
+    }
     
     var disposeBag = Set<AnyCancellable>()
     
@@ -31,14 +33,14 @@ public final class ComposeContentViewModel: NSObject, ObservableObject {
     let composeContentTableViewCell = ComposeContentTableViewCell()
     
     // input
-    let context: AppContext
+    let composeContext: ComposeContext
     let destination: Destination
     weak var delegate: ComposeContentViewModelDelegate?
     
     @Published var viewLayoutFrame = ViewLayoutFrame()
     
     // author (me)
-    @Published var authContext: AuthContext
+    @Published var authenticationBox: MastodonAuthenticationBox
     
     // auto-complete info
     @Published var autoCompleteRetryLayoutTimes = 0
@@ -111,7 +113,8 @@ public final class ComposeContentViewModel: NSObject, ObservableObject {
     
     // visibility
     @Published public var visibility: Mastodon.Entity.Status.Visibility
-    
+    @Published public var isVisibilityButtonEnabled = false
+
     // language
     @Published public var language: String
     @Published public private(set) var recentLanguages: [String]
@@ -139,53 +142,56 @@ public final class ComposeContentViewModel: NSObject, ObservableObject {
     }
 
     public init(
-        context: AppContext,
-        authContext: AuthContext,
+        authenticationBox: MastodonAuthenticationBox,
+        composeContext: ComposeContext,
         destination: Destination,
         initialContent: String
     ) {
-        self.context = context
-        self.authContext = authContext
+        self.authenticationBox = authenticationBox
         self.destination = destination
+        self.composeContext = composeContext
         self.visibility = {
             // default private when user locked
             var visibility: Mastodon.Entity.Status.Visibility = {
-                guard let author = authContext.mastodonAuthenticationBox.authenticationRecord.object(in: context.managedObjectContext)?.user else {
+                guard let author = authenticationBox.cachedAccount else {
                     return .public
                 }
-                return author.locked ? .private : .public
+                if let defaultPrivacy = author.source?.privacy, let statusPrivacy = Mastodon.Entity.Status.Visibility(rawValue: defaultPrivacy.rawValue) {
+                    return statusPrivacy
+                } else {
+                    return author.locked ? .private : .public
+                }
             }()
             // set visibility for reply post
             if case .reply(let record) = destination {
-                context.managedObjectContext.performAndWait {
-                    guard let status = record.object(in: context.managedObjectContext) else {
-                        assertionFailure()
-                        return
+                let repliedStatusVisibility = record.entity.visibility
+                switch repliedStatusVisibility {
+                case .public:
+                    // keep default
+                    break
+                case .unlisted:
+                    if visibility == .public {
+                        visibility = .unlisted
                     }
-                    let repliedStatusVisibility = status.visibility
-                    switch repliedStatusVisibility {
-                    case .public, .unlisted:
-                        // keep default
-                        break
-                    case .private:
-                        visibility = .private
-                    case .direct:
-                        visibility = .direct
-                    case ._other:
-                        assertionFailure()
-                        break
-                    }
+                case .private:
+                    visibility = .private
+                case .direct:
+                    visibility = .direct
+                case ._other, .none:
+                    assertionFailure()
+                    break
                 }
             }
             return visibility
         }()
-        self.customEmojiViewModel = context.emojiService.dequeueCustomEmojiViewModel(
-            for: authContext.mastodonAuthenticationBox.domain
-        )
         
-        let recentLanguages = context.settingService.currentSetting.value?.recentLanguages ?? []
+        self.customEmojiViewModel = EmojiService.shared.dequeueCustomEmojiViewModel(
+            for: authenticationBox.domain
+        )
+                
+        let recentLanguages = SettingService.shared.currentSetting.value?.recentLanguages ?? []
         self.recentLanguages = recentLanguages
-        self.language = recentLanguages.first ?? Locale.current.languageCode ?? "en"
+        self.language = UserDefaults.shared.defaultPostLanguage
         super.init()
         // end init
         
@@ -193,53 +199,41 @@ public final class ComposeContentViewModel: NSObject, ObservableObject {
         let initialContentWithSpace = initialContent.isEmpty ? "" : initialContent + " "
         switch destination {
         case .reply(let record):
-            context.managedObjectContext.performAndWait {
-                guard let status = record.object(in: context.managedObjectContext) else {
-                    assertionFailure()
-                    return
-                }
-                let author = authContext.mastodonAuthenticationBox.authenticationRecord.object(in: context.managedObjectContext)?.user
-
-                var mentionAccts: [String] = []
-                if author?.id != status.author.id {
-                    mentionAccts.append("@" + status.author.acct)
-                }
-                let mentions = status.mentions
-                    .filter { author?.id != $0.id }
-                for mention in mentions {
-                    let acct = "@" + mention.acct
-                    guard !mentionAccts.contains(acct) else { continue }
-                    mentionAccts.append(acct)
-                }
-                for acct in mentionAccts {
-                    UITextChecker.learnWord(acct)
-                }
-                if let spoilerText = status.spoilerText, !spoilerText.isEmpty {
-                    self.isContentWarningActive = true
-                    self.contentWarning = spoilerText
-                }
-
-                let initialComposeContent = mentionAccts.joined(separator: " ")
-                let preInsertedContent = initialComposeContent.isEmpty ? "" : initialComposeContent + " "
-                self.initialContent = preInsertedContent + initialContentWithSpace
-                self.content = preInsertedContent + initialContentWithSpace
+            let status = record.entity
+            let author = authenticationBox.cachedAccount
+            
+            var mentionAccts: [String] = []
+            if author?.id != status.account.id {
+                mentionAccts.append("@" + status.account.acct)
             }
+            let mentions = status.mentions.filter { author?.id != $0.id }
+            for mention in mentions {
+                let acct = "@" + mention.acct
+                guard !mentionAccts.contains(acct) else { continue }
+                mentionAccts.append(acct)
+            }
+            for acct in mentionAccts {
+                UITextChecker.learnWord(acct)
+            }
+            if let spoilerText = status.spoilerText, !spoilerText.isEmpty {
+                self.isContentWarningActive = true
+                self.contentWarning = spoilerText
+            }
+            
+            let initialComposeContent = mentionAccts.joined(separator: " ")
+            let preInsertedContent = initialComposeContent.isEmpty ? "" : initialComposeContent + " "
+            self.initialContent = preInsertedContent + initialContentWithSpace
+            self.content = preInsertedContent + initialContentWithSpace
         case .topLevel:
             self.initialContent = initialContentWithSpace
             self.content = initialContentWithSpace
         }
 
         // set limit
-        let _configuration: Mastodon.Entity.Instance.Configuration? = {
-            var configuration: Mastodon.Entity.Instance.Configuration? = nil
-            context.managedObjectContext.performAndWait {
-                guard let authentication = authContext.mastodonAuthenticationBox.authenticationRecord.object(in: context.managedObjectContext)
-                else { return }
-                configuration = authentication.instance?.configuration
-            }
-            return configuration
-        }()
-        if let configuration = _configuration {
+        let authentication = authenticationBox.authentication
+        let configuration = authentication.instanceConfiguration?.instanceConfigLimitingProperties
+        
+        if let configuration {
             // set character limit
             if let maxCharacters = configuration.statuses?.maxCharacters {
                 maxTextInputLimit = maxCharacters
@@ -259,31 +253,103 @@ public final class ComposeContentViewModel: NSObject, ObservableObject {
             // TODO: more limit
         }
         
+        switch composeContext {
+        case .composeStatus:
+            self.isVisibilityButtonEnabled = true
+        case let .editStatus(status, _):
+            if let visibility = status.entity.visibility {
+                self.visibility = visibility
+            }
+            self.isVisibilityButtonEnabled = false
+            self.attachmentViewModels = status.entity.mastodonAttachments.compactMap {
+                guard let assetURL = $0.assetURL, let url = URL(string: assetURL) else { return nil }
+
+                let attachmentViewModel = AttachmentViewModel(
+                    authenticationBox: authenticationBox,
+                    input: .mastodonAssetUrl(url: url, attachmentId: $0.id),
+                    sizeLimit: sizeLimit,
+                    delegate: self,
+                    isEditing: true,
+                    caption: $0.altDescription
+                )
+                return attachmentViewModel
+            }
+        }
+        
+        if case let ComposeContext.editStatus(status, _) = composeContext {
+            if status.entity.sensitive == true {
+                isContentWarningActive = true
+                contentWarning = status.entity.spoilerText ?? ""
+            }
+            Task { @MainActor in
+                if let poll = await status.getPoll(
+                    in: authenticationBox.domain,
+                    authorization: authenticationBox.userAuthorization
+                ) {
+                    isPollActive = !poll.expired
+                    pollMultipleConfigurationOption = poll.multiple
+                    if let pollExpiresAt = poll.expiresAt {
+                        pollExpireConfigurationOption = .init(closestDateToExpiry: pollExpiresAt)
+                    }
+                    pollOptions = poll.options.map {
+                        let option = PollComposeItem.Option()
+                        option.text = $0.title
+                        return option
+                    }
+                }
+            }
+        }
+        
         bind()
     }
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
 
 }
 
 extension ComposeContentViewModel {
     private func bind() {
         // bind author
-        $authContext
-            .sink { [weak self] authContext in
-                guard let self = self else { return }
-                guard let user = authContext.mastodonAuthenticationBox.authenticationRecord.object(in: self.context.managedObjectContext)?.user else { return }
-                self.avatarURL = user.avatarImageURL()
-                self.name = user.nameMetaContent ?? PlaintextMetaContent(string: user.displayNameWithFallback)
-                self.username = user.acctWithDomain
+        $authenticationBox
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] authenticationBox in
+                guard let self, let account = authenticationBox.cachedAccount else { return }
+
+                self.avatarURL = account.avatarImageURL()
+
+                do {
+                    let content = MastodonContent(content: account.displayNameWithFallback, emojis: account.emojis.asDictionary)
+                    let metaContent = try MastodonMetaContent.convert(document: content)
+                    self.name = metaContent
+                } catch {
+                    self.name = PlaintextMetaContent(string: account.displayNameWithFallback)
+                }
+
+                self.username = account.acctWithDomain
             }
             .store(in: &disposeBag)
         
         // bind text
         $content
-            .map { $0.count }
+            .receive(on: DispatchQueue.main)
+            .map { [weak self] input in
+                guard let self, let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else {
+                    return input.count
+                }
+                let matches = detector.matches(in: input, options: [], range: NSRange(location: 0, length: input.count))
+                let lengthWithoutLinks = input.count - matches.map({ match in
+                    guard let range = Range(match.range, in: input) else {
+                        return 0
+                    }
+                    let url = input[range]
+                    return url.count
+                }).reduce(0, +)
+                let charactersReservedPerURL = authenticationBox
+                    .authentication
+                    .instanceConfiguration?
+                    .charactersReservedPerURL ?? MastodonAuthentication.fallbackCharactersReservedPerURL
+                return lengthWithoutLinks + (matches.count * charactersReservedPerURL)
+            }
+            .receive(on: DispatchQueue.main)
             .assign(to: &$contentWeightedLength)
         
         Publishers.CombineLatest(
@@ -421,23 +487,32 @@ extension ComposeContentViewModel {
         .assign(to: &$isPublishBarButtonItemEnabled)
         
         // bind modal dismiss state
-        $content
-            .receive(on: DispatchQueue.main)
-            .map { content in
-                if content.isEmpty {
-                    return true
-                }
-                // if the trimmed content equal to initial content
-                return content.trimmingCharacters(in: .whitespacesAndNewlines) == self.initialContent
-            }
-            .assign(to: &$shouldDismiss)
+        Publishers.CombineLatest4(
+            $contentWarning,
+            $content,
+            $isPollActive,
+            $attachmentViewModels
+        )
+        .receive(on: DispatchQueue.main)
+        .map { contentWarning, content, hasPoll, attachments in
+            let trimmedContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            let initialContent = self.initialContent.trimmingCharacters(in: .whitespacesAndNewlines)
+            let canDiscardContent = trimmedContent.isEmpty || trimmedContent == initialContent
+
+            let canDiscardPoll = !hasPoll
+
+            let canDiscardAttachments = attachments.isEmpty
+
+            return canDiscardContent && canDiscardPoll && canDiscardAttachments
+        }
+        .assign(to: &$shouldDismiss)
         
         // languages
-        context.settingService.currentSetting
+        SettingService.shared.currentSetting
             .flatMap { settings in
                 if let settings {
                     return settings.publisher(for: \.recentLanguages, options: .initial).eraseToAnyPublisher()
-                } else if let code = Locale.current.languageCode {
+                } else if let code = Locale.current.language.languageCode?.identifier {
                     return Just([code]).eraseToAnyPublisher()
                 }
                 return Just([]).eraseToAnyPublisher()
@@ -450,7 +525,7 @@ extension ComposeContentViewModel {
 extension ComposeContentViewModel {
     public enum Destination {
         case topLevel
-        case reply(parent: ManagedObjectRecord<Status>)
+        case reply(parent: MastodonStatus)
     }
     
     public enum ScrollViewState {
@@ -478,8 +553,6 @@ extension ComposeContentViewModel {
 
 extension ComposeContentViewModel {
     func createNewPollOptionIfCould() {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
-        
         guard pollOptions.count < maxPollOptionLimit else { return }
         let option = PollComposeItem.Option()
         option.shouldBecomeFirstResponder = true
@@ -507,15 +580,8 @@ extension ComposeContentViewModel {
     }
     
     public func statusPublisher() throws -> StatusPublisher {
-        let authContext = self.authContext
-        
-        // author
-        let managedObjectContext = self.context.managedObjectContext
-        var _author: ManagedObjectRecord<MastodonUser>?
-        managedObjectContext.performAndWait {
-            _author = authContext.mastodonAuthenticationBox.authenticationRecord.object(in: managedObjectContext)?.user.asRecord
-        }
-        guard let author = _author else {
+       
+        guard authenticationBox.cachedAccount != nil else {
             throw AppError.badAuthentication
         }
         
@@ -531,16 +597,13 @@ extension ComposeContentViewModel {
         }()
         
         // save language to recent languages
-        if let settings = context.settingService.currentSetting.value {
-            Task.detached(priority: .background) { [language] in
-                try await settings.managedObjectContext?.performChanges {
-                    settings.recentLanguages = [language] + settings.recentLanguages.filter { $0 != language }
-                }
+        if let settings = SettingService.shared.currentSetting.value {
+            settings.managedObjectContext?.performAndWait {
+                settings.recentLanguages = [language] + settings.recentLanguages.filter { $0 != language }
             }
         }
-        
+
         return MastodonStatusPublisher(
-            author: author,
             replyTo: {
                 if case .reply(let status) = destination {
                     return status
@@ -559,7 +622,51 @@ extension ComposeContentViewModel {
             visibility: visibility,
             language: language
         )
-    }   // end func publisher()
+    }
+
+
+    // MastodonEditStatusPublisher
+    public func statusEditPublisher() throws -> StatusPublisher? {
+        guard case let .editStatus(status, _) = composeContext else { return nil }
+
+        // author
+        guard let author = authenticationBox.cachedAccount else {
+            throw AppError.badAuthentication
+        }
+
+        // poll
+        _ = try {
+            guard isPollActive else { return }
+            let isAllNonEmpty = pollOptions
+                .map { $0.text }
+                .allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            guard isAllNonEmpty else {
+                throw ComposeError.pollHasEmptyOption
+            }
+        }()
+
+        // save language to recent languages
+        if let settings = SettingService.shared.currentSetting.value {
+            settings.managedObjectContext?.performAndWait {
+                settings.recentLanguages = [language] + settings.recentLanguages.filter { $0 != language }
+            }
+        }
+
+        return MastodonEditStatusPublisher(statusID: status.id,
+                                           author: author,
+                                           isContentWarningComposing: isContentWarningActive,
+                                           contentWarning: contentWarning,
+                                           content: content,
+                                           isMediaSensitive: isContentWarningActive,
+                                           attachmentViewModels: attachmentViewModels,
+                                           isPollComposing: isPollActive,
+                                           pollOptions: pollOptions,
+                                           pollExpireConfigurationOption: pollExpireConfigurationOption,
+                                           pollMultipleConfigurationOption: pollMultipleConfigurationOption,
+                                           visibility: visibility,
+                                           language: language)
+    }
+
 }
 
 extension ComposeContentViewModel {
@@ -682,15 +789,13 @@ extension ComposeContentViewModel: AttachmentViewModelDelegate {
     
     @MainActor
     func uploadMediaInQueue() async throws {
-        for (i, attachmentViewModel) in attachmentViewModels.enumerated() {
+        for (_, attachmentViewModel) in attachmentViewModels.enumerated() {
             switch attachmentViewModel.uploadState {
             case .none:
                 return
             case .compressing:
                 return
             case .ready:
-                let count = self.attachmentViewModels.count
-                logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): upload \(i)/\(count) attachment")
                 try await attachmentViewModel.upload()
                 return
             case .uploading:

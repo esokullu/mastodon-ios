@@ -5,9 +5,7 @@
 //  Created by ProtoLimit on 2022-07-19.
 //
 
-import os.log
 import UIKit
-import AVKit
 import Combine
 import GameplayKit
 import MastodonAsset
@@ -15,12 +13,7 @@ import MastodonCore
 import MastodonUI
 import MastodonLocalization
 
-final class BookmarkViewController: UIViewController, NeedsDependency, MediaPreviewableViewController {
-    
-    let logger = Logger(subsystem: "BookmarkViewController", category: "ViewController")
-    
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+final class BookmarkViewController: UIViewController, MediaPreviewableViewController {
     
     var disposeBag = Set<AnyCancellable>()
     var viewModel: BookmarkViewModel!
@@ -39,9 +32,6 @@ final class BookmarkViewController: UIViewController, NeedsDependency, MediaPrev
         return tableView
     }()
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
     
 }
 
@@ -50,14 +40,7 @@ extension BookmarkViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        view.backgroundColor = ThemeService.shared.currentTheme.value.secondarySystemBackgroundColor
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.view.backgroundColor = theme.secondarySystemBackgroundColor
-            }
-            .store(in: &disposeBag)
+        view.backgroundColor = .secondarySystemBackground
 
         navigationItem.titleView = titleView
         titleView.update(title: L10n.Scene.Bookmark.title, subtitle: nil)
@@ -71,16 +54,6 @@ extension BookmarkViewController {
             tableView: tableView,
             statusTableViewCellDelegate: self
         )
-
-        // setup batch fetch
-        viewModel.listBatchFetchViewModel.setup(scrollView: tableView)
-        viewModel.listBatchFetchViewModel.shouldFetch
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                self.viewModel.stateMachine.enter(BookmarkViewModel.State.Loading.self)
-            }
-            .store(in: &disposeBag)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -88,13 +61,6 @@ extension BookmarkViewController {
         
         tableView.deselectRow(with: transitionCoordinator, animated: animated)
     }
-    
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        
-//        aspectViewDidDisappear(animated)
-    }
-    
 }
 
 // MARK: - UITableViewDelegate
@@ -132,7 +98,7 @@ extension BookmarkViewController: StatusTableViewCellDelegate { }
 
 // MARK: - AuthContextProvider
 extension BookmarkViewController: AuthContextProvider {
-    var authContext: AuthContext { viewModel.authContext }
+    var authenticationBox: MastodonAuthenticationBox { viewModel.authenticationBox }
 }
 
 extension BookmarkViewController {
@@ -149,5 +115,15 @@ extension BookmarkViewController: StatusTableViewControllerNavigateable {
     
     @objc func statusKeyCommandHandlerRelay(_ sender: UIKeyCommand) {
         statusKeyCommandHandler(sender)
+    }
+}
+
+//MARK: - UIScrollViewDelegate
+
+extension BookmarkViewController: UIScrollViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        Self.scrollViewDidScrollToEnd(scrollView) {
+            viewModel.stateMachine.enter(BookmarkViewModel.State.Loading.self)
+        }
     }
 }

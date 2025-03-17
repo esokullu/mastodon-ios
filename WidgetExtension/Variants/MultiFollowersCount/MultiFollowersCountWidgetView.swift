@@ -25,6 +25,7 @@ struct MultiFollowersCountWidgetView: View {
                 .multilineTextAlignment(.center)
                 .font(.caption)
                 .padding(.all, 20)
+                .emptyWidgetBackground()
         }
     }
     
@@ -32,12 +33,10 @@ struct MultiFollowersCountWidgetView: View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(accounts, id: \.acct) { account in
                 HStack {
-                    if let avatarImage = account.avatarImage {
-                        Image(uiImage: avatarImage)
-                            .resizable()
-                            .frame(width: 32, height: 32)
-                            .cornerRadius(5)
-                    }
+                    Image(uiImage: account.avatarImage)
+                        .resizable()
+                        .frame(width: 32, height: 32)
+                        .cornerRadius(5)
                     VStack(alignment: .leading) {
                         Text(account.followersCount.asAbbreviatedCountString())
                             .font(.title2)
@@ -57,6 +56,7 @@ struct MultiFollowersCountWidgetView: View {
             Spacer()
         }
         .padding(.vertical, 16)
+        .emptyWidgetBackground()
     }
     
     private func viewForMediumWidget(_ accounts: [MultiFollowersEntryAccountable]) -> some View {
@@ -67,12 +67,10 @@ struct MultiFollowersCountWidgetView: View {
             ]) {
                 ForEach(accounts, id: \.acct) { account in
                     HStack {
-                        if let avatarImage = account.avatarImage {
-                            Image(uiImage: avatarImage)
-                                .resizable()
-                                .frame(width: 32, height: 32)
-                                .cornerRadius(5)
-                        }
+                        Image(uiImage: account.avatarImage)
+                            .resizable()
+                            .frame(width: 32, height: 32)
+                            .cornerRadius(5)
                         VStack(alignment: .leading) {
                             Text(account.followersCount.asAbbreviatedCountString())
                                 .font(.title2)
@@ -93,5 +91,6 @@ struct MultiFollowersCountWidgetView: View {
             Spacer()
         }
         .padding(.vertical, 16)
+        .emptyWidgetBackground()
     }
 }

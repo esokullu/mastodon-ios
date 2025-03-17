@@ -5,27 +5,22 @@
 //  Created by MainasuK on 2022-1-21.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreDataStack
 import MastodonCore
+import MastodonSDK
 import MastodonLocalization
 
-final class NotificationTimelineViewController: UIViewController, NeedsDependency, MediaPreviewableViewController {
-    
-    let logger = Logger(subsystem: "NotificationTimelineViewController", category: "ViewController")
-    
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+class NotificationTimelineViewController: UIViewController, MediaPreviewableViewController {
     
     let mediaPreviewTransitionController = MediaPreviewTransitionController()
 
     var disposeBag = Set<AnyCancellable>()
     var observations = Set<NSKeyValueObservation>()
 
-    var viewModel: NotificationTimelineViewModel!
-    
+    let viewModel: NotificationTimelineViewModel
+
     private(set) lazy var refreshControl: RefreshControl = {
         let refreshControl = RefreshControl()
         refreshControl.addTarget(self, action: #selector(NotificationTimelineViewController.refreshControlValueChanged(_:)), for: .valueChanged)
@@ -34,7 +29,7 @@ final class NotificationTimelineViewController: UIViewController, NeedsDependenc
     
     private(set) lazy var tableView: UITableView = {
         let tableView = UITableView()
-        tableView.backgroundColor = .clear
+        tableView.backgroundColor = .secondarySystemBackground
         tableView.rowHeight = UITableView.automaticDimension
         tableView.separatorStyle = .none
         return tableView
@@ -42,10 +37,20 @@ final class NotificationTimelineViewController: UIViewController, NeedsDependenc
     
     let cellFrameCache = NSCache<NSNumber, NSValue>()
 
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
+    init(viewModel: NotificationTimelineViewModel) {
+        self.viewModel = viewModel
+
+        super.init(nibName: nil, bundle: nil)
+
+        title = viewModel.scope.title
+        view.backgroundColor = .secondarySystemBackground
     }
     
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    
+    func didActOnFollowRequest(_ notification: MastodonNotification, approved: Bool) {
+        viewModel.didActOnFollowRequest(notification, approved: approved)
+    }
 }
 
 extension NotificationTimelineViewController {
@@ -62,17 +67,7 @@ extension NotificationTimelineViewController {
             tableView: tableView,
             notificationTableViewCellDelegate: self
         )
-        
-        // setup batch fetch
-        viewModel.listBatchFetchViewModel.setup(scrollView: tableView)
-        viewModel.listBatchFetchViewModel.shouldFetch
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                self.viewModel.loadOldestStateMachine.enter(NotificationTimelineViewModel.LoadOldestState.Loading.self)
-            }
-            .store(in: &disposeBag)
-        
+
         // setup refresh control
         tableView.refreshControl = refreshControl
         viewModel.didLoadLatest
@@ -101,13 +96,10 @@ extension NotificationTimelineViewController {
             let now = Date()
             if let timestamp = viewModel.lastAutomaticFetchTimestamp {
                 if now.timeIntervalSince(timestamp) > 60 {
-                    logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): auto fetch latest timeline…")
                     Task {
                         await viewModel.loadLatest()
                     }
                     viewModel.lastAutomaticFetchTimestamp = now
-                } else {
-                    logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): auto fetch latest timeline skip. Reason: updated in recent 60s")
                 }
             } else {
                 Task {
@@ -133,9 +125,11 @@ extension NotificationTimelineViewController: CellFrameCacheContainer {
 extension NotificationTimelineViewController {
 
     @objc private func refreshControlValueChanged(_ sender: RefreshControl) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
-        
         Task {
+            guard let authBox = AuthenticationServiceProvider.shared.currentActiveUser.value else { return }
+            let policy = try? await APIService.shared.notificationPolicy(authenticationBox: authBox)
+            viewModel.notificationPolicy = policy?.value
+
             await viewModel.loadLatest()
         }
     }
@@ -144,7 +138,7 @@ extension NotificationTimelineViewController {
 
 // MARK: - AuthContextProvider
 extension NotificationTimelineViewController: AuthContextProvider {
-    var authContext: AuthContext { viewModel.authContext }
+    var authenticationBox: MastodonAuthenticationBox { AuthenticationServiceProvider.shared.currentActiveUser.value! }
 }
 
 // MARK: - UITableViewDelegate
@@ -183,13 +177,17 @@ extension NotificationTimelineViewController: UITableViewDelegate, AutoGenerateT
     }
     
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        guard let item = viewModel.diffableDataSource?.itemIdentifier(for: indexPath) else {
+        
+        let sectionCount = viewModel.diffableDataSource?.numberOfSections(in: tableView) ?? 0
+        let rowCount = viewModel.diffableDataSource?.tableView(tableView, numberOfRowsInSection: indexPath.section) ?? 0
+        
+        let isLastItem = indexPath.section == sectionCount - 1 && indexPath.row == rowCount - 1
+        
+        guard isLastItem, let item = viewModel.diffableDataSource?.itemIdentifier(for: indexPath) else {
             return
         }
-        
-        // check item type inside `loadMore`
         Task {
-            await viewModel.loadMore(item: item)
+            await viewModel.loadMore(olderThan: item, newerThan: nil)
         }
     }
 
@@ -233,7 +231,7 @@ extension NotificationTimelineViewController: TableViewControllerNavigateable {
             return
         }
 
-        let _navigateToItem: NotificationItem? = {
+        let _navigateToItem: NotificationListItem? = {
             var index = selectedItemIndex
             while 0..<items.count ~= index {
                 index = {
@@ -260,7 +258,7 @@ extension NotificationTimelineViewController: TableViewControllerNavigateable {
         guard let indexPathsForVisibleRows = tableView.indexPathsForVisibleRows else { return }
         guard let diffableDataSource = viewModel.diffableDataSource else { return }
         
-        var visibleItems: [NotificationItem] = indexPathsForVisibleRows.sorted().compactMap { indexPath in
+        var visibleItems: [NotificationListItem] = indexPathsForVisibleRows.sorted().compactMap { indexPath in
             guard let item = diffableDataSource.itemIdentifier(for: indexPath) else { return nil }
             guard Self.validNavigateableItem(item) else { return nil }
             return item
@@ -274,9 +272,9 @@ extension NotificationTimelineViewController: TableViewControllerNavigateable {
         tableView.selectRow(at: indexPath, animated: true, scrollPosition: scrollPosition)
     }
     
-    static func validNavigateableItem(_ item: NotificationItem) -> Bool {
+    static func validNavigateableItem(_ item: NotificationListItem) -> Bool {
         switch item {
-        case .feed:
+        case .notification:
             return true
         default:
             return false
@@ -290,32 +288,54 @@ extension NotificationTimelineViewController: TableViewControllerNavigateable {
         
         Task { @MainActor in
             switch item {
-            case .feed(let record):
-                guard let feed = record.object(in: self.context.managedObjectContext) else { return }
-                guard let notification = feed.notification else { return }
+            case .notification(let notificationItem):
+                let status: Mastodon.Entity.Status?
+                let account: Mastodon.Entity.Account?
+                switch notificationItem {
+                case .notification:
+                    guard let notification = MastodonFeedItemCacheManager.shared.cachedItem(notificationItem) as? Mastodon.Entity.Notification  else {
+                        status = nil
+                        account = nil
+                        break
+                    }
+                    status = notification.status
+                    account = notification.account
+                    
+                case .notificationGroup:
+                    guard let notificationGroup = MastodonFeedItemCacheManager.shared.cachedItem(notificationItem) as? Mastodon.Entity.NotificationGroup  else {
+                        status = nil
+                        account = nil
+                        break
+                    }
+                    if let statusID = notificationGroup.statusID {
+                        status = MastodonFeedItemCacheManager.shared.cachedItem(.status(id: statusID)) as? Mastodon.Entity.Status
+                    } else {
+                        status = nil
+                    }
+                    if notificationGroup.sampleAccountIDs.count == 1, let theOneAccountID = notificationGroup.sampleAccountIDs.first {
+                        account = MastodonFeedItemCacheManager.shared.fullAccount(theOneAccountID)
+                    } else {
+                        account = nil
+                    }
+                case .status:
+                    assertionFailure("unexpected element in notifications feed")
+                    status = nil
+                    account = nil
+                    break
+                }
                 
-                if let stauts = notification.status {
+                if let status {
                     let threadViewModel = ThreadViewModel(
-                        context: self.context,
-                        authContext: self.viewModel.authContext,
-                        optionalRoot: .root(context: .init(status: .init(objectID: stauts.objectID)))
+                        authenticationBox: self.authenticationBox,
+                        optionalRoot: .root(context: .init(status: .fromEntity(status)))
                     )
-                    _ = self.coordinator.present(
+                    _ = self.sceneCoordinator?.present(
                         scene: .thread(viewModel: threadViewModel),
                         from: self,
                         transition: .show
                     )
-                } else {
-                    let profileViewModel = ProfileViewModel(
-                        context: self.context,
-                        authContext: self.viewModel.authContext,
-                        optionalMastodonUser: notification.account
-                    )
-                    _ = self.coordinator.present(
-                        scene: .profile(viewModel: profileViewModel),
-                        from: self,
-                        transition: .show
-                    )
+                } else if let account {
+                    await DataSourceFacade.coordinateToProfileScene(provider: self, account: account)
                 }
             default:
                 break
@@ -327,4 +347,14 @@ extension NotificationTimelineViewController: TableViewControllerNavigateable {
         navigateKeyCommandHandler(sender)
     }
 
+}
+
+//MARK: - UIScrollViewDelegate
+
+extension NotificationTimelineViewController: UIScrollViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        Self.scrollViewDidScrollToEnd(scrollView) {
+            viewModel.loadOldestStateMachine.enter(NotificationTimelineViewModel.LoadOldestState.Loading.self)
+        }
+    }
 }

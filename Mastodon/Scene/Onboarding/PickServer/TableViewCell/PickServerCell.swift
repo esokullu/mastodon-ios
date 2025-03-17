@@ -5,7 +5,6 @@
 //  Created by BradGao on 2021/2/24.
 //
 
-import os.log
 import UIKit
 import Combine
 import MastodonSDK
@@ -29,7 +28,7 @@ class PickServerCell: UITableViewCell {
     let thumbnailImageView: UIImageView = {
         let thumbnail = UIImageView()
         thumbnail.translatesAutoresizingMaskIntoConstraints = false
-        thumbnail.backgroundColor = Asset.Colors.brand.color
+        thumbnail.backgroundColor = Asset.Colors.Brand.blurple.color
         thumbnail.layer.cornerRadius = 8
         thumbnail.contentMode = .scaleAspectFill
         thumbnail.layer.masksToBounds = true
@@ -126,7 +125,7 @@ extension PickServerCell {
         super.setSelected(selected, animated: animated)
         if selected {
             checkbox.image = UIImage(systemName: "checkmark")
-            checkbox.tintColor = Asset.Colors.brand.color
+            checkbox.tintColor = Asset.Colors.Brand.blurple.color
         } else {
             checkbox.image = nil
         }

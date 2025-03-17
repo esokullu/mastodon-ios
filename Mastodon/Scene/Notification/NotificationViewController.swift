@@ -5,7 +5,6 @@
 //  Created by sxiaojian on 2021/4/12.
 //
 
-import os.log
 import UIKit
 import Combine
 import MastodonAsset
@@ -13,18 +12,14 @@ import MastodonLocalization
 import Tabman
 import Pageboy
 import MastodonCore
+import MastodonSDK
 
-final class NotificationViewController: TabmanViewController, NeedsDependency {
-    
-    let logger = Logger(subsystem: "NotificationViewController", category: "ViewController")
-    
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+final class NotificationViewController: TabmanViewController {
 
     var disposeBag = Set<AnyCancellable>()
     var observations = Set<NSKeyValueObservation>()
 
-    var viewModel: NotificationViewModel!
+    var viewModel: NotificationViewModel?
     
     let pageSegmentedControl = UISegmentedControl()
 
@@ -41,28 +36,18 @@ final class NotificationViewController: TabmanViewController, NeedsDependency {
             animated: animated
         )
         
-        viewModel.currentPageIndex = index
+        viewModel?.currentPageIndex = index
     }
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
 }
 
 extension NotificationViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = ThemeService.shared.currentTheme.value.secondarySystemBackgroundColor
-        ThemeService.shared.currentTheme
-            .receive(on: RunLoop.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.view.backgroundColor = theme.secondarySystemBackgroundColor
-            }
-            .store(in: &disposeBag)
+        view.backgroundColor = .secondarySystemBackground
         
-        setupSegmentedControl(scopes: viewModel.scopes)
+        setupSegmentedControl(scopes: [.everything, .mentions])
         pageSegmentedControl.translatesAutoresizingMaskIntoConstraints = false
         navigationItem.titleView = pageSegmentedControl
         NSLayoutConstraint.activate([
@@ -71,7 +56,7 @@ extension NotificationViewController {
         pageSegmentedControl.addTarget(self, action: #selector(NotificationViewController.pageSegmentedControlValueChanged(_:)), for: .valueChanged)
 
         dataSource = viewModel
-        viewModel.$viewControllers
+        viewModel?.$viewControllers
             .receive(on: DispatchQueue.main)
             .sink { [weak self] viewControllers in
                 guard let self = self else { return }
@@ -81,11 +66,11 @@ extension NotificationViewController {
             }
             .store(in: &disposeBag)
         
-        viewModel.viewControllers = viewModel.scopes.map { scope in
+        viewModel?.viewControllers = [NotificationTimelineViewModel.Scope.everything, .mentions].map { scope in
             createViewController(for: scope)
         }
         
-        viewModel.$currentPageIndex
+        viewModel?.$currentPageIndex
             .receive(on: DispatchQueue.main)
             .sink { [weak self] currentPageIndex in
                 guard let self = self else { return }
@@ -99,14 +84,11 @@ extension NotificationViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-//        aspectViewWillAppear(animated)
-        
-        // fetch latest notification when scroll position is within half screen height to prevent list reload
-//        if tableView.contentOffset.y < view.frame.height * 0.5 {
-//            viewModel.loadLatestStateMachine.enter(NotificationViewModel.LoadLatestState.Loading.self)
-//        }
+        // https://github.com/mastodon/documentation/pull/1447#issuecomment-2149225659
+        if let viewModel, viewModel.notificationPolicy != nil {
+            navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal.decrease.circle"), style: .plain, target: self, action: #selector(NotificationViewController.showNotificationPolicySettings(_:)))
+        }
 
-        
         // needs trigger manually after onboarding dismiss
         setNeedsStatusBarAppearanceUpdate()
     }
@@ -115,20 +97,39 @@ extension NotificationViewController {
         super.viewDidAppear(animated)
 
         // reset notification count
-        context.notificationService.clearNotificationCountForActiveUser()
+        NotificationService.shared.clearNotificationCountForActiveUser()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         
         // reset notification count
-        context.notificationService.clearNotificationCountForActiveUser()
+        NotificationService.shared.clearNotificationCountForActiveUser()
     }
     
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         
 //        aspectViewDidDisappear(animated)
+    }
+
+    //MARK: - Actions
+
+    @objc private func showNotificationPolicySettings(_ sender: Any) {
+        guard let viewModel, let policy = viewModel.notificationPolicy else { return }
+
+        Task {
+            let policyViewModel = await NotificationFilterViewModel(
+                notFollowing: policy.filterNotFollowing,
+                noFollower: policy.filterNotFollowers,
+                newAccount: policy.filterNewAccounts,
+                privateMentions: policy.filterPrivateMentions
+            )
+            
+            guard let policyViewController = self.sceneCoordinator?.present(scene: .notificationPolicy(viewModel: policyViewModel), transition: .formSheet) as? NotificationPolicyViewController else { return }
+            
+            policyViewController.delegate = self
+        }
     }
 }
 
@@ -140,31 +141,30 @@ extension NotificationViewController {
         }
         
         // set initial selection
-        guard !pageSegmentedControl.isSelected else { return }
+        guard let viewModel, !pageSegmentedControl.isSelected else { return }
         if viewModel.currentPageIndex < pageSegmentedControl.numberOfSegments {
             pageSegmentedControl.selectedSegmentIndex = viewModel.currentPageIndex
         } else {
             pageSegmentedControl.selectedSegmentIndex = 0
         }
     }
-    
+
     private func createViewController(for scope: NotificationTimelineViewModel.Scope) -> UIViewController {
-        let viewController = NotificationTimelineViewController()
-        viewController.context = context
-        viewController.coordinator = coordinator
-        viewController.viewModel = NotificationTimelineViewModel(
-            context: context,
-            authContext: viewModel.authContext,
-            scope: scope
+        guard let viewModel else { return UITableViewController() }
+
+        let viewController = NotificationTimelineViewController(
+            viewModel: NotificationTimelineViewModel(
+                authenticationBox: viewModel.authenticationBox,
+                scope: scope, notificationPolicy: viewModel.notificationPolicy
+            )
         )
+
         return viewController
     }
 }
 
 extension NotificationViewController {
     @objc private func pageSegmentedControlValueChanged(_ sender: UISegmentedControl) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
-        
         let index = sender.selectedSegmentIndex
         scrollToPage(.at(index: index), animated: true, completion: nil)
     }
@@ -232,20 +232,28 @@ extension NotificationViewController {
     }
 
     @objc private func showCategory(_ sender: UIKeyCommand) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         guard let rawValue = sender.propertyList as? String,
               let category = CategorySwitch(rawValue: rawValue)
         else { return }
         
         switch category {
-        case .everything:
-            scrollToPage(.first, animated: true, completion: nil)
         case .mentions:
             scrollToPage(.last, animated: true, completion: nil)
+        case .everything:
+            scrollToPage(.first, animated: true, completion: nil)
         }
     }
     
     override var keyCommands: [UIKeyCommand]? {
         return categorySwitchKeyCommands
+    }
+}
+
+
+//MARK: - NotificationPolicyViewControllerDelegate
+
+extension NotificationViewController: NotificationPolicyViewControllerDelegate {
+    func policyUpdated(_ viewController: NotificationPolicyViewController, newPolicy: Mastodon.Entity.NotificationPolicy) {
+        viewModel?.notificationPolicy = newPolicy
     }
 }

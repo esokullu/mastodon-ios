@@ -7,19 +7,22 @@
 
 import UIKit
 import Combine
+import MastodonSDK
 
 extension SearchResultViewModel {
     
     func setupDiffableDataSource(
         tableView: UITableView,
-        statusTableViewCellDelegate: StatusTableViewCellDelegate
+        statusTableViewCellDelegate: StatusTableViewCellDelegate,
+        userTableViewCellDelegate: UserTableViewCellDelegate
     ) {
         diffableDataSource = SearchResultSection.tableViewDiffableDataSource(
             tableView: tableView,
-            context: context,
+            authenticationBox: authenticationBox,
             configuration: .init(
-                authContext: authContext,
-                statusViewTableViewCellDelegate: statusTableViewCellDelegate
+                authenticationBox: authenticationBox,
+                statusViewTableViewCellDelegate: statusTableViewCellDelegate,
+                userTableViewCellDelegate: userTableViewCellDelegate
             )
         )
         
@@ -29,14 +32,20 @@ extension SearchResultViewModel {
         diffableDataSource.apply(snapshot, animatingDifferences: false)
 
         Publishers.CombineLatest3(
-            statusFetchedResultsController.$records,
-            userFetchedResultsController.$records,
+            dataController.$records,
+            $accounts,
             $hashtags
         )
-        .map { statusRecords, userRecords, hashtags in
+        .map { statusRecords, accounts, hashtags in
             var items: [SearchResultItem] = []
-            
-            let userItems = userRecords.map { SearchResultItem.user($0) }
+
+            let accountsWithRelationship: [(account: Mastodon.Entity.Account, relationship: Mastodon.Entity.Relationship?)] = accounts.compactMap { account in
+                guard let relationship = self.relationships.first(where: {$0.id == account.id }) else { return (account: account, relationship: nil)}
+
+                return (account: account, relationship: relationship)
+            }
+
+            let userItems = accountsWithRelationship.map { SearchResultItem.account($0.account, relationship: $0.relationship) }
             items.append(contentsOf: userItems)
             
             let hashtagItems = hashtags.map { SearchResultItem.hashtag(tag: $0) }
@@ -57,22 +66,22 @@ extension SearchResultViewModel {
                 
                 var snapshot = NSDiffableDataSourceSnapshot<SearchResultSection, SearchResultItem>()
                 snapshot.appendSections([.main])
-                snapshot.appendItems(items, toSection: .main)
+                snapshot.appendItems(items.removingDuplicates(), toSection: .main)
                 
                 if let currentState = self.stateMachine.currentState {
                     switch currentState {
                     case is State.Loading,
-                        is State.Fail,
-                        is State.Idle:
+                        is State.Fail:
                         let attribute = SearchResultItem.BottomLoaderAttribute(isEmptyResult: false)
                         snapshot.appendItems([.bottomLoader(attribute: attribute)], toSection: .main)
-                    case is State.Fail:
-                        break
                     case is State.NoMore:
                         if snapshot.itemIdentifiers.isEmpty {
                             let attribute = SearchResultItem.BottomLoaderAttribute(isEmptyResult: true)
                             snapshot.appendItems([.bottomLoader(attribute: attribute)], toSection: .main)
                         }
+                    case is State.Idle:
+                        // do nothing
+                        break
                     default:
                         break
                     }

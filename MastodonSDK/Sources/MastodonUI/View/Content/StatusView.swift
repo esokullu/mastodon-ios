@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022-1-10.
 //
 
-import os.log
 import UIKit
 import Combine
 import MetaTextKit
@@ -13,6 +12,7 @@ import Meta
 import MastodonAsset
 import MastodonCore
 import MastodonLocalization
+import MastodonSDK
 
 public extension CGSize {
     static let authorAvatarButtonSize = CGSize(width: 46, height: 46)
@@ -29,12 +29,14 @@ public protocol StatusViewDelegate: AnyObject {
     func statusView(_ statusView: StatusView, pollVoteButtonPressed button: UIButton)
     func statusView(_ statusView: StatusView, actionToolbarContainer: ActionToolbarContainer, buttonDidPressed button: UIButton, action: ActionToolbarContainer.Action)
     func statusView(_ statusView: StatusView, menuButton button: UIButton, didSelectAction action: MastodonMenu.Action)
-    func statusView(_ statusView: StatusView, spoilerOverlayViewDidPressed overlayView: SpoilerOverlayView)
+    func statusView(_ statusView: StatusView, contentConcealExplainViewDidPressed contentConcealView: ContentConcealExplainView)
     func statusView(_ statusView: StatusView, mediaGridContainerView: MediaGridContainerView, mediaSensitiveButtonDidPressed button: UIButton)
     func statusView(_ statusView: StatusView, statusMetricView: StatusMetricView, reblogButtonDidPressed button: UIButton)
     func statusView(_ statusView: StatusView, statusMetricView: StatusMetricView, favoriteButtonDidPressed button: UIButton)
+    func statusView(_ statusView: StatusView, statusMetricView: StatusMetricView, showEditHistory button: UIButton)
     func statusView(_ statusView: StatusView, cardControl: StatusCardControl, didTapURL url: URL)
-    func statusView(_ statusView: StatusView, cardControlMenu: StatusCardControl) -> UIMenu?
+    func statusView(_ statusView: StatusView, cardControl: StatusCardControl, didTapProfile account: Mastodon.Entity.Account)
+    func statusView(_ statusView: StatusView, cardControlMenu: StatusCardControl) -> [LabeledAction]?
     
     // a11y
     func statusView(_ statusView: StatusView, accessibilityActivate: Void)
@@ -42,9 +44,227 @@ public protocol StatusViewDelegate: AnyObject {
 
 public final class StatusView: UIView {
     
-    public static let containerLayoutMargin: CGFloat = 16
+    public struct ContentConcealViewModel {
+        // Treat this as a layered reveal, with the actual content at the bottom, a layer of contentWarned protection on top of it, and a layer of filtered on top of that.
+        // For a post that carries both, revealing content removes the filtered layer first, then the contentWarned layer. Concealing content replaces both layers at once.
+        private let filtered: ContentDisplayMode
+        private let contentWarned: ContentDisplayMode
+        
+        private init(filtered: ContentDisplayMode, contentWarned: ContentDisplayMode) {
+            self.filtered = filtered
+            self.contentWarned = contentWarned
+        }
+        
+        public init(status: MastodonStatus?, filterBox: Mastodon.Entity.FilterBox?, filterContext: Mastodon.Entity.FilterContext?) {
+             
+            let status = (status?.reblog ?? status)
+            
+            if let status, let filterContext, let filterBox {
+                let filterPrefix = "\(L10n.Common.Controls.Timeline.filtered) \""
+                let filterResult = filterBox.apply(to: status, in: filterContext)
+                switch filterResult {
+                case .notFiltered:
+                    filtered = .neverConceal
+                case .hide(let reason):
+                    filtered = .concealAll(reason: filterPrefix + reason + "\"", showAnyway: status.showDespiteFilter)
+                case .warn(let reason):
+                    filtered = .concealAll(reason: filterPrefix + reason + "\"", showAnyway: status.showDespiteFilter)
+                }
+            } else {
+                filtered = .neverConceal
+            }
+            
+            if let status {
+                let contentWarning = ContentWarning(status: status)
+                switch contentWarning {
+                case .warnNothing:
+                    contentWarned = .neverConceal
+                case .warnMediaOnly:
+                    contentWarned = .concealMediaOnly(showAnyway: status.showDespiteContentWarning)
+                case .warnWholePost(let message):
+                    contentWarned = .concealAll(reason: message, showAnyway: status.showDespiteContentWarning)
+                }
+            } else {
+                contentWarned = .neverConceal
+            }
+        }
+        
+        public init(status: Mastodon.Entity.Status?, filterBox: Mastodon.Entity.FilterBox?, filterContext: Mastodon.Entity.FilterContext?, showDespiteFilter: Bool, showDespiteContentWarning: Bool) {
+             
+            let status = (status?.reblog ?? status)
+            
+            if let status, let filterContext, let filterBox {
+                let filterPrefix = "\(L10n.Common.Controls.Timeline.filtered) \""
+                let filterResult = filterBox.apply(to: status, in: filterContext)
+                switch filterResult {
+                case .notFiltered:
+                    filtered = .neverConceal
+                case .hide(let reason):
+                    filtered = .concealAll(reason: filterPrefix + reason + "\"", showAnyway: showDespiteFilter)
+                case .warn(let reason):
+                    filtered = .concealAll(reason: filterPrefix + reason + "\"", showAnyway: showDespiteFilter)
+                }
+            } else {
+                filtered = .neverConceal
+            }
+            
+            if let status {
+                let contentWarning = ContentWarning(status: status)
+                switch contentWarning {
+                case .warnNothing:
+                    contentWarned = .neverConceal
+                case .warnMediaOnly:
+                    contentWarned = .concealMediaOnly(showAnyway: showDespiteContentWarning)
+                case .warnWholePost(let message):
+                    contentWarned = .concealAll(reason: message, showAnyway: showDespiteContentWarning)
+                }
+            } else {
+                contentWarned = .neverConceal
+            }
+        }
+        
+        func contentDisplayMode(_ status: Mastodon.Entity.Status, showDespiteFilter: Bool, showDespiteContentWarning: Bool) -> StatusView.ContentDisplayMode {
+            let contentDisplayModel = StatusView.ContentConcealViewModel(status: status, filterBox: StatusFilterService.shared.activeFilterBox, filterContext: .notifications, showDespiteFilter: showDespiteFilter, showDespiteContentWarning: showDespiteContentWarning)
+            return contentDisplayModel.effectiveDisplayMode
+        }
+        
+        public var effectiveDisplayMode: ContentDisplayMode {
+            switch (filtered.shouldConcealSomething, contentWarned.shouldConcealSomething) {
+            case (true, _):
+                return filtered
+            case (false, true):
+                return contentWarned
+            case (false, false):
+                switch (filtered.canToggleConcealed, contentWarned.canToggleConcealed) {
+                case (false, _):
+                    return contentWarned
+                case (true, true):
+                    return contentWarned
+                case (_, false):
+                    return filtered
+                }
+            }
+        }
+        
+        public func byShowingAll() -> ContentConcealViewModel {
+            guard effectiveDisplayMode.shouldConcealSomething else { return self }
+            let newFiltered = filtered.shouldConcealSomething ? filtered.byTogglingReveal() : filtered
+            let newContentWarned = contentWarned.shouldConcealSomething ? contentWarned.byTogglingReveal() : contentWarned
+            let newModel = ContentConcealViewModel(filtered: newFiltered, contentWarned: newContentWarned)
+            return newModel
+        }
+        
+        // TODO: effect would be clearer if we require getting a new ContentConcealViewModel with the desired changes and then applying it to a status
+        public func toggleConcealed(for status: MastodonStatus) {
+            if effectiveDisplayMode.shouldConcealSomething {
+                // stepwise reveal
+                if filtered.shouldConcealSomething {
+                    status.showDespiteFilter = true
+                } else {
+                    status.showDespiteContentWarning = true
+                }
+            } else {
+                // back all the way out
+                if !filtered.shouldConcealSomething {
+                    switch filtered {
+                    case .neverConceal:
+                        break
+                    case .concealAll:
+                        if status.showDespiteFilter {
+                            status.showDespiteFilter = false
+                        }
+                    case .concealMediaOnly:
+                        assert(false, "filters always affect the whole post")
+                        if status.showDespiteFilter {
+                            status.showDespiteFilter = false
+                        }
+                    case .alwaysConceal:
+                        assert(false)
+                        break
+                    case .UNDETERMINED:
+                        break
+                    }
+                }
+                if !contentWarned.shouldConcealSomething {
+                    switch contentWarned {
+                    case .neverConceal:
+                        break
+                    case .concealAll, .concealMediaOnly:
+                        if status.showDespiteContentWarning {
+                            status.showDespiteContentWarning = false
+                        }
+                    case .alwaysConceal:
+                        assert(false)
+                        break
+                    case .UNDETERMINED:
+                        break
+                    }
+                }
+            }
+        }
+    }
     
-    let logger = Logger(subsystem: "StatusView", category: "View")
+    public enum ContentDisplayMode {
+        case neverConceal
+        case concealAll(reason: String, showAnyway: Bool)
+        case concealMediaOnly(showAnyway: Bool)
+        case alwaysConceal
+        case UNDETERMINED
+        
+        public var shouldConcealSomething: Bool {
+            switch self {
+            case .neverConceal: return false
+            case .concealAll(_, let showAnyway): return !showAnyway
+            case .concealMediaOnly(let showAnyway): return !showAnyway
+            case .alwaysConceal: return true
+            case .UNDETERMINED: return false
+            }
+        }
+        
+        public var canToggleConcealed: Bool {
+            switch self {
+            case .neverConceal: return false
+            case .concealAll, .concealMediaOnly: return true
+            case .alwaysConceal: return false
+            case .UNDETERMINED: return false
+            }
+        }
+        
+        public var shouldConcealText: Bool {
+            switch self {
+            case .neverConceal: return false
+            case .concealAll(_, let showAnyway): return !showAnyway
+            case .concealMediaOnly: return false
+            case .alwaysConceal: return true
+            case .UNDETERMINED: return false
+            }
+        }
+        
+        public var shouldConcealMedia: Bool {
+            return shouldConcealSomething
+        }
+        
+        func byTogglingReveal() -> ContentDisplayMode {
+            switch self {
+            case .neverConceal:
+                return self
+            case .concealAll(let reason, let showAnyway):
+                return .concealAll(reason: reason, showAnyway: !showAnyway)
+            case .concealMediaOnly(let showAnyway):
+                return .concealMediaOnly(showAnyway: !showAnyway)
+            case .alwaysConceal:
+                return self
+            case .UNDETERMINED:
+                return self
+            }
+        }
+    }
+    
+    public var contentDisplayMode: ContentDisplayMode {
+        return viewModel.contentDisplayMode
+    }
+    
+    public static let containerLayoutMargin: CGFloat = 16
     
     private var _disposeBag = Set<AnyCancellable>() // which lifetime same to view scope
     public var disposeBag = Set<AnyCancellable>()
@@ -52,6 +272,10 @@ public final class StatusView: UIView {
     public weak var delegate: StatusViewDelegate?
     
     public private(set) var style: Style?
+    
+    public var domain: String? {
+        viewModel.authenticationBox?.domain
+    }
 
     // accessibility actions
     var toolbarActions = [UIAccessibilityCustomAction]()
@@ -87,6 +311,46 @@ public final class StatusView: UIView {
     // author
     let authorAdaptiveMarginContainerView = AdaptiveMarginContainerView()
     public let authorView = StatusAuthorView()
+    
+    // edit history content warning
+    lazy var historyContentWarningAdaptiveMarginContainerView: AdaptiveMarginContainerView = {
+        let view = AdaptiveMarginContainerView()
+        view.contentView = historyContentWarningContainerView
+        view.margin = StatusView.containerLayoutMargin
+        return view
+    }()
+    
+    let historyContentWarningLabel: MetaLabel = {
+       let label = MetaLabel(style: .statusSpoilerBanner)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    lazy var historyContentWarningContainerView: UIView = {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        
+        let divider = UIView()
+        divider.backgroundColor = Asset.Colors.Label.secondary.color
+        divider.translatesAutoresizingMaskIntoConstraints = false
+        
+        container.addSubview(historyContentWarningLabel)
+        container.addSubview(divider)
+        
+        NSLayoutConstraint.activate([
+            historyContentWarningLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            historyContentWarningLabel.topAnchor.constraint(equalTo: container.topAnchor),
+            historyContentWarningLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+
+            divider.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            divider.topAnchor.constraint(equalTo: historyContentWarningLabel.bottomAnchor, constant: 16),
+            divider.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            divider.heightAnchor.constraint(equalToConstant: 2),
+            divider.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+        
+        return container
+    }()
 
     // content
     let contentAdaptiveMarginContainerView = AdaptiveMarginContainerView()
@@ -115,7 +379,7 @@ public final class StatusView: UIView {
         ]
         metaText.linkAttributes = [
             .font: UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 17, weight: .regular)),
-            .foregroundColor: Asset.Colors.brand.color,
+            .foregroundColor: Asset.Colors.Brand.blurple.color,
         ]
         return metaText
     }()
@@ -123,7 +387,7 @@ public final class StatusView: UIView {
     public let statusCardControl = StatusCardControl()
     
     // content warning
-    public let spoilerOverlayView = SpoilerOverlayView()
+    public let contentConcealExplainView = ContentConcealExplainView()
 
     // media
     public let mediaContainerView = UIView()
@@ -169,11 +433,11 @@ public final class StatusView: UIView {
         return label
     }()
     let pollVoteButton: UIButton = {
-        let button = HitTestExpandedButton()
+        let button = MinimumHitTargetButton()
         button.titleLabel?.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 14, weight: .semibold))
         button.setTitle(L10n.Common.Controls.Status.Poll.vote, for: .normal)
-        button.setTitleColor(Asset.Colors.brand.color, for: .normal)
-        button.setTitleColor(Asset.Colors.brand.color.withAlphaComponent(0.8), for: .highlighted)
+        button.setTitleColor(Asset.Colors.Brand.blurple.color, for: .normal)
+        button.setTitleColor(Asset.Colors.Brand.blurple.color.withAlphaComponent(0.8), for: .highlighted)
         button.setTitleColor(Asset.Colors.Button.disabled.color, for: .disabled)
         button.isEnabled = false
         return button
@@ -212,7 +476,7 @@ public final class StatusView: UIView {
         let revertButton = UIButton()
         revertButton.titleLabel?.font = UIFontMetrics(forTextStyle: .footnote).scaledFont(for: .systemFont(ofSize: 13, weight: .bold))
         revertButton.setTitle(L10n.Common.Controls.Status.Translation.showOriginal, for: .normal)
-        revertButton.setTitleColor(Asset.Colors.brand.color, for: .normal)
+        revertButton.setTitleColor(Asset.Colors.Brand.blurple.color, for: .normal)
         revertButton.addAction(UIAction { [weak self] _ in
             self?.revertTranslation()
         }, for: .touchUpInside)
@@ -255,17 +519,9 @@ public final class StatusView: UIView {
     public let actionToolbarContainer = ActionToolbarContainer()
 
     // metric
-    let statusMetricViewAdaptiveMarginContainerView = AdaptiveMarginContainerView()
     public let statusMetricView = StatusMetricView()
     
-    // filter hint
-    public let filterHintLabel: UILabel = {
-        let label = UILabel()
-        label.textColor = Asset.Colors.Label.secondary.color
-        label.text = L10n.Common.Controls.Timeline.filtered
-        label.font = .systemFont(ofSize: 17, weight: .regular)
-        return label
-    }()
+    private var contentConcealExplainViewHeightConstraint: NSLayoutConstraint?
     
     public func prepareForReuse() {
         disposeBag.removeAll()
@@ -279,13 +535,17 @@ public final class StatusView: UIView {
             pollTableViewDiffableDataSource?.applySnapshotUsingReloadData(snapshot)
         }
         
+        mediaGridContainerView.hideContentWarning(true)
         setHeaderDisplay(isDisplay: false)
         setContentSensitiveeToggleButtonDisplay(isDisplay: false)
-        setSpoilerOverlayViewHidden(isHidden: true)
         setMediaDisplay(isDisplay: false)
         setPollDisplay(isDisplay: false)
-        setFilterHintLabelDisplay(isDisplay: false)
         setStatusCardControlDisplay(isDisplay: false)
+        
+        headerInfoLabel.text = nil
+        headerIconImageView.image = nil
+        headerInfoLabel.setup(style: .statusHeader)
+        headerIconImageView.tintColor = Asset.Colors.Label.secondary.color
     }
 
     public override init(frame: CGRect) {
@@ -319,16 +579,15 @@ extension StatusView {
         authorView.statusView = self
 
         // content warning
-        let spoilerOverlayViewTapGestureRecognizer = UITapGestureRecognizer.singleTapGestureRecognizer
-        spoilerOverlayView.addGestureRecognizer(spoilerOverlayViewTapGestureRecognizer)
-        spoilerOverlayViewTapGestureRecognizer.addTarget(self, action: #selector(StatusView.spoilerOverlayViewTapGestureRecognizerHandler(_:)))
+        let contentConcealExplainViewTapGestureRecognizer = UITapGestureRecognizer.singleTapGestureRecognizer
+        contentConcealExplainView.addGestureRecognizer(contentConcealExplainViewTapGestureRecognizer)
+        contentConcealExplainViewTapGestureRecognizer.addTarget(self, action: #selector(StatusView.contentConcealExplainViewTapGestureRecognizerHandler(_:)))
         
         // content
         contentMetaText.textView.delegate = self
         contentMetaText.textView.linkDelegate = self
 
         // card
-        statusCardControl.addTarget(self, action: #selector(statusCardControlPressed), for: .touchUpInside)
         statusCardControl.delegate = self
 
         // media
@@ -354,27 +613,17 @@ extension StatusView {
 extension StatusView {
     
     @objc private func headerDidPressed(_ sender: UITapGestureRecognizer) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
         assert(sender.view === headerContainerView)
         delegate?.statusView(self, headerDidPressed: headerContainerView)
     }
     
     @objc private func pollVoteButtonDidPressed(_ sender: UIButton) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
         delegate?.statusView(self, pollVoteButtonPressed: pollVoteButton)
     }
     
-    @objc private func spoilerOverlayViewTapGestureRecognizerHandler(_ sender: UITapGestureRecognizer) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
-        delegate?.statusView(self, spoilerOverlayViewDidPressed: spoilerOverlayView)
+    @objc private func contentConcealExplainViewTapGestureRecognizerHandler(_ sender: UITapGestureRecognizer) {
+        delegate?.statusView(self, contentConcealExplainViewDidPressed: contentConcealExplainView)
     }
-
-    @objc private func statusCardControlPressed(_ sender: StatusCardControl) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
-        guard let url = viewModel.card?.url else { return }
-        delegate?.statusView(self, didTapCardWithURL: url)
-    }
-    
 }
 
 extension StatusView {
@@ -397,6 +646,7 @@ extension StatusView {
         case notificationQuote
         case composeStatusReplica
         case composeStatusAuthor
+        case editHistory
     }
 }
 
@@ -411,6 +661,7 @@ extension StatusView.Style {
         case .notificationQuote:    notificationQuote(statusView: statusView)
         case .composeStatusReplica: composeStatusReplica(statusView: statusView)
         case .composeStatusAuthor:  composeStatusAuthor(statusView: statusView)
+        case .editHistory:          editHistory(statusView: statusView)
         }
 
         statusView.authorView.layout(style: self)
@@ -448,6 +699,9 @@ extension StatusView.Style {
         statusView.authorAdaptiveMarginContainerView.contentView = statusView.authorView
         statusView.authorAdaptiveMarginContainerView.margin = StatusView.containerLayoutMargin
         statusView.containerStackView.addArrangedSubview(statusView.authorAdaptiveMarginContainerView)
+        
+        // history content warning
+        statusView.containerStackView.addArrangedSubview(statusView.historyContentWarningAdaptiveMarginContainerView)
 
         // content container: V - [ contentMetaText statusCardControl ]
         statusView.contentContainer.axis = .vertical
@@ -463,15 +717,15 @@ extension StatusView.Style {
 
         // status content
         statusView.contentContainer.addArrangedSubview(statusView.contentMetaText.textView)
-        statusView.contentContainer.addArrangedSubview(statusView.statusCardControl)
 
         // translated info
         statusView.containerStackView.addArrangedSubview(statusView.isTranslatingLoadingView)
         statusView.containerStackView.addArrangedSubview(statusView.translatedInfoView)
 
-        statusView.spoilerOverlayView.translatesAutoresizingMaskIntoConstraints = false
-        statusView.containerStackView.addSubview(statusView.spoilerOverlayView)
-        statusView.contentContainer.pinTo(to: statusView.spoilerOverlayView)
+        // link preview card
+        statusView.contentContainer.addArrangedSubview(statusView.statusCardControl)
+
+        statusView.containerStackView.addArrangedSubview(statusView.contentConcealExplainView)
 
         // media container: V - [ mediaGridContainerView ]
         statusView.mediaContainerView.translatesAutoresizingMaskIntoConstraints = false
@@ -511,16 +765,7 @@ extension StatusView.Style {
         // action toolbar
         statusView.actionToolbarAdaptiveMarginContainerView.contentView = statusView.actionToolbarContainer
         statusView.actionToolbarAdaptiveMarginContainerView.margin = StatusView.containerLayoutMargin
-        statusView.actionToolbarContainer.configure(for: .inline)
         statusView.containerStackView.addArrangedSubview(statusView.actionToolbarAdaptiveMarginContainerView)
-        
-        // filterHintLabel
-        statusView.filterHintLabel.translatesAutoresizingMaskIntoConstraints = false
-        statusView.addSubview(statusView.filterHintLabel)
-        NSLayoutConstraint.activate([
-            statusView.filterHintLabel.centerXAnchor.constraint(equalTo: statusView.containerStackView.centerXAnchor),
-            statusView.filterHintLabel.centerYAnchor.constraint(equalTo: statusView.containerStackView.centerYAnchor),
-        ])
     }
     
     func inline(statusView: StatusView) {
@@ -532,16 +777,8 @@ extension StatusView.Style {
         base(statusView: statusView)      // override the base style
         
         // statusMetricView
-        statusView.statusMetricViewAdaptiveMarginContainerView.contentView = statusView.statusMetricView
-        statusView.statusMetricViewAdaptiveMarginContainerView.margin = StatusView.containerLayoutMargin
-        statusView.containerStackView.addArrangedSubview(statusView.statusMetricViewAdaptiveMarginContainerView)
-
-        UIContentSizeCategory.publisher
-            .sink { category in
-                statusView.statusMetricView.containerStackView.axis = category > .accessibilityLarge ? .vertical : .horizontal
-                statusView.statusMetricView.containerStackView.alignment = category > .accessibilityLarge ? .leading : .fill
-            }
-            .store(in: &statusView._disposeBag)
+        statusView.statusMetricView.margin = StatusView.containerLayoutMargin
+        statusView.containerStackView.addArrangedSubview(statusView.statusMetricView)
     }
     
     func report(statusView: StatusView) {
@@ -577,12 +814,14 @@ extension StatusView.Style {
         base(statusView: statusView)
         
         statusView.contentAdaptiveMarginContainerView.removeFromSuperview()
-        statusView.spoilerOverlayView.removeFromSuperview()
         statusView.mediaContainerView.removeFromSuperview()
         statusView.pollAdaptiveMarginContainerView.removeFromSuperview()
         statusView.actionToolbarAdaptiveMarginContainerView.removeFromSuperview()
     }
     
+    func editHistory(statusView: StatusView) {
+        base(statusView: statusView)
+    }
 }
 
 extension StatusView {
@@ -594,11 +833,6 @@ extension StatusView {
         authorView.contentSensitiveeToggleButton.isHidden = !isDisplay
     }
     
-    func setSpoilerOverlayViewHidden(isHidden: Bool) {
-        spoilerOverlayView.isHidden = isHidden
-        spoilerOverlayView.setComponentHidden(isHidden)
-    }
-    
     func setMediaDisplay(isDisplay: Bool = true) {
         mediaContainerView.isHidden = !isDisplay
     }
@@ -606,13 +840,25 @@ extension StatusView {
     func setPollDisplay(isDisplay: Bool = true) {
         pollAdaptiveMarginContainerView.isHidden = !isDisplay
     }
-    
-    func setFilterHintLabelDisplay(isDisplay: Bool = true) {
-        filterHintLabel.isHidden = !isDisplay
-    }
 
     func setStatusCardControlDisplay(isDisplay: Bool = true) {
-        statusCardControl.isHidden = !isDisplay
+        if viewModel.mediaViewConfigurations.isEmpty && viewModel.card != nil {
+            statusCardControl.isHidden = !isDisplay
+        } else {
+            statusCardControl.isHidden = true
+        }
+    }
+    
+    func setContentConcealExplainView(isHidden: Bool) {
+        contentConcealExplainView.isHidden = isHidden
+        if contentConcealExplainViewHeightConstraint == nil {
+            contentConcealExplainViewHeightConstraint = contentConcealExplainView.heightAnchor.constraint(equalToConstant: 100).priority(.defaultHigh)
+        }
+        if isHidden {
+            contentConcealExplainViewHeightConstraint?.deactivate()
+        } else {
+            contentConcealExplainViewHeightConstraint?.activate()
+        }
     }
     
     // container width
@@ -634,7 +880,7 @@ extension StatusView {
     }
 
     private var hideTranslationAction: UIAccessibilityCustomAction? {
-        guard viewModel.translatedFromLanguage != nil else { return nil }
+        guard viewModel.translation?.sourceLanguage != nil else { return nil }
         return UIAccessibilityCustomAction(name: L10n.Common.Controls.Status.Translation.showOriginal) { [weak self] _ in
             self?.revertTranslation()
             return true
@@ -651,7 +897,7 @@ extension StatusView: AdaptiveContainerView {
         contentAdaptiveMarginContainerView.margin = margin
         pollAdaptiveMarginContainerView.margin = margin
         actionToolbarAdaptiveMarginContainerView.margin = margin
-        statusMetricViewAdaptiveMarginContainerView.margin = margin
+        statusMetricView.margin = margin
     }
 }
 
@@ -682,7 +928,6 @@ extension StatusView: UITextViewDelegate {
 // MARK: - MetaTextViewDelegate
 extension StatusView: MetaTextViewDelegate {
     public func metaTextView(_ metaTextView: MetaTextView, didSelectMeta meta: Meta) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): meta: \(String(describing: meta))")
         switch metaTextView {
         case contentMetaText.textView:
             delegate?.statusView(self, metaText: contentMetaText, didSelectMeta: meta)
@@ -707,7 +952,6 @@ extension StatusView: MediaGridContainerViewDelegate {
 // MARK: - UITableViewDelegate
 extension StatusView: UITableViewDelegate {
     public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): select \(indexPath.debugDescription)")
         
         switch tableView {
         case pollTableView:
@@ -742,23 +986,30 @@ extension StatusView: StatusMetricViewDelegate {
     func statusMetricView(_ statusMetricView: StatusMetricView, favoriteButtonDidPressed button: UIButton) {
         delegate?.statusView(self, statusMetricView: statusMetricView, favoriteButtonDidPressed: button)
     }
+
+    func statusMetricView(_ statusMetricView: StatusMetricView, didPressEditHistoryButton button: UIButton) {
+        delegate?.statusView(self, statusMetricView: statusMetricView, showEditHistory: button)
+    }
 }
 
 // MARK: - MastodonMenuDelegate
 extension StatusView: MastodonMenuDelegate {
     public func menuAction(_ action: MastodonMenu.Action) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
         delegate?.statusView(self, menuButton: authorView.menuButton, didSelectAction: action)
     }
 }
 
 // MARK: StatusCardControlDelegate
 extension StatusView: StatusCardControlDelegate {
+    public func statusCardControl(_ statusCardControl: StatusCardControl, didTapAuthor author: Mastodon.Entity.Account) {
+        delegate?.statusView(self, cardControl: statusCardControl, didTapProfile: author)
+    }
+    
     public func statusCardControl(_ statusCardControl: StatusCardControl, didTapURL url: URL) {
         delegate?.statusView(self, cardControl: statusCardControl, didTapURL: url)
     }
 
-    public func statusCardControlMenu(_ statusCardControl: StatusCardControl) -> UIMenu? {
+    public func statusCardControlMenu(_ statusCardControl: StatusCardControl) -> [LabeledAction]? {
         delegate?.statusView(self, cardControlMenu: statusCardControl)
     }
 }

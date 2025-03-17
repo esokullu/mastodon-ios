@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-4-12.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreData
@@ -17,22 +16,24 @@ import MastodonAsset
 import MastodonCore
 import MastodonLocalization
 
+@MainActor
 class ThreadViewModel {
-    
-    let logger = Logger(subsystem: "ThreadViewModel", category: "ViewModel")
     
     var disposeBag = Set<AnyCancellable>()
     var rootItemObserver: AnyCancellable?
     
     // input
-    let context: AppContext
-    let authContext: AuthContext
+    let authenticationBox: MastodonAuthenticationBox
     let mastodonStatusThreadViewModel: MastodonStatusThreadViewModel
     
     // output
-    var diffableDataSource: UITableViewDiffableDataSource<StatusSection, StatusItem>?
-    @Published var root: StatusItem.Thread?
+    var diffableDataSource: UITableViewDiffableDataSource<StatusSection, MastodonItemIdentifier>?
+    @Published var root: MastodonItemIdentifier.Thread?
     @Published var threadContext: ThreadContext?
+    @Published var hasPendingStatusEditReload = false
+    
+    let onDismiss = PassthroughSubject<MastodonStatus, Never>()
+    let onEdit = PassthroughSubject<MastodonStatus, Never>()
     
     private(set) lazy var loadThreadStateMachine: GKStateMachine = {
         let stateMachine = GKStateMachine(states: [
@@ -48,80 +49,67 @@ class ThreadViewModel {
     @Published var navigationBarTitle: MastodonMetaContent?
     
     init(
-        context: AppContext,
-        authContext: AuthContext,
-        optionalRoot: StatusItem.Thread?
+        authenticationBox: MastodonAuthenticationBox,
+        optionalRoot: MastodonItemIdentifier.Thread?
     ) {
-        self.context = context
-        self.authContext = authContext
+        self.authenticationBox = authenticationBox
         self.root = optionalRoot
-        self.mastodonStatusThreadViewModel = MastodonStatusThreadViewModel(context: context)
+        self.mastodonStatusThreadViewModel = MastodonStatusThreadViewModel(filterContext: .thread)
         // end init
-        
-        ManagedObjectObserver.observe(context: context.managedObjectContext)
-            .sink(receiveCompletion: { completion in
-                // do nohting
-            }, receiveValue: { [weak self] changes in
-                guard let self = self else { return }
-                
-                let objectIDs: [NSManagedObjectID] = changes.changeTypes.compactMap { changeType in
-                    guard case let .delete(object) = changeType else { return nil }
-                    return object.objectID
-                }
-                
-                self.delete(objectIDs: objectIDs)
-            })
-            .store(in: &disposeBag)
-        
+
         $root
             .receive(on: DispatchQueue.main)
             .sink { [weak self] root in
                 guard let self = self else { return }
                 guard case let .root(threadContext) = root else { return }
-                guard let status = threadContext.status.object(in: self.context.managedObjectContext) else { return }
+                let status = threadContext.status
                 
                 // bind threadContext
                 self.threadContext = .init(
-                    domain: status.domain,
                     statusID: status.id,
-                    replyToID: status.inReplyToID
+                    replyToID: status.entity.inReplyToID
                 )
                 
                 // bind titleView
                 self.navigationBarTitle = {
-                    let title = L10n.Scene.Thread.title(status.author.displayNameWithFallback)
-                    let content = MastodonContent(content: title, emojis: status.author.emojis.asDictionary)
+                    let title = L10n.Scene.Thread.title(status.entity.account.displayNameWithFallback)
+                    let content = MastodonContent(content: title, emojis: status.entity.account.emojis.asDictionary)
                     return try? MastodonMetaContent.convert(document: content)
                 }()
             }
             .store(in: &disposeBag)
+        
+        PublisherService.shared
+            .statusPublishResult
+            .sink { [weak self] value in
+                guard let self else { return }
+                if case let Result.success(result) = value {
+                    switch result {
+                    case let .edit(content):
+                        let status = content.value
+                        let mastodonStatus = MastodonStatus.fromEntity(status)
+                        self.hasPendingStatusEditReload = true
+                        if status.id == root?.record.id {
+                            self.root = .root(context: .init(status: mastodonStatus))
+                        }
+                        self.loadThreadStateMachine.enter(LoadThreadState.Loading.self)
+                        self.onEdit.send(mastodonStatus)
+                    case .post:
+                        self.loadThreadStateMachine.enter(LoadThreadState.Loading.self)
+                    }
+                }
+            }
+            .store(in: &disposeBag)
     }
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
 
 }
 
 extension ThreadViewModel {
     
     struct ThreadContext {
-        let domain: String
         let statusID: Mastodon.Entity.Status.ID
         let replyToID: Mastodon.Entity.Status.ID?
     }
     
-}
-
-extension ThreadViewModel {
-    func delete(objectIDs: [NSManagedObjectID]) {
-        if let root = self.root,
-           case let .root(threadContext) = root,
-           objectIDs.contains(threadContext.status.objectID)
-        {
-            self.root = nil
-        }
-
-        self.mastodonStatusThreadViewModel.delete(objectIDs: objectIDs)
-    }
 }

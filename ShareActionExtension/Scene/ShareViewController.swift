@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022/11/13.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreDataStack
@@ -16,8 +15,6 @@ import MastodonLocalization
 import UniformTypeIdentifiers
 
 final class ShareViewController: UIViewController {
-    
-    let logger = Logger(subsystem: "ShareViewController", category: "ViewController")
     
     var disposeBag = Set<AnyCancellable>()
     
@@ -32,6 +29,7 @@ final class ShareViewController: UIViewController {
         button.setTitle(L10n.Scene.Compose.composeAction, for: .normal)
         return button
     }()
+
     private func configurePublishButtonApperance() {
         publishButton.adjustsImageWhenHighlighted = false
         publishButton.setBackgroundImage(.placeholder(color: Asset.Colors.Label.primary.color), for: .normal)
@@ -64,9 +62,6 @@ final class ShareViewController: UIViewController {
         return label
     }()
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
 
 }
 
@@ -74,16 +69,9 @@ extension ShareViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        setupTheme(theme: ThemeService.shared.currentTheme.value)
-        ThemeService.shared.apply(theme: ThemeService.shared.currentTheme.value)
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.setupTheme(theme: theme)
-            }
-            .store(in: &disposeBag)
-        
+        setupTheme()
+        ThemeService.shared.apply()
+
         view.backgroundColor = .systemBackground
         title = L10n.Scene.Compose.Title.newPost
         
@@ -91,14 +79,14 @@ extension ShareViewController {
         navigationItem.rightBarButtonItem = publishBarButtonItem
         
         do {
-            guard let authContext = try setupAuthContext() else {
+            guard let authenticationBox = try setupAuthContext() else {
                 setupHintLabel()
                 return
             }
-            viewModel.authContext = authContext
+            viewModel.authenticationBox = authenticationBox
             let composeContentViewModel = ComposeContentViewModel(
-                context: context,
-                authContext: authContext,
+                authenticationBox: authenticationBox,
+                composeContext: .composeStatus,
                 destination: .topLevel,
                 initialContent: ""
             )
@@ -118,7 +106,6 @@ extension ShareViewController {
                 await load(inputItems: inputItems)
             }   // end Task
         } catch {
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): error: \(error.localizedDescription)")
         }
         
         viewModel.$isPublishing
@@ -139,28 +126,23 @@ extension ShareViewController {
 
 extension ShareViewController {
     @objc private func cancelBarButtonItemPressed(_ sender: UIBarButtonItem) {
-        logger.debug("\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
-
         extensionContext?.cancelRequest(withError: NSError(domain: "org.joinmastodon.app.ShareActionExtension", code: -1))
     }
 
     @objc private func publishBarButtonItemPressed(_ sender: UIBarButtonItem) {
-        logger.debug("\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
-
-        
         Task { @MainActor in
             viewModel.isPublishing = true
             do {
                 guard let statusPublisher = try composeContentViewModel?.statusPublisher(),
-                      let authContext = viewModel.authContext
+                      let authenticationBox = viewModel.authenticationBox
                 else {
                     throw AppError.badRequest
                 }
                 
-                _ = try await statusPublisher.publish(api: context.apiService, authContext: authContext)
+                _ = try await statusPublisher.publish(api: APIService.shared, authenticationBox: authenticationBox)
                 
                 self.publishButton.setTitle(L10n.Common.Controls.Actions.done, for: .normal)
-                try await Task.sleep(nanoseconds: 1 * .second)
+                try await Task.sleep(nanoseconds: 1 * .nanosPerUnit)
                 
                 self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
 
@@ -176,11 +158,9 @@ extension ShareViewController {
 }
 
 extension ShareViewController {
-    private func setupAuthContext() throws -> AuthContext? {
-        let request = MastodonAuthentication.activeSortedFetchRequest   // use active order
-        let _authentication = try context.managedObjectContext.fetch(request).first
-        let _authContext = _authentication.flatMap { AuthContext(authentication: $0) }
-        return _authContext
+    private func setupAuthContext() throws -> MastodonAuthenticationBox? {
+
+        return AuthenticationServiceProvider.shared.currentActiveUser.value
     }
     
     private func setupHintLabel() {
@@ -192,12 +172,12 @@ extension ShareViewController {
         ])
     }
 
-    private func setupTheme(theme: Theme) {
-        view.backgroundColor = theme.systemElevatedBackgroundColor
+    private func setupTheme() {
+        view.backgroundColor = SystemTheme.systemElevatedBackgroundColor
 
         let barAppearance = UINavigationBarAppearance()
         barAppearance.configureWithDefaultBackground()
-        barAppearance.backgroundColor = theme.navigationBarBackgroundColor
+        barAppearance.backgroundColor = SystemTheme.navigationBarBackgroundColor
         navigationItem.standardAppearance = barAppearance
         navigationItem.compactAppearance = barAppearance
         navigationItem.scrollEdgeAppearance = barAppearance
@@ -223,21 +203,15 @@ extension ShareViewController: UIAdaptivePresentationControllerDelegate {
     }
     
     func presentationControllerDidAttemptToDismiss(_ presentationController: UIPresentationController) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         showDismissConfirmAlertController()
     }
-    
-    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
-    
 }
 
 extension ShareViewController {
     
     private func load(inputItems: [NSExtensionItem]) async {
         guard let composeContentViewModel = self.composeContentViewModel,
-              let authContext = viewModel.authContext
+              let authenticationBox = viewModel.authenticationBox
         else {
             assertionFailure()
             return
@@ -278,8 +252,7 @@ extension ShareViewController {
 
         if let movieProvider = _movieProvider {
             let attachmentViewModel = AttachmentViewModel(
-                api: context.apiService,
-                authContext: authContext,
+                authenticationBox: authenticationBox,
                 input: .itemProvider(movieProvider),
                 sizeLimit: .init(image: nil, video: nil),
                 delegate: composeContentViewModel
@@ -288,8 +261,7 @@ extension ShareViewController {
         } else if !imageProviders.isEmpty {
             let attachmentViewModels = imageProviders.map { provider in
                 AttachmentViewModel(
-                    api: context.apiService,
-                    authContext: authContext,
+                    authenticationBox: authenticationBox,
                     input: .itemProvider(provider),
                     sizeLimit: .init(image: nil, video: nil),
                     delegate: composeContentViewModel
@@ -331,6 +303,3 @@ extension ShareViewController {
     }
 }
 
-extension AppContext {
-    static let shared = AppContext()
-}

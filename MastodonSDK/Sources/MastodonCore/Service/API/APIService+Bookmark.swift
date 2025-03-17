@@ -10,7 +10,6 @@ import Combine
 import MastodonSDK
 import CoreData
 import CoreDataStack
-import CommonOSLog
 
 extension APIService {
 
@@ -20,31 +19,19 @@ extension APIService {
     }
 
     public func bookmark(
-        record: ManagedObjectRecord<Status>,
+        record: MastodonStatus,
         authenticationBox: MastodonAuthenticationBox
     ) async throws -> Mastodon.Response.Content<Mastodon.Entity.Status> {
-        let logger = Logger(subsystem: "APIService", category: "Bookmark")
-        
-        let managedObjectContext = backgroundManagedObjectContext
-        
+                
         // update bookmark state and retrieve bookmark context
-        let bookmarkContext: MastodonBookmarkContext = try await managedObjectContext.performChanges {
-            guard let authentication = authenticationBox.authenticationRecord.object(in: managedObjectContext),
-                  let _status = record.object(in: managedObjectContext)
-            else {
-                throw APIError.implicit(.badRequest)
-            }
-            let me = authentication.user
-            let status = _status.reblog ?? _status
-            let isBookmarked = status.bookmarkedBy.contains(me)
-            status.update(bookmarked: !isBookmarked, by: me)
-            let context = MastodonBookmarkContext(
-                statusID: status.id,
-                isBookmarked: isBookmarked
-            )
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): update status bookmark: \(!isBookmarked)")
-            return context
-        }
+        let _status = record.entity
+        let status = _status.reblog ?? _status
+        let isBookmarked = status.bookmarked == true
+
+        let bookmarkContext = MastodonBookmarkContext(
+            statusID: status.id,
+            isBookmarked: isBookmarked
+        )
 
         // request bookmark or undo bookmark
         let result: Result<Mastodon.Response.Content<Mastodon.Entity.Status>, Error>
@@ -59,39 +46,13 @@ extension APIService {
             result = .success(response)
         } catch {
             result = .failure(error)
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): update bookmark failure: \(error.localizedDescription)")
         }
+                
+        let response = try result.get()
         
         // update bookmark state
-        try await managedObjectContext.performChanges {
-            guard let authentication = authenticationBox.authenticationRecord.object(in: managedObjectContext),
-                  let _status = record.object(in: managedObjectContext)
-            else { return }
-            let me = authentication.user
-            let status = _status.reblog ?? _status
-            
-            switch result {
-            case .success(let response):
-                _ = Persistence.Status.createOrMerge(
-                    in: managedObjectContext,
-                    context: Persistence.Status.PersistContext(
-                        domain: authenticationBox.domain,
-                        entity: response.value,
-                        me: me,
-                        statusCache: nil,
-                        userCache: nil,
-                        networkDate: response.networkDate
-                    )
-                )
-                logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): update status bookmark: \(response.value.bookmarked.debugDescription)")
-            case .failure:
-                // rollback
-                status.update(bookmarked: bookmarkContext.isBookmarked, by: me)
-                logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): rollback status bookmark")
-            }
-        }
+        record.entity = response.value
         
-        let response = try result.get()
         return response
     }
     
@@ -111,32 +72,7 @@ extension APIService {
             authorization: authenticationBox.userAuthorization,
             query: query
         ).singleOutput()
-        
-        let managedObjectContext = self.backgroundManagedObjectContext
-        try await managedObjectContext.performChanges {
-            guard let me = authenticationBox.authenticationRecord.object(in: managedObjectContext)?.user else {
-                assertionFailure()
-                return
-            }
-            
-            for entity in response.value {
-                let result = Persistence.Status.createOrMerge(
-                    in: managedObjectContext,
-                    context: Persistence.Status.PersistContext(
-                        domain: authenticationBox.domain,
-                        entity: entity,
-                        me: me,
-                        statusCache: nil,
-                        userCache: nil,
-                        networkDate: response.networkDate
-                    )
-                )
-                
-                result.status.update(bookmarked: true, by: me)
-                result.status.reblog?.update(bookmarked: true, by: me)
-            }   // end for … in
-        }
-        
+
         return response
     }   // end func
 }

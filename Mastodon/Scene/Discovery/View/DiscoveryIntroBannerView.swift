@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022-4-19.
 //
 
-import os.log
 import UIKit
 import Combine
 import MastodonAsset
@@ -18,9 +17,6 @@ public protocol DiscoveryIntroBannerViewDelegate: AnyObject {
 }
 
 public final class DiscoveryIntroBannerView: UIView {
-    
-    let logger = Logger(subsystem: "DiscoveryIntroBannerView", category: "View")
-    
     var _disposeBag = Set<AnyCancellable>()
     
     public weak var delegate: DiscoveryIntroBannerViewDelegate?
@@ -34,8 +30,8 @@ public final class DiscoveryIntroBannerView: UIView {
         return label
     }()
     
-    let closeButton: HitTestExpandedButton = {
-        let button = HitTestExpandedButton(type: .system)
+    let closeButton: MinimumHitTargetButton = {
+        let button = MinimumHitTargetButton(type: .system)
         button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
         button.tintColor = Asset.Colors.Label.secondary.color
         return button
@@ -57,14 +53,7 @@ extension DiscoveryIntroBannerView {
     private func _init() {
         preservesSuperviewLayoutMargins = true
         
-        setupAppearance(theme: ThemeService.shared.currentTheme.value)
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.setupAppearance(theme: theme)
-            }
-            .store(in: &_disposeBag)
+        backgroundColor = .systemBackground
         
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         addSubview(closeButton)
@@ -90,15 +79,6 @@ extension DiscoveryIntroBannerView {
 
 extension DiscoveryIntroBannerView {
     @objc private func closeButtonDidPressed(_ sender: UIButton) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
         delegate?.discoveryIntroBannerView(self, closeButtonDidPressed: sender)
     }
-}
-
-extension DiscoveryIntroBannerView {
-    
-    private func setupAppearance(theme: Theme) {
-        backgroundColor = theme.systemBackgroundColor
-    }
-    
 }

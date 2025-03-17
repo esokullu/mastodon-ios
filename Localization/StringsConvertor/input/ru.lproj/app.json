@@ -15,10 +15,6 @@
                 "title": "Не удалось проголосовать",
                 "poll_ended": "Опрос уже завершился"
             },
-            "discard_post_content": {
-                "title": "Удалить черновик",
-                "message": "Вы действительно хотите удалить набранное содержимое поста?"
-            },
             "publish_post_failure": {
                 "title": "Ошибка публикации",
                 "message": "Не удалось опубликовать пост.\nПожалуйста, проверьте подключение к интернету.",
@@ -53,9 +49,27 @@
                 "message": "Успешно очищено %s кэша."
             },
             "translation_failed": {
-                "title": "Note",
-                "message": "Translation failed. Maybe the administrator has not enabled translations on this server or this server is running an older version of Mastodon where translations are not yet supported.",
-                "button": "OK"
+                "title": "Примечание",
+                "message": "Перевод не удался. Возможно, администратор не включил переводы на этом сервере или на этом сервере установлена старая версия Mastodon, в которой переводы еще не поддерживаются.",
+                "button": "ХОРОШО"
+            },
+            "media_missing_alt_text": {
+                "title": "Отсутствие Alt-текста у медиафайлов",
+                "message": "На %d ваших изображений отсутствует alt-текст.\nОпубликовать все равно?",
+                "cancel": "Отмена",
+                "post": "Пост"
+            },
+            "boost_a_post": {
+                "title_boost": "Увеличить пост?",
+                "title_unboost": "Разгрузить пост?",
+                "cancel": "Отмена",
+                "boost": "Увеличить",
+                "unboost": "Разгрузить"
+            },
+            "unfollow_user": {
+                "title": "Отказаться от %@?",
+                "cancel": "Отмена",
+                "unfollow": "Отклонить"
             }
         },
         "controls": {
@@ -79,11 +93,10 @@
                 "take_photo": "Сделать фото",
                 "save_photo": "Сохранить изображение",
                 "copy_photo": "Скопировать изображение",
-                "sign_in": "Log in",
-                "sign_up": "Create account",
+                "sign_in": "Войти",
                 "see_more": "Ещё",
                 "preview": "Предпросмотр",
-                "copy": "Copy",
+                "copy": "Копировать",
                 "share": "Поделиться",
                 "share_user": "Поделиться %s",
                 "share_post": "Поделиться постом",
@@ -99,15 +112,24 @@
                 "settings": "Настройки",
                 "delete": "Удалить",
                 "translate_post": {
-                    "title": "Translate from %s",
-                    "unknown_language": "Unknown"
-                }
+                    "title": "Перевести с %s",
+                    "unknown_language": "Неизвестно"
+                },
+                "edit_post": "Редактировать",
+                "bookmark": "Закладка",
+                "remove_bookmark": "Удалить закладку",
+                "follow": "Следовать за %s",
+                "unfollow": "Отказаться от %s"
             },
             "tabs": {
                 "home": "Главная",
-                "search_and_explore": "Search and Explore",
-                "notifications": "Notifications",
-                "profile": "Профиль"
+                "search_and_explore": "Искать и исследовать",
+                "notifications": "Уведомления",
+                "profile": "Профиль",
+                "a11y": {
+                    "search": "Поиск",
+                    "explore": "Изучите сайт"
+                }
             },
             "keyboard": {
                 "common": {
@@ -121,9 +143,9 @@
                     "next_status": "Следующий пост",
                     "open_status": "Открыть пост",
                     "open_author_profile": "Открыть профиль автора",
-                    "open_reblogger_profile": "Открыть профиль продвинувшего",
+                    "open_reblogger_profile": "Открыть профиль загрузчика",
                     "reply_status": "Ответить на пост",
-                    "toggle_reblog": "Продвинуть или убрать продвижение",
+                    "toggle_reblog": "Переключить буст на пост",
                     "toggle_favorite": "Добавить или убрать из избранного",
                     "toggle_content_warning": "Раскрыть или спрятать содержимое",
                     "preview_image": "Предпросмотр изображения"
@@ -134,30 +156,34 @@
                 }
             },
             "status": {
-                "user_reblogged": "%s продвинул(а)",
+                "reply": "Reply",
+                "private_reply": "Private reply",
+                "mention": "Mention",
+                "private_mention": "Private mention",
+                "user_reblogged": "%s увеличен",
                 "user_replied_to": "Ответил(а) %s",
                 "show_post": "Показать пост",
                 "show_user_profile": "Показать профиль пользователя",
                 "content_warning": "Предупреждение о содержании",
-                "sensitive_content": "Sensitive Content",
+                "sensitive_content": "Чувствительный контент",
                 "media_content_warning": "Нажмите в любом месте, чтобы показать",
                 "tap_to_reveal": "Нажмите, чтобы показать",
-                "load_embed": "Load Embed",
-                "link_via_user": "%s via %s",
+                "load_embed": "Загрузить Встроить",
+                "link_via_user": "%s через %s",
                 "poll": {
                     "vote": "Проголосовать",
                     "closed": "Завершён"
                 },
                 "meta_entity": {
-                    "url": "Link: %s",
-                    "hashtag": "Hashtag: %s",
-                    "mention": "Show Profile: %s",
-                    "email": "Email address: %s"
+                    "url": "Ссылка: %s",
+                    "hashtag": "Хэштег: %s",
+                    "mention": "Показать профиль: %s",
+                    "email": "Адрес электронной почты: %s"
                 },
                 "actions": {
                     "reply": "Ответить",
-                    "reblog": "Продвинуть",
-                    "unreblog": "Убрать продвижение",
+                    "reblog": "Увеличить",
+                    "unreblog": "Отменить повышение",
                     "favorite": "Добавить в избранное",
                     "unfavorite": "Убрать из избранного",
                     "menu": "Меню",
@@ -165,8 +191,13 @@
                     "show_image": "Показать изображение",
                     "show_gif": "Показать GIF",
                     "show_video_player": "Показать видеопроигрыватель",
-                    "share_link_in_post": "Share Link in Post",
-                    "tap_then_hold_to_show_menu": "Нажмите и удерживайте, чтобы показать меню"
+                    "share_link_in_post": "Поделиться ссылкой в сообщении",
+                    "tap_then_hold_to_show_menu": "Нажмите и удерживайте, чтобы показать меню",
+                    "a11y_labels": {
+                        "reblog": "Увеличить",
+                        "unreblog": "Отменить повышение"
+                    },
+                    "copy_link": "Копировать ссылку"
                 },
                 "tag": {
                     "url": "Ссылка",
@@ -177,37 +208,62 @@
                     "emoji": "Эмодзи"
                 },
                 "visibility": {
-                    "unlisted": "Everyone can see this post but not display in the public timeline.",
-                    "private": "Only their followers can see this post.",
-                    "private_from_me": "Only my followers can see this post.",
-                    "direct": "Only mentioned user can see this post."
+                    "unlisted": "Все могут видеть это сообщение, но оно не отображается в публичной временной шкале.",
+                    "private": "Это сообщение могут увидеть только их подписчики.",
+                    "private_from_me": "Это сообщение могут увидеть только мои подписчики.",
+                    "direct": "Только указанный пользователь может видеть это сообщение."
                 },
                 "translation": {
-                    "translated_from": "Translated from %s using %s",
-                    "unknown_language": "Unknown",
-                    "unknown_provider": "Unknown",
-                    "show_original": "Shown Original"
+                    "translated_from": "Переведено с %s с помощью %s",
+                    "unknown_language": "Неизвестно",
+                    "unknown_provider": "Неизвестный",
+                    "show_original": "Показать оригинал"
+                },
+                "media": {
+                    "accessibility_label": "%s, вложение %d из %d",
+                    "expand_image_hint": "Разворачивает изображение. Дважды нажмите и удерживайте для отображения действий",
+                    "expand_gif_hint": "Разворачивает GIF. Дважды нажмите и удерживайте, чтобы показать действия",
+                    "expand_video_hint": "Отображает видеоплеер. Дважды нажмите и удерживайте для отображения действий"
+                },
+                "posted_via_application": "%s через %s",
+                "buttons": {
+                    "reblogs_title": "Повышает",
+                    "favorites_title": "Избранное",
+                    "edit_history_title": "История редактирования",
+                    "edit_history_detail": "Последнее редактирование %s"
+                },
+                "edited_at_timestamp_prefix": "Отредактировано %s",
+                "edit_history": {
+                    "title": "История редактирования",
+                    "original_post": "Оригинальное сообщение - %s"
+                },
+                "card": {
+                    "by": "По",
+                    "by_author": "По %s"
                 }
             },
             "friendship": {
                 "follow": "Подписаться",
+                "follow_back": "Follow back",
                 "following": "В подписках",
+                "mutual": "Mutual",
                 "request": "Отправить запрос",
                 "pending": "Отправлен",
                 "block": "Заблокировать",
                 "block_user": "Заблокировать %s",
-                "block_domain": "Заблокировать %s",
+                "block_domain": "Заблокировать домен %s",
                 "unblock": "Разблокировать",
                 "unblock_user": "Разблокировать %s",
                 "blocked": "В заблокированных",
+                "domain_blocked": "Домен заблокирован",
                 "mute": "Игнорировать",
                 "mute_user": "Игнорировать %s",
                 "unmute": "Убрать из игнорируемых",
                 "unmute_user": "Убрать %s из игнорируемых",
                 "muted": "В игнорируемых",
                 "edit_info": "Изменить",
-                "show_reblogs": "Show Reblogs",
-                "hide_reblogs": "Hide Reblogs"
+                "show_reblogs": "Показать повышения",
+                "hide_reblogs": "Скрыть повышения"
             },
             "timeline": {
                 "filtered": "Отфильтровано",
@@ -229,25 +285,49 @@
                     "user_suspended_warning": "Учётная запись %s заморожена."
                 }
             }
+        },
+        "user_list": {
+            "no_verified_link": "Нет проверенной ссылки",
+            "followers_count": "%@ последователи"
         }
     },
     "scene": {
         "welcome": {
-            "slogan": "Социальная сеть\nпод вашим контролем.",
-            "get_started": "Присоединиться",
-            "log_in": "Вход"
+            "log_in": "Вход",
+            "learn_more": "Узнать больше",
+            "join_default_server": "Присоединяйтесь %@",
+            "pick_server": "Выберите другой сервер",
+            "separator": {
+                "or": "или"
+            },
+            "education": {
+                "mastodon": {
+                    "title": "Добро пожаловать в Mastodon",
+                    "description": "Mastodon - это децентрализованная социальная сеть, то есть ее не контролирует ни одна компания. Она состоит из множества независимо управляемых серверов, соединенных вместе."
+                },
+                "servers": {
+                    "title": "Что такое серверы?",
+                    "description": "Каждый аккаунт Mastodon размещается на сервере - каждый со своими ценностями, правилами и администраторами. Независимо от того, какой из них вы выберете, вы сможете следить за людьми на любом сервере и взаимодействовать с ними."
+                },
+                "a11y": {
+                    "what_is_mastodon": {
+                        "title": "Что такое Mastodon?"
+                    }
+                }
+            }
         },
         "login": {
-            "title": "Welcome back",
-            "subtitle": "Log you in on the server you created your account on.",
+            "title": "С возвращением",
+            "subtitle": "Войдите в систему с сервера, на котором вы создали свою учетную запись.",
             "server_search_field": {
-                "placeholder": "Enter URL or search for your server"
+                "placeholder": "Введите URL-адрес или найдите свой сервер"
             }
         },
         "server_picker": {
-            "title": "Выберите сервер,\nлюбой сервер.",
-            "subtitle": "Pick a server based on your region, interests, or a general purpose one. You can still chat with anyone on Mastodon, regardless of your servers.",
+            "title": "Выбор сервера",
             "button": {
+                "language": "Язык",
+                "signup_speed": "Скорость регистрации",
                 "category": {
                     "all": "Все",
                     "all_accessiblity_description": "Категория: все",
@@ -273,24 +353,47 @@
                 "category": "КАТЕГОРИЯ"
             },
             "input": {
-                "search_servers_or_enter_url": "Search communities or enter URL"
+                "search_servers_or_enter_url": "Поиск сообществ или введите URL-адрес"
             },
             "empty_state": {
                 "finding_servers": "Ищем доступные сервера...",
                 "bad_network": "Что-то пошло не так при загрузке данных. Проверьте подключение к интернету.",
                 "no_results": "Нет результатов"
+            },
+            "signup_speed": {
+                "all": "Все",
+                "instant": "Instant Sign-up",
+                "manually_reviewed": "Manual Review"
+            },
+            "language": {
+                "all": "All"
+            },
+            "search": {
+                "placeholder": "Search name or URL"
+            },
+            "no_server_selected_hint": "We’ll pick a server based on your language if you continue without making a selection."
+        },
+        "privacy": {
+            "title": "Your Privacy",
+            "description": "Although the Mastodon app does not collect any data, the server you sign up through may have a different policy.\n\nIf you disagree with the policy for **%s**, you can go back and pick a different server.",
+            "policy": {
+                "ios": "Privacy Policy - Mastodon for iOS",
+                "server": "Privacy Policy - %s"
+            },
+            "button": {
+                "confirm": "I Agree"
             }
         },
         "register": {
-            "title": "Расскажите нам о себе.",
-            "lets_get_you_set_up_on_domain": "Let’s get you set up on %s",
+            "title": "Create Account",
             "input": {
                 "avatar": {
                     "delete": "Удалить"
                 },
                 "username": {
                     "placeholder": "имя пользователя",
-                    "duplicate_prompt": "Это имя пользователя занято."
+                    "duplicate_prompt": "Это имя пользователя занято.",
+                    "suggestion": "amazing_%@"
                 },
                 "display_name": {
                     "placeholder": "отображаемое имя"
@@ -300,6 +403,7 @@
                 },
                 "password": {
                     "placeholder": "пароль",
+                    "confirmation_placeholder": "Confirm Password",
                     "require": "Your password needs at least:",
                     "character_limit": "8 characters",
                     "accessibility": {
@@ -324,7 +428,7 @@
                 "reason": {
                     "blocked": "%s содержит запрещённый e-mail сервис",
                     "unreachable": "%s не существует",
-                    "taken": "%s уже используется",
+                    "taken": "%s is already taken. How about:",
                     "reserved": "%s является зарезервированным ключевым словом",
                     "accepted": "%s должно быть принято",
                     "blank": "Поле «%s» обязательно",
@@ -342,56 +446,71 @@
             }
         },
         "server_rules": {
-            "title": "Несколько основных правил.",
-            "subtitle": "Эти правила установлены администраторами %s.",
+            "title": "Server Rules",
+            "subtitle": "By continuing, you agree to follow by the following rules set and enforced by the **%s** moderators.",
             "prompt": "Продолжая, вы соглашаетесь с условиям использования и политикой конфиденциальности %s.",
             "terms_of_service": "условия использования",
             "privacy_policy": "политика конфиденциальности",
             "button": {
-                "confirm": "Принимаю"
+                "confirm": "I Agree",
+                "disagree": "Disagree"
             }
         },
         "confirm_email": {
-            "title": "И ещё кое-что.",
-            "subtitle": "Мы только что отправили письмо на\n%s.\nНажмите на ссылку в нём, чтобы\nподтвердить свою учётную запись.",
-            "tap_the_link_we_emailed_to_you_to_verify_your_account": "Tap the link we emailed to you to verify your account",
+            "title": "Check Your Inbox",
+            "tap_the_link_we_emailed_to_you_to_verify_your_account": "Tap the link we sent you to verify %@. We’ll wait right here.",
             "button": {
-                "open_email_app": "Открыть приложение почты",
                 "resend": "Отправить заново"
             },
             "dont_receive_email": {
-                "title": "Проверьте свой e-mail адрес",
+                "title": "Check your Email",
                 "description": "Проверьте, правильно ли указан ваш e-mail адрес, а также папку «спам», если ещё не сделали этого.",
                 "resend_email": "Отправить ещё раз"
             },
             "open_email_app": {
-                "title": "Проверьте вашу почту.",
+                "title": "Check your Inbox.",
                 "description": "Мы только что отправили вам e-mail. Проверьте спам, если не нашли его.",
                 "mail": "Почта",
                 "open_email_client": "Открыть почтовый клиент"
+            },
+            "didnt_get_link": {
+                "prefix": "Didn’t get a link?",
+                "resend_in": "Resend (%@)",
+                "resend_now": "Resend now."
             }
         },
         "home_timeline": {
             "title": "Главная",
-            "navigation_bar_state": {
-                "offline": "Не в сети",
-                "new_posts": "Показать новые",
-                "published": "Опубликовано!",
-                "Publishing": "Публикуем пост...",
-                "accessibility": {
-                    "logo_label": "Logo Button",
-                    "logo_hint": "Tap to scroll to top and tap again to previous location"
+            "timeline_menu": {
+                "following": "Following",
+                "local_community": "Local",
+                "lists": {
+                    "title": "Lists",
+                    "empty_message": "You don't have any Lists"
+                },
+                "hashtags": {
+                    "title": "Followed Hashtags",
+                    "empty_message": "You don't follow any Hashtags"
                 }
+            },
+            "timeline_pill": {
+                "offline": "Offline",
+                "new_posts": "New Posts",
+                "post_sent": "Post Sent"
+            },
+            "empty_state": {
+                "list_empty_message_title": "This list is empty"
             }
         },
         "suggestion_account": {
-            "title": "Подпишитесь на людей",
-            "follow_explain": "Посты людей, на которых вы подписались, будут видны на главной странице."
+            "title": "Popular on Mastodon",
+            "follow_all": "Follow all"
         },
         "compose": {
             "title": {
                 "new_post": "Новый пост",
-                "new_reply": "Новый ответ"
+                "new_reply": "Новый ответ",
+                "edit_post": "Edit Post"
             },
             "media_selection": {
                 "camera": "Сделать фото",
@@ -415,6 +534,7 @@
                 "server_processing_state": "Server Processing..."
             },
             "poll": {
+                "title": "Poll",
                 "duration_time": "Продолжительность: %s",
                 "thirty_minutes": "30 минут",
                 "one_hour": "1 час",
@@ -424,7 +544,11 @@
                 "seven_days": "7 дней",
                 "option_number": "Вариант %ld",
                 "the_poll_is_invalid": "The poll is invalid",
-                "the_poll_has_empty_option": "The poll has empty option"
+                "the_poll_has_empty_option": "The poll has empty option",
+                "add_option": "Add Option",
+                "remove_option": "Remove Option",
+                "move_up": "Move Up",
+                "move_down": "Move Down"
             },
             "content_warning": {
                 "placeholder": "Напишите предупреждение здесь..."
@@ -456,6 +580,12 @@
                 "toggle_content_warning": "Добавить/убрать предупреждение о содержании",
                 "append_attachment_entry": "Прикрепить файл — %s",
                 "select_visibility_entry": "Выбрать видимость — %s"
+            },
+            "language": {
+                "title": "Post Language",
+                "suggested": "Suggested",
+                "recent": "Recent",
+                "other": "Other Language…"
             }
         },
         "profile": {
@@ -468,7 +598,8 @@
                 "my_followers": "followers",
                 "other_posts": "posts",
                 "other_following": "following",
-                "other_followers": "followers"
+                "other_followers": "followers",
+                "familiar_followers": "mutuals"
             },
             "fields": {
                 "joined": "Joined",
@@ -507,12 +638,20 @@
                     "message": "Confirm to unblock %s"
                 },
                 "confirm_show_reblogs": {
-                    "title": "Show Reblogs",
-                    "message": "Confirm to show reblogs"
+                    "title": "Show Boosts",
+                    "message": "Confirm to show boosts"
                 },
                 "confirm_hide_reblogs": {
-                    "title": "Hide Reblogs",
-                    "message": "Confirm to hide reblogs"
+                    "title": "Hide Boosts",
+                    "message": "Confirm to hide boosts"
+                },
+                "confirm_block_domain": {
+                    "title": "Block domain",
+                    "message": "Confirm to block domain %s"
+                },
+                "confirm_unblock_domain": {
+                    "title": "Unblock domain",
+                    "message": "Confirm to unblock domain %s"
                 }
             },
             "accessibility": {
@@ -538,7 +677,7 @@
             "title": "Favorited By"
         },
         "reblogged_by": {
-            "title": "Reblogged By"
+            "title": "Boosted By"
         },
         "search": {
             "title": "Поиск",
@@ -560,16 +699,21 @@
                 }
             },
             "searching": {
-                "segment": {
-                    "all": "Всё",
-                    "people": "Люди",
-                    "hashtags": "Хэштеги",
-                    "posts": "Посты"
+                "posts": "Posts matching \"%s\"",
+                "people": "People matching \"%s\"",
+                "profile": "Go to @%s@%s",
+                "url": "Open URL in Mastodon",
+                "hashtag": "Go to #%s",
+                "no_user": {
+                    "title": "No User Account Found",
+                    "message": "There's no Useraccount \"%s\" on %s"
                 },
                 "empty_state": {
                     "no_results": "Нет результатов"
                 },
                 "recent_search": "Последние запросы",
+                "no_recent_searches": "No recent searches.",
+                "clear_all": "Clear all",
                 "clear": "Очистить"
             }
         },
@@ -584,20 +728,50 @@
             "intro": "These are the posts gaining traction in your corner of Mastodon."
         },
         "favorite": {
-            "title": "Ваше избранное"
+            "title": "Favorites"
         },
         "notification": {
             "title": {
                 "Everything": "Все",
                 "Mentions": "Упоминания"
             },
+            "headers": {
+                "report": "Report",
+                "sign_up": "Signup",
+                "favourite": "Favorite",
+                "follow": "Follow",
+                "follow_request": "Follow request",
+                "moderation_warning": "Warning",
+                "poll": "Poll",
+                "boost": "Boost",
+                "severed_relationships": "Domain block",
+                "status": "Post",
+                "edit": "Edit"
+            },
+            "grouped_notification_description": {
+                "your_poll_has_ended": "Your poll has ended",
+                "single_name_ran_poll": "%@ ran %@",
+                "single_name_mentioned_you": "%@ mentioned you",
+                "single_name_requested_to_follow_you": "%@ requested to follow you",
+                "single_name_posted": "%@ posted:",
+                "single_name_boosted": "%@ boosted:",
+                "single_name_favourited": "%@ favorited:",
+                "single_name_followed_you": "%@ followed you",
+                "multiple_people_boosted": "%@ boosted:",
+                "multiple_people_favourited": "%@ favorited:",
+                "multiple_people_followed_you": "%@ followed you",
+                "single_name_signed_up": "%@ signed up",
+                "someone_reported_account_for_rule_violation": "Someone reported %@ for rule violation.",
+                "someone_reported_posts_from_account_for_rule_violation": "Someone reported %@ from %@ for rule violation."
+            },
             "notification_description": {
                 "followed_you": "followed you",
                 "favorited_your_post": "favorited your post",
-                "reblogged_your_post": "reblogged your post",
+                "reblogged_your_post": "boosted your post",
                 "mentioned_you": "mentioned you",
                 "request_to_follow_you": "request to follow you",
-                "poll_has_ended": "poll has ended"
+                "poll_has_ended": "poll has ended",
+                "relationship_severance": "An admin from %@ has blocked %@, including %@."
             },
             "keyobard": {
                 "show_everything": "Показать все",
@@ -608,6 +782,41 @@
                 "accepted": "Accepted",
                 "reject": "reject",
                 "rejected": "Rejected"
+            },
+            "warning": {
+                "none": "Your account has received a moderation warning.",
+                "disable": "Your account has been disabled.",
+                "mark_statuses_as_sensitive": "Some of your posts have been marked as sensitive.",
+                "delete_statuses": "Some of your posts have been removed.",
+                "sensitive": "Your posts will be marked as sensitive from now on.",
+                "silence": "Your account has been limited.",
+                "suspend": "Your account has been suspended.",
+                "learn_more": "Learn More"
+            },
+            "learn_more_about_server_blocks": "Learn more about server blocks",
+            "filtered_notification": {
+                "title": "Filtered Notifications",
+                "accept": "Accept",
+                "dismiss": "Dismiss"
+            },
+            "policy": {
+                "title": "Filter Notifications from…",
+                "not_following": {
+                    "title": "People you don't follow",
+                    "subtitle": "Until you manually approve them"
+                },
+                "no_follower": {
+                    "title": "People not following you",
+                    "subtitle": "Including people who have been following you fewer than 3 days"
+                },
+                "new_account": {
+                    "title": "New accounts",
+                    "subtitle": "Created within the past 30 days"
+                },
+                "private_mentions": {
+                    "title": "Unsolicited private mentions",
+                    "subtitle": "Filtered unless it’s in reply to your own mention or if you follow the sender"
+                }
             }
         },
         "thread": {
@@ -615,60 +824,100 @@
             "title": "Пост %s"
         },
         "settings": {
-            "title": "Настройки",
-            "section": {
-                "appearance": {
-                    "title": "Внешний вид",
-                    "automatic": "Автоматически",
-                    "light": "Светлая тема",
-                    "dark": "Тёмная тема"
-                },
-                "look_and_feel": {
-                    "title": "Look and Feel",
-                    "use_system": "Use System",
-                    "really_dark": "Really Dark",
-                    "sorta_dark": "Sorta Dark",
-                    "light": "Light"
-                },
-                "notifications": {
-                    "title": "Уведомления",
-                    "favorites": "Добавляет мой пост в избранное",
-                    "follows": "Подписался на меня",
-                    "boosts": "Продвигает мой пост",
-                    "mentions": "Упоминает меня",
-                    "trigger": {
-                        "anyone": "кто угодно",
-                        "follower": "мой подписчик",
-                        "follow": "любой, на кого я подписан(а)",
-                        "noone": "никто",
-                        "title": "Уведомлять меня, когда"
-                    }
-                },
-                "preference": {
-                    "title": "Предпочтения",
-                    "true_black_dark_mode": "Полноценно чёрный режим",
-                    "disable_avatar_animation": "Отключить анимацию аватарок",
-                    "disable_emoji_animation": "Отключить анимацию эмодзи",
-                    "using_default_browser": "Использовать браузер по умолчанию для открытия ссылок",
-                    "open_links_in_mastodon": "Открывать ссылки в Мастодоне"
-                },
-                "boring_zone": {
-                    "title": "Зона скукотищи",
-                    "account_settings": "Настройки аккаунта",
-                    "terms": "Условия использования",
-                    "privacy": "Политика конфиденциальности"
-                },
-                "spicy_zone": {
-                    "title": "Пикантная зона",
-                    "clear": "Очистить кэш медиа",
-                    "signout": "Выйти из учётной записи"
+            "overview": {
+                "title": "Settings",
+                "general": "General",
+                "notifications": "Notifications",
+                "privacy_safety": "Privacy & Safety",
+                "support_mastodon": "Support Mastodon",
+                "about_mastodon": "About Mastodon",
+                "server_details": "Server Details",
+                "logout": "Logout %@"
+            },
+            "about_mastodon": {
+                "title": "About",
+                "more_settings": "Even More Settings",
+                "contribute_to_mastodon": "Contribute to Mastodon",
+                "privacy_policy": "Privacy Policy",
+                "clear_media_storage": "Clear Media Storage"
+            },
+            "server_details": {
+                "about": "About",
+                "rules": "Rules",
+                "about_instance": {
+                    "title": "Administrator",
+                    "message_admin": "Message Admin",
+                    "legal_notice": "A legal notice"
                 }
             },
-            "footer": {
-                "mastodon_description": "Mastodon — проект с открытым исходным кодом. Сообщить о проблемах можно на GitHub по адресу %s (%s)"
+            "general": {
+                "title": "General",
+                "appearance": {
+                    "section_title": "Appearance",
+                    "dark": "Dark",
+                    "light": "Light",
+                    "system": "Use Device Appearance"
+                },
+                "ask_before": {
+                    "section_title": "Ask before…",
+                    "posting_without_alt_text": "Posting without Alt Text",
+                    "unfollowing_someone": "Unfollowing Someone",
+                    "boosting_a_post": "Boosting a Post",
+                    "deleting_a_post": "Deleting a Post"
+                },
+                "design": {
+                    "section_title": "Design",
+                    "show_animations": "Play Animated Avatars and Emoji"
+                },
+                "language": {
+                    "section_title": "Language",
+                    "default_post_language": "Default Post Language"
+                },
+                "links": {
+                    "section_title": "Links",
+                    "open_in_mastodon": "Open in Mastodon",
+                    "open_in_browser": "Open in Browser"
+                }
             },
-            "keyboard": {
-                "close_settings_window": "Закрыть окно настроек"
+            "notifications": {
+                "title": "Notifications",
+                "policy": {
+                    "title": "Get Notifications from",
+                    "anyone": "Anyone",
+                    "followers": "People who follow you",
+                    "follow": "People you follow",
+                    "noone": "No one"
+                },
+                "alert": {
+                    "mentions_and_replies": "Mentions & Replies",
+                    "boosts": "Boosts",
+                    "favorites": "Favorites",
+                    "new_followers": "New Followers"
+                },
+                "disabled": {
+                    "notification_hint": "Turn on notifications from your device settings to see updates on your lock screen.",
+                    "go_to_settings": "Go to Notification Settings"
+                }
+            },
+            "privacy_safety": {
+                "title": "Privacy & Safety",
+                "preset": {
+                    "title": "Preset",
+                    "open_and_public": "Open & Public",
+                    "private_and_restricted": "Private & Restricted",
+                    "custom": "Custom"
+                },
+                "default_post_visibility": {
+                    "title": "Default Post Visibility"
+                },
+                "manually_approve_follow_requests": "Manually Approve Follow Requests",
+                "show_followers_and_following": "Show Followers & Following",
+                "suggest_my_account_to_others": "Suggest My Account to Others",
+                "appear_in_search_engines": "Appear in Search Engines"
+            },
+            "donation": {
+                "title": "Donate to Mastodon",
+                "manage": "Manage donations"
             }
         },
         "report": {
@@ -720,7 +969,7 @@
                 "unfollowed": "Unfollowed",
                 "unfollow_user": "Unfollow %s",
                 "mute_user": "Mute %s",
-                "you_wont_see_their_posts_or_reblogs_in_your_home_feed_they_wont_know_they_ve_been_muted": "You won’t see their posts or reblogs in your home feed. They won’t know they’ve been muted.",
+                "you_wont_see_their_posts_or_reblogs_in_your_home_feed_they_wont_know_they_ve_been_muted": "You won’t see their posts or boosts in your home feed. They won’t know they’ve been muted.",
                 "block_user": "Block %s",
                 "they_will_no_longer_be_able_to_follow_or_see_your_posts_but_they_can_see_if_theyve_been_blocked": "They will no longer be able to follow or see your posts, but they can see if they’ve been blocked.",
                 "while_we_review_this_you_can_take_action_against_user": "Пока мы рассматриваем его, вот действия, которые вы можете предпринять лично против %s"
@@ -736,12 +985,9 @@
         "account_list": {
             "tab_bar_hint": "Current selected profile: %s. Double tap then hold to show account switcher",
             "dismiss_account_switcher": "Dismiss Account Switcher",
-            "add_account": "Add Account"
-        },
-        "wizard": {
-            "new_in_mastodon": "Новое в Мастодоне",
-            "multiple_account_switch_intro_description": "Switch between multiple accounts by holding the profile button.",
-            "accessibility_hint": "Double tap to dismiss this wizard"
+            "add_account": "Add Account",
+            "logout_all_accounts": "Log Out Of All Accounts",
+            "logout": "Logout"
         },
         "bookmark": {
             "title": "Bookmarks"
@@ -756,6 +1002,69 @@
             "actions": {
                 "follow": "Follow",
                 "unfollow": "Unfollow"
+            }
+        },
+        "donation": {
+            "picker": {
+                "once_title": "Just once",
+                "monthly_title": "Monthly",
+                "yearly_title": "Yearly"
+            },
+            "donatebuttontitle": "Donate",
+            "currency": "Currency",
+            "success": {
+                "title": "Thank you for your contribution!",
+                "subtitle": "You should receive an email confirming your donation soon.",
+                "server_error_title": "Payment failed",
+                "server_error_message": "We are sorry, an error occurred and we have not been able to process your donation.\n\nPlease retry in a few minutes.",
+                "share_button_title": "Spread the word"
+            }
+        }
+    },
+    "extension": {
+        "open_in": {
+            "invalid_link_error": "This doesn't seem to be a valid Mastodon link."
+        }
+    },
+    "widget": {
+        "common": {
+            "unsupported_widget_family": "Sorry but this Widget family is unsupported.",
+            "user_not_logged_in": "Please open Mastodon to log in to an Account."
+        },
+        "followers_count": {
+            "configuration_display_name": "Followers",
+            "configuration_description": "Show number of followers.",
+            "title": "FOLLOWERS",
+            "followers_today": "%s followers today"
+        },
+        "multiple_followers": {
+            "configuration_display_name": "Multiple followers",
+            "configuration_description": "Show number of followers for multiple accounts.",
+            "mock_user": {
+                "display_name": "Another follower",
+                "account_name": "another@follower.social"
+            }
+        },
+        "latest_followers": {
+            "configuration_display_name": "Latest followers",
+            "configuration_description": "Show latest followers.",
+            "title": "Latest followers",
+            "last_update": "Last update: %s"
+        },
+        "hashtag": {
+            "configuration": {
+                "display_name": "Hashtag",
+                "description": "Shows a recent post with the selected hashtag."
+            },
+            "not_found": {
+                "account_name": "John Mastodon",
+                "account": "@johnMastodon@no-such.account",
+                "content": "Sorry, we couldn’t find any posts with the hashtag <a>#%@</a>. Please try a <a>#DifferentHashtag</a> or check the widget settings."
+            },
+            "placeholder": {
+                "account_name": "John Mastodon",
+                "account": "@johnMastodon@no-such.account",
+                "content": "This is how a post with a <a>#hashtag</a> would look. Pick whichever <a>#hashtag</a> you want in the widget settings."
             }
         }
     }

@@ -5,19 +5,17 @@
 //  Created by sxiaojian on 2021/2/5.
 //
 
-import os.log
 import func QuartzCore.CACurrentMediaTime
 import Foundation
 import CoreData
 import CoreDataStack
 import GameplayKit
 import MastodonCore
+import MastodonSDK
 
 extension HomeTimelineViewModel {
     class LoadLatestState: GKState {
         
-        let logger = Logger(subsystem: "HomeTimelineViewModel.LoadLatestState", category: "StateMachine")
-
         let id = UUID()
 
         var name: String {
@@ -30,20 +28,9 @@ extension HomeTimelineViewModel {
             self.viewModel = viewModel
         }
         
-        override func didEnter(from previousState: GKState?) {
-            super.didEnter(from: previousState)
-            let previousState = previousState as? HomeTimelineViewModel.LoadLatestState
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): [\(self.id.uuidString)] enter \(self.name), previous: \(previousState?.name  ?? "<nil>")")
-            viewModel?.loadLatestStateMachinePublisher.send(self)
-        }
-        
         @MainActor
         func enter(state: LoadLatestState.Type) {
             stateMachine?.enter(state)
-        }
-        
-        deinit {
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): [\(self.id.uuidString)] \(self.name)")
         }
     }
 }
@@ -51,7 +38,7 @@ extension HomeTimelineViewModel {
 extension HomeTimelineViewModel.LoadLatestState {
     class Initial: HomeTimelineViewModel.LoadLatestState {
         override func isValidNextState(_ stateClass: AnyClass) -> Bool {
-            return stateClass == Loading.self
+            return stateClass == Loading.self || stateClass == LoadingManually.self
         }
     }
     
@@ -61,7 +48,8 @@ extension HomeTimelineViewModel.LoadLatestState {
         }
         
         override func didEnter(from previousState: GKState?) {
-            didEnter(from: previousState, viewModel: viewModel, isUserInitiated: false)
+            super.didEnter(from: previousState)
+            loadLatest(viewModel: viewModel, isUserInitiated: false, isContextSwitch: previousState is HomeTimelineViewModel.LoadLatestState.ContextSwitch)
         }
     }
     
@@ -71,7 +59,8 @@ extension HomeTimelineViewModel.LoadLatestState {
         }
         
         override func didEnter(from previousState: GKState?) {
-            didEnter(from: previousState, viewModel: viewModel, isUserInitiated: true)
+            super.didEnter(from: previousState)
+            loadLatest(viewModel: viewModel, isUserInitiated: true, isContextSwitch: previousState is HomeTimelineViewModel.LoadLatestState.ContextSwitch)
         }
     }
     
@@ -83,63 +72,139 @@ extension HomeTimelineViewModel.LoadLatestState {
     
     class Idle: HomeTimelineViewModel.LoadLatestState {
         override func isValidNextState(_ stateClass: AnyClass) -> Bool {
-            return stateClass == Loading.self
+            return stateClass == Loading.self || stateClass == LoadingManually.self || stateClass == ContextSwitch.self
         }
     }
 
-    private func didEnter(from previousState: GKState?, viewModel: HomeTimelineViewModel?, isUserInitiated: Bool) {
-        super.didEnter(from: previousState)
+    class ContextSwitch: HomeTimelineViewModel.LoadLatestState {
+        override func isValidNextState(_ stateClass: AnyClass) -> Bool {
+            return stateClass == Loading.self || stateClass == LoadingManually.self  || stateClass == ContextSwitch.self
+        }
 
+        override func didEnter(from previousState: GKState?) {
+            guard let viewModel else { return }
+            Task { @MainActor in
+                guard let diffableDataSource = viewModel.diffableDataSource else {
+                    assertionFailure()
+                    return
+                }
+                
+                await viewModel.dataController.setRecordsAfterFiltering([])
+                var snapshot = NSDiffableDataSourceSnapshot<StatusSection, MastodonItemIdentifier>()
+                snapshot.appendSections([.main])
+                snapshot.appendItems([.topLoader], toSection: .main)
+                diffableDataSource.apply(snapshot) { [weak self] in
+                    guard let self else { return }
+
+                    self.stateMachine?.enter(Loading.self)
+                }
+            }
+        }
+    }
+
+    private func loadLatest(viewModel: HomeTimelineViewModel?, isUserInitiated: Bool, isContextSwitch: Bool) {
         guard let viewModel else { return }
         
-        let latestFeedRecords = viewModel.fetchedResultsController.records.prefix(APIService.onceRequestStatusMaxCount)
-        let parentManagedObjectContext = viewModel.fetchedResultsController.managedObjectContext
-        let managedObjectContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
-        managedObjectContext.parent = parentManagedObjectContext
+        Task { @MainActor in
+            viewModel.timelineIsEmpty.send(nil)
+            
+            let latestFeedRecords = viewModel.dataController.records
 
-        Task {
-            let start = CACurrentMediaTime()
             let latestStatusIDs: [Status.ID] = latestFeedRecords.compactMap { record in
-                guard let feed = record.object(in: managedObjectContext) else { return nil }
-                return feed.status?.id
+                return record.status?.reblog?.id ?? record.status?.id
             }
-            let end = CACurrentMediaTime()
-            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: collect statuses id cost: %.2fs", ((#file as NSString).lastPathComponent), #line, #function, end - start)
 
             do {
-                let response = try await viewModel.context.apiService.homeTimeline(
-                    authenticationBox: viewModel.authContext.mastodonAuthenticationBox
-                )
+                await AuthenticationServiceProvider.shared.fetchAccounts(onlyIfItHasBeenAwhile: true)
+                let response: Mastodon.Response.Content<[Mastodon.Entity.Status]>
                 
-                await enter(state: Idle.self)
-                viewModel.homeTimelineNavigationBarTitleViewModel.receiveLoadingStateCompletion(.finished)
+                /// To find out wether or not we need to show the "Load More" button
+                /// we have make sure to eventually overlap with the most recent cached item
+                let sinceID = latestFeedRecords.count > 1 ? latestFeedRecords[1].id : nil
+                
+                switch viewModel.timelineContext {
+                case .home:
+                    response = try await APIService.shared.homeTimeline(
+                        sinceID: sinceID,
+                        authenticationBox: viewModel.authenticationBox
+                    )
+                case .public:
+                    response = try await APIService.shared.publicTimeline(
+                        query: .init(local: true, sinceID: sinceID),
+                        authenticationBox: viewModel.authenticationBox
+                    )
+                case let .list(id):
+                    response = try await APIService.shared.listTimeline(
+                        id: id,
+                        query: .init(sinceID: sinceID),
+                        authenticationBox: viewModel.authenticationBox
+                    )
+                case let .hashtag(tag):
+                    response = try await APIService.shared.hashtagTimeline(
+                        hashtag: tag,
+                        authenticationBox: viewModel.authenticationBox
+                    )
+                }
 
-                viewModel.context.instanceService.updateMutesAndBlocks()
-                
-                // stop refresher if no new statuses
+                enter(state: Idle.self)
+                viewModel.receiveLoadingStateCompletion(.finished)
+
                 let statuses = response.value
-                let newStatuses = statuses.filter { !latestStatusIDs.contains($0.id) }
-                logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): load \(newStatuses.count) new statuses")
-                
-                if newStatuses.isEmpty {
+
+                if statuses.isEmpty {
+                    // stop refresher if no new statuses
+                    await viewModel.dataController.setRecordsAfterFiltering([])
                     viewModel.didLoadLatest.send()
                 } else {
-                    if !latestStatusIDs.isEmpty {
-                        viewModel.homeTimelineNavigationBarTitleViewModel.newPostsIncoming()
+                    var toAdd = [MastodonFeed]()
+                    
+                    let last = statuses.last
+                    if let latestFirstId = latestFeedRecords.first?.id, let last, last.id == latestFirstId {
+                        /// We have an overlap with the existing Statuses, thus no _Load More_ required
+                        toAdd = statuses.prefix(statuses.count-1).map({ MastodonFeed.fromStatus($0.asMastodonStatus, kind: .home) })
+                    } else {
+                        /// If we do not have existing items, no _Load More_ is required as there is no gap
+                        /// If our fetched Statuses do **not** overlap with the existing ones, we need a _Load More_ Button
+                        toAdd = statuses.map({ MastodonFeed.fromStatus($0.asMastodonStatus, kind: .home) })
+                        toAdd.last?.hasMore = latestFeedRecords.isNotEmpty
                     }
+                    
+                    let newRecords = (toAdd + latestFeedRecords).removingDuplicates()
+                    await viewModel.dataController.setRecordsAfterFiltering(newRecords)
                 }
-                viewModel.timelineIsEmpty.value = latestStatusIDs.isEmpty && statuses.isEmpty
-                
+
+                viewModel.timelineIsEmpty.value = (latestStatusIDs.isEmpty && statuses.isEmpty) ? {
+                    switch viewModel.timelineContext {
+                    case .home:
+                        return .timeline
+                    case .public:
+                        return .timeline
+                    case .list:
+                        return .list
+                    case .hashtag:
+                        return .list
+                    }
+                }() : nil
+
                 if !isUserInitiated {
-                    await UIImpactFeedbackGenerator(style: .light)
-                        .impactOccurred()
+                    FeedbackGenerator.shared.generate(.impact(.light))
                 }
                 
+                let hasNewStatuses: Bool = {
+                    if sinceID != nil {
+                        return statuses.count > 1
+                    }
+                    return statuses.isNotEmpty
+                }()
+                
+                if hasNewStatuses && !isContextSwitch {
+                    viewModel.hasNewPosts.value = true
+                }
+
             } catch {
-                logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): fetch statuses failed: \(error.localizedDescription)")
-                await enter(state: Idle.self)
+                enter(state: Idle.self)
                 viewModel.didLoadLatest.send()
-                viewModel.homeTimelineNavigationBarTitleViewModel.receiveLoadingStateCompletion(.failure(error))
+                viewModel.receiveLoadingStateCompletion(.failure(error))
             }
         }   // end Task
     }

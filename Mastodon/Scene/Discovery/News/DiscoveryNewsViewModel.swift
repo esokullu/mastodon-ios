@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022-4-13.
 //
 
-import os.log
 import UIKit
 import Combine
 import GameplayKit
@@ -19,9 +18,7 @@ final class DiscoveryNewsViewModel {
     var disposeBag = Set<AnyCancellable>()
     
     // input
-    let context: AppContext
-    let authContext: AuthContext
-    let listBatchFetchViewModel = ListBatchFetchViewModel()
+    let authenticationBox: MastodonAuthenticationBox
 
     // output
     @Published var links: [Mastodon.Entity.Link] = []
@@ -42,29 +39,24 @@ final class DiscoveryNewsViewModel {
     let didLoadLatest = PassthroughSubject<Void, Never>()
     @Published var isServerSupportEndpoint = true
 
-    init(context: AppContext, authContext: AuthContext) {
-        self.context = context
-        self.authContext = authContext
+    init(authenticationBox: MastodonAuthenticationBox) {
+        self.authenticationBox = authenticationBox
         // end init
         
         Task {
             await checkServerEndpoint()
         }   // end Task
     }
-    
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
-    
 }
 
 
 extension DiscoveryNewsViewModel {
     func checkServerEndpoint() async {
         do {
-            _ = try await context.apiService.trendLinks(
-                domain: authContext.mastodonAuthenticationBox.domain,
-                query: .init(offset: nil, limit: nil)
+            _ = try await APIService.shared.trendLinks(
+                domain: authenticationBox.domain,
+                query: .init(offset: nil, limit: nil),
+                authenticationBox: authenticationBox
             )
         } catch let error as Mastodon.API.Error where error.httpResponseStatus.code == 404 {
             isServerSupportEndpoint = false

@@ -5,9 +5,7 @@
 //  Created by sxiaojian on 2021/2/5.
 //
 
-import os.log
 import UIKit
-import AVKit
 import Combine
 import CoreData
 import CoreDataStack
@@ -20,17 +18,18 @@ import MastodonCore
 import MastodonUI
 import MastodonLocalization
 
-final class HomeTimelineViewController: UIViewController, NeedsDependency, MediaPreviewableViewController {
-    
-    let logger = Logger(subsystem: "HomeTimelineViewController", category: "UI")
-    
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+final class HomeTimelineViewController: UIViewController, MediaPreviewableViewController {
     
     var disposeBag = Set<AnyCancellable>()
-    var viewModel: HomeTimelineViewModel!
-    
+    var viewModel: HomeTimelineViewModel?
+
     let mediaPreviewTransitionController = MediaPreviewTransitionController()
+    
+    var navigationFlow: NavigationFlow?
+    
+    enum EmptyViewUseCase {
+        case timeline, list
+    }
 
     let friendsAssetImageView: UIImageView = {
         let imageView = UIImageView()
@@ -46,22 +45,44 @@ final class HomeTimelineViewController: UIViewController, NeedsDependency, Media
         emptyView.isLayoutMarginsRelativeArrangement = true
         return emptyView
     }()
-    
-    let titleView = HomeTimelineNavigationBarTitleView()
-    
+
+    lazy var timelineSelectorButton = {
+        let button = UIButton(type: .custom)
+
+        button.setAttributedTitle(
+            .init(string: L10n.Scene.HomeTimeline.TimelineMenu.following, attributes: [
+                .font: UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 20, weight: .semibold))
+            ]),
+            for: .normal)
+
+        let imageConfiguration = UIImage.SymbolConfiguration(paletteColors: [.secondaryLabel, .secondarySystemFill])
+            .applying(UIImage.SymbolConfiguration(textStyle: .subheadline))
+            .applying(UIImage.SymbolConfiguration(pointSize: 16, weight: .bold, scale: .medium))
+
+        button.configuration = {
+            var config = UIButton.Configuration.plain()
+            config.contentInsets = .init(top: 0, leading: 0, bottom: 0, trailing: 0)
+            config.imagePadding = 8
+            config.image = UIImage(systemName: "chevron.down.circle.fill", withConfiguration: imageConfiguration)
+            config.imagePlacement = .trailing
+            return config
+        }()
+
+        button.showsMenuAsPrimaryAction = true
+        button.menu = generateTimelineSelectorMenu()
+        return button
+    }()
+
     let settingBarButtonItem: UIBarButtonItem = {
         let barButtonItem = UIBarButtonItem()
-        barButtonItem.tintColor = ThemeService.tintColor
-        barButtonItem.image = Asset.ObjectsAndTools.gear.image.withRenderingMode(.alwaysTemplate)
+        barButtonItem.tintColor = Asset.Colors.Brand.blurple.color
+        barButtonItem.image = UIImage(systemName: "gear")
         barButtonItem.accessibilityLabel = L10n.Common.Controls.Actions.settings
         return barButtonItem
     }()
     
     let tableView: UITableView = {
         let tableView = ControlContainableTableView()
-        tableView.register(StatusTableViewCell.self, forCellReuseIdentifier: String(describing: StatusTableViewCell.self))
-        tableView.register(TimelineMiddleLoaderTableViewCell.self, forCellReuseIdentifier: String(describing: TimelineMiddleLoaderTableViewCell.self))
-        tableView.register(TimelineBottomLoaderTableViewCell.self, forCellReuseIdentifier: String(describing: TimelineBottomLoaderTableViewCell.self))
         tableView.rowHeight = UITableView.automaticDimension
         tableView.separatorStyle = .none
         tableView.backgroundColor = .clear
@@ -75,11 +96,157 @@ final class HomeTimelineViewController: UIViewController, NeedsDependency, Media
     }()
     
     let refreshControl = RefreshControl()
+    let timelinePill = TimelineStatusPill()
+    var timelinePillCenterXAnchor: NSLayoutConstraint?
+    var timelinePillVisibleTopAnchor: NSLayoutConstraint?
+    var timelinePillHiddenTopAnchor: NSLayoutConstraint?
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s:", ((#file as NSString).lastPathComponent), #line, #function)
+    /// Donations
+    let donationBanner = DonationBanner()
+    var donationBannerCenterXAnchor: NSLayoutConstraint?
+    var donationBannerVisibleBottomAnchor: NSLayoutConstraint?
+    var donationBannerHiddenBottomAnchor: NSLayoutConstraint?
+
+    private func generateTimelineSelectorMenu() -> UIMenu {
+        let showFollowingAction = UIAction(title: L10n.Scene.HomeTimeline.TimelineMenu.following, image: .init(systemName: "house")) { [weak self] _ in
+            guard let self, let viewModel = self.viewModel else { return }
+
+            Task { [weak self] in
+                guard let self else { return }
+                viewModel.timelineContext = .home
+                await viewModel.dataController.setRecordsAfterFiltering([])
+                
+                viewModel.loadLatestStateMachine.enter(HomeTimelineViewModel.LoadLatestState.ContextSwitch.self)
+                self.timelineSelectorButton.setAttributedTitle(
+                    .init(string: L10n.Scene.HomeTimeline.TimelineMenu.following, attributes: [
+                        .font: UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 20, weight: .semibold))
+                    ]),
+                    for: .normal)
+                
+                self.timelineSelectorButton.sizeToFit()
+                self.timelineSelectorButton.menu = self.generateTimelineSelectorMenu()
+            }
+        }
+
+        let showLocalTimelineAction = UIAction(title: L10n.Scene.HomeTimeline.TimelineMenu.localCommunity, image: .init(systemName: "building.2")) { [weak self] action in
+            guard let self, let viewModel = self.viewModel else { return }
+
+            viewModel.timelineContext = .public
+            viewModel.loadLatestStateMachine.enter(HomeTimelineViewModel.LoadLatestState.ContextSwitch.self)
+            timelineSelectorButton.setAttributedTitle(
+                .init(string: L10n.Scene.HomeTimeline.TimelineMenu.localCommunity, attributes: [
+                    .font: UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 20, weight: .semibold))
+                ]),
+                for: .normal)
+            timelineSelectorButton.sizeToFit()
+            timelineSelectorButton.menu = generateTimelineSelectorMenu()
+        }
+
+        if let viewModel {
+            switch viewModel.timelineContext {
+            case .public:
+                showLocalTimelineAction.state = .on
+                showFollowingAction.state = .off
+            case .home:
+                showLocalTimelineAction.state = .off
+                showFollowingAction.state = .on
+            case .list:
+                showLocalTimelineAction.state = .off
+                showFollowingAction.state = .off
+            case .hashtag:
+                showLocalTimelineAction.state = .off
+                showFollowingAction.state = .off
+            }
+        }
+        
+        let listsSubmenu = UIDeferredMenuElement.uncached { [weak self] callback in
+            guard let self else { return callback([]) }
+            
+            Task { @MainActor in
+                let lists = (try? await Mastodon.API.Lists.getLists(
+                    session: .shared,
+                    domain: self.authenticationBox.domain,
+                    authorization: self.authenticationBox.userAuthorization
+                ).singleOutput().value) ?? []
+                
+                var listEntries = lists.map { entry in
+                    return LabeledAction(title: entry.title, image: nil, handler: { [weak self] in
+                        guard let self, let viewModel = self.viewModel else { return }
+                        viewModel.timelineContext = .list(entry.id)
+                        viewModel.loadLatestStateMachine.enter(HomeTimelineViewModel.LoadLatestState.ContextSwitch.self)
+                        timelineSelectorButton.setAttributedTitle(
+                            .init(string: entry.title, attributes: [
+                                .font: UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 20, weight: .semibold))
+                            ]),
+                            for: .normal)
+                        timelineSelectorButton.sizeToFit()
+                        timelineSelectorButton.menu = generateTimelineSelectorMenu()
+                    }).menuElement
+                }
+                
+                if listEntries.isEmpty {
+                    listEntries = [
+                        UIAction(title: L10n.Scene.HomeTimeline.TimelineMenu.Lists.emptyMessage, attributes: [.disabled], handler: {_ in })
+                    ]
+                }
+
+                callback(listEntries)
+            }
+        }
+        
+        let listsMenu = UIMenu(
+            title: L10n.Scene.HomeTimeline.TimelineMenu.Lists.title,
+            image: UIImage(systemName: "list.bullet.rectangle.portrait"),
+            children: [listsSubmenu]
+        )
+        
+        let hashtagsSubmenu = UIDeferredMenuElement.uncached { [weak self] callback in
+            guard let self else { return callback([]) }
+            
+            Task { @MainActor in
+                let lists = (try? await Mastodon.API.Account.followedTags(
+                    session: .shared,
+                    domain: self.authenticationBox.domain,
+                    query: .init(limit: nil),
+                    authorization: self.authenticationBox.userAuthorization
+                ).singleOutput().value) ?? []
+                
+                var listEntries = lists.map { entry in
+                    let entryName = "#\(entry.name)"
+                    return LabeledAction(title: entryName, image: nil, handler: { [weak self] in
+                        guard let self, let viewModel = self.viewModel else { return }
+                        viewModel.timelineContext = .hashtag(entry.name)
+                        viewModel.loadLatestStateMachine.enter(HomeTimelineViewModel.LoadLatestState.ContextSwitch.self)
+                        timelineSelectorButton.setAttributedTitle(
+                            .init(string: entryName, attributes: [
+                                .font: UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 20, weight: .semibold))
+                            ]),
+                            for: .normal)
+                        timelineSelectorButton.sizeToFit()
+                        timelineSelectorButton.menu = generateTimelineSelectorMenu()
+                    }).menuElement
+                }
+                
+                if listEntries.isEmpty {
+                    listEntries = [
+                        UIAction(title: L10n.Scene.HomeTimeline.TimelineMenu.Hashtags.emptyMessage, attributes: [.disabled], handler: {_ in })
+                    ]
+                }
+
+                callback(listEntries)
+            }
+        }
+
+        let hashtagsMenu = UIMenu(
+            title: L10n.Scene.HomeTimeline.TimelineMenu.Hashtags.title,
+            image: UIImage(systemName: "number"),
+            children: [hashtagsSubmenu]
+        )
+        
+        let listsDivider = UIMenu(title: "", options: .displayInline, children: [listsMenu, hashtagsMenu])
+
+        return UIMenu(children: [showFollowingAction, showLocalTimelineAction, listsDivider])
     }
-    
 }
 
 extension HomeTimelineViewController {
@@ -87,71 +254,22 @@ extension HomeTimelineViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        title = L10n.Scene.HomeTimeline.title
-        view.backgroundColor = ThemeService.shared.currentTheme.value.secondarySystemBackgroundColor
-        ThemeService.shared.currentTheme
-            .receive(on: RunLoop.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.view.backgroundColor = theme.secondarySystemBackgroundColor
-            }
-            .store(in: &disposeBag)
-        viewModel.$displaySettingBarButtonItem
+        title = nil
+        view.backgroundColor = .secondarySystemBackground
+
+        viewModel?.$displaySettingBarButtonItem
             .receive(on: DispatchQueue.main)
             .sink { [weak self] displaySettingBarButtonItem in
                 guard let self = self else { return }
-                #if DEBUG
-                // display debug menu
-                self.navigationItem.rightBarButtonItem = {
-                    let barButtonItem = UIBarButtonItem()
-                    barButtonItem.image = UIImage(systemName: "ellipsis.circle")
-                    barButtonItem.menu = self.debugMenu
-                    return barButtonItem
-                }()
-                #else
+
                 self.navigationItem.rightBarButtonItem = displaySettingBarButtonItem ? self.settingBarButtonItem : nil
-                #endif
             }
             .store(in: &disposeBag)
-        #if DEBUG
-        // long press to trigger debug menu
-        settingBarButtonItem.menu = debugMenu
-        #else
+
         settingBarButtonItem.target = self
         settingBarButtonItem.action = #selector(HomeTimelineViewController.settingBarButtonItemPressed(_:))
-        #endif
         
-        #if SNAPSHOT
-        titleView.logoButton.menu = self.debugMenu
-        titleView.button.menu = self.debugMenu
-        #endif
-        
-        navigationItem.titleView = titleView
-        titleView.delegate = self
-        
-        viewModel.homeTimelineNavigationBarTitleViewModel.state
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] state in
-                guard let self = self else { return }
-                self.titleView.configure(state: state)
-            }
-            .store(in: &disposeBag)
-        
-        viewModel.homeTimelineNavigationBarTitleViewModel.state
-            .removeDuplicates()
-            .filter { $0 == .publishedButton }
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                guard UserDefaults.shared.lastVersionPromptedForReview == nil else { return }
-                guard UserDefaults.shared.processCompletedCount > 3 else { return }
-                guard let windowScene = self.view.window?.windowScene else { return }
-                let version = UIApplication.appVersion()
-                UserDefaults.shared.lastVersionPromptedForReview = version
-                SKStoreReviewController.requestReview(in: windowScene)
-            }
-            .store(in: &disposeBag)
+        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: timelineSelectorButton)
         
         tableView.refreshControl = refreshControl
         refreshControl.addTarget(self, action: #selector(HomeTimelineViewController.refreshControlValueChanged(_:)), for: .valueChanged)
@@ -169,27 +287,17 @@ extension HomeTimelineViewController {
             publishProgressView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
         ])
 
-        viewModel.tableView = tableView
+        viewModel?.tableView = tableView
         tableView.delegate = self
-        viewModel.setupDiffableDataSource(
+        viewModel?.setupDiffableDataSource(
             tableView: tableView,
+            filterContext: filterContext,
             statusTableViewCellDelegate: self,
             timelineMiddleLoaderTableViewCellDelegate: self
         )
-        
-        // setup batch fetch
-        viewModel.listBatchFetchViewModel.setup(scrollView: tableView)
-        viewModel.listBatchFetchViewModel.shouldFetch
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                guard self.view.window != nil else { return }
-                self.viewModel.loadOldestStateMachine.enter(HomeTimelineViewModel.LoadOldestState.Loading.self)
-            }
-            .store(in: &disposeBag)
-        
+
         // bind refresh control
-        viewModel.didLoadLatest
+        viewModel?.didLoadLatest
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self = self else { return }
@@ -200,7 +308,14 @@ extension HomeTimelineViewController {
             }
             .store(in: &disposeBag)
         
-        context.publisherService.$currentPublishProgress
+        PublisherService.shared.statusPublishResult.receive(on: DispatchQueue.main).sink { result in
+            if case .success(.edit(let status)) = result {
+                self.viewModel?.hasPendingStatusEditReload = true
+                self.viewModel?.dataController.update(status: .fromEntity(status.value), intent: .edit)
+            }
+        }.store(in: &disposeBag)
+        
+        PublisherService.shared.$currentPublishProgress
             .receive(on: DispatchQueue.main)
             .sink { [weak self] progress in
                 guard let self = self else { return }
@@ -229,13 +344,26 @@ extension HomeTimelineViewController {
             }
             .store(in: &disposeBag)
         
-        viewModel.timelineIsEmpty
+        viewModel?.timelineIsEmpty
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] isEmpty in
-                if isEmpty {
-                    self?.showEmptyView()
-                } else {
+            .sink { [weak self] state in
+                guard let state else {
                     self?.emptyView.removeFromSuperview()
+                    return
+                }
+                self?.showEmptyView(state)
+
+                let userDoesntFollowPeople: Bool
+                if let authenticationBox = self?.authenticationBox,
+                   let me = authenticationBox.cachedAccount {
+                    userDoesntFollowPeople = me.followersCount == 0
+                } else {
+                    userDoesntFollowPeople = true
+                }
+
+                if (self?.viewModel?.presentedSuggestions == false) && userDoesntFollowPeople {
+                    self?.findPeopleButtonPressed(self)
+                    self?.viewModel?.presentedSuggestions = true
                 }
             }
             .store(in: &disposeBag)
@@ -254,9 +382,6 @@ extension HomeTimelineViewController {
                 
                 let viewFrameInWindow = self.view.convert(self.view.frame, to: nil)
                 guard xPosition >= viewFrameInWindow.minX && xPosition <= viewFrameInWindow.maxX else { return }
-                        
-                // works on iOS 14
-                self.logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): receive notification \(xPosition)")
 
                 // check if scroll to top
                 guard self.shouldRestoreScrollPosition() else { return }
@@ -264,8 +389,113 @@ extension HomeTimelineViewController {
             }
             .store(in: &disposeBag)
 
+        timelinePill.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(timelinePill)
+
+        let timelinePillCenterXAnchor = timelinePill.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        let timelinePillVisibleTopAnchor = timelinePill.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8)
+        let timelinePillHiddenTopAnchor = view.safeAreaLayoutGuide.topAnchor.constraint(equalTo: timelinePill.bottomAnchor, constant: 8)
+
+        NSLayoutConstraint.activate([
+            timelinePillHiddenTopAnchor, timelinePillCenterXAnchor
+        ])
+
+        timelinePill.addTarget(self, action: #selector(HomeTimelineViewController.timelinePillTouched(_:)), for: .touchDown)
+        timelinePill.addTarget(self, action: #selector(HomeTimelineViewController.timelinePillPressedInside(_:)), for: .touchUpInside)
+        timelinePill.addTarget(self, action: #selector(HomeTimelineViewController.timelinePillTouchedOutside(_:)), for: .touchUpOutside)
+
+        self.timelinePillCenterXAnchor = timelinePillCenterXAnchor
+        self.timelinePillVisibleTopAnchor = timelinePillVisibleTopAnchor
+        self.timelinePillHiddenTopAnchor = timelinePillHiddenTopAnchor
+
+        viewModel?.hasNewPosts
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] hasNewPosts in
+                guard let self else { return }
+
+                if hasNewPosts {
+                    self.timelinePill.update(with: .newPosts)
+                    self.showTimelinePill()
+                } else {
+                    self.hideTimelinePill()
+                }
+            })
+            .store(in: &disposeBag)
+
+        viewModel?.isOffline
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] isOffline in
+                guard let self else { return }
+
+                if isOffline {
+                    self.timelinePill.update(with: .offline)
+                    self.showTimelinePill()
+                }
+            })
+            .store(in: &disposeBag)
+
+        PublisherService.shared.statusPublishResult
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] publishResult in
+            guard let self else { return }
+            switch publishResult {
+            case .success:
+                self.timelinePill.update(with: .postSent)
+                self.showTimelinePill()
+                self.viewModel?.loadLatestStateMachine.enter(HomeTimelineViewModel.LoadLatestState.Loading.self)
+            case .failure(let error):
+                self.hideTimelinePill()
+                if tabBarController?.presentingViewController == nil {
+                    let alertController = UIAlertController.standardAlert(of: error)
+                    self.present(alertController, animated: true)
+                }
+            }
+        }
+        .store(in: &disposeBag)
+        
+        view.addSubview(donationBanner)
+        donationBanner.alpha = 0
+        donationBanner.translatesAutoresizingMaskIntoConstraints = false
+        donationBanner.onClose = { [weak self] campaignID in
+            self?.hideDonationCampaignBanner()
+            if let campaignID {
+                Mastodon.Entity.DonationCampaign.didDismiss(campaignID)
+            }
+        }
+        donationBanner.onShowDonationDialog = { [weak self] campaign in
+            self?.showDonationCampaign(campaign)
+        }
+        
+        let donationBannerCenterXAnchor = donationBanner.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        let donationBannerVisibleBottomAnchor = donationBanner.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        let donationBannerHiddenBottomAnchor = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: donationBanner.topAnchor)
+
+        NSLayoutConstraint.activate([
+            donationBannerHiddenBottomAnchor,
+            donationBannerCenterXAnchor,
+            donationBanner.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            donationBanner.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+        
+        self.donationBannerCenterXAnchor = donationBannerCenterXAnchor
+        self.donationBannerVisibleBottomAnchor = donationBannerVisibleBottomAnchor
+        self.donationBannerHiddenBottomAnchor = donationBannerHiddenBottomAnchor
+        
+        viewModel?.onPresentDonationCampaign
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] campaign in
+                self?.showDonationCampaignBanner(campaign)
+            })
+            .store(in: &disposeBag)
+        
+        StatusFilterService.shared.$activeFilterBox
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.tableView.reloadData()
+            }
+            .store(in: &disposeBag)
     }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
@@ -274,23 +504,25 @@ extension HomeTimelineViewController {
         
         // needs trigger manually after onboarding dismiss
         setNeedsStatusBarAppearanceUpdate()
+        
+        Task {
+            await viewModel?.askForDonationIfPossible()
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-        viewModel.viewDidAppear.send()
-
-        if let timestamp = viewModel.lastAutomaticFetchTimestamp {
+        if let timestamp = viewModel?.lastAutomaticFetchTimestamp {
             let now = Date()
             if now.timeIntervalSince(timestamp) > 60 {
-                self.viewModel.lastAutomaticFetchTimestamp = now
-                self.viewModel.homeTimelineNeedRefresh.send()
+                self.viewModel?.lastAutomaticFetchTimestamp = now
+                self.viewModel?.homeTimelineNeedRefresh.send()
             } else {
                 // do nothing
             }
         } else {
-            self.viewModel.homeTimelineNeedRefresh.send()
+            self.viewModel?.homeTimelineNeedRefresh.send()
         }
     }
 
@@ -301,14 +533,14 @@ extension HomeTimelineViewController {
             // do nothing
         } completion: { _ in
             // fix AutoLayout cell height not update after rotate issue
-            self.viewModel.cellFrameCache.removeAllObjects()
+            self.viewModel?.cellFrameCache.removeAllObjects()
             self.tableView.reloadData()
         }
     }
 }
 
 extension HomeTimelineViewController {
-    func showEmptyView() {
+    func showEmptyView(_ state: HomeTimelineViewModel.EmptyViewState) {
         if emptyView.superview != nil {
             return
         }
@@ -324,56 +556,73 @@ extension HomeTimelineViewController {
         if emptyView.arrangedSubviews.count > 0 {
             return
         }
-        let findPeopleButton: PrimaryActionButton = {
-            let button = PrimaryActionButton()
-            button.setTitle(L10n.Common.Controls.Actions.findPeople, for: .normal)
-            button.addTarget(self, action: #selector(HomeTimelineViewController.findPeopleButtonPressed(_:)), for: .touchUpInside)
-            return button
-        }()
-        NSLayoutConstraint.activate([
-            findPeopleButton.heightAnchor.constraint(equalToConstant: 46)
-        ])
-        
-        let manuallySearchButton: HighlightDimmableButton = {
-            let button = HighlightDimmableButton()
-            button.titleLabel?.font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 15, weight: .semibold))
-            button.setTitle(L10n.Common.Controls.Actions.manuallySearch, for: .normal)
-            button.setTitleColor(Asset.Colors.brand.color, for: .normal)
-            button.addTarget(self, action: #selector(HomeTimelineViewController.manuallySearchButtonPressed(_:)), for: .touchUpInside)
-            return button
-        }()
 
-        let topPaddingView = UIView()
-        let bottomPaddingView = UIView()
+        switch state {
+        case .list:
+            let noStatusesLabel: UILabel = {
+                let label = UILabel()
+                label.text = L10n.Scene.HomeTimeline.EmptyState.listEmptyMessageTitle
+                label.textColor = Asset.Colors.Label.secondary.color
+                label.textAlignment = .center
+                return label
+            }()
+            emptyView.addArrangedSubview(noStatusesLabel)
+        case .timeline:
+            let findPeopleButton: PrimaryActionButton = {
+                let button = PrimaryActionButton()
+                button.setTitle(L10n.Common.Controls.Actions.findPeople, for: .normal)
+                button.addTarget(self, action: #selector(HomeTimelineViewController.findPeopleButtonPressed(_:)), for: .touchUpInside)
+                return button
+            }()
+            NSLayoutConstraint.activate([
+                findPeopleButton.heightAnchor.constraint(equalToConstant: 46)
+            ])
+            
+            let manuallySearchButton: HighlightDimmableButton = {
+                let button = HighlightDimmableButton()
+                button.titleLabel?.font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 15, weight: .semibold))
+                button.setTitle(L10n.Common.Controls.Actions.manuallySearch, for: .normal)
+                button.setTitleColor(Asset.Colors.Brand.blurple.color, for: .normal)
+                button.addTarget(self, action: #selector(HomeTimelineViewController.manuallySearchButtonPressed(_:)), for: .touchUpInside)
+                return button
+            }()
 
-        emptyView.addArrangedSubview(topPaddingView)
-        emptyView.addArrangedSubview(friendsAssetImageView)
-        emptyView.addArrangedSubview(bottomPaddingView)
+            let topPaddingView = UIView()
+            let bottomPaddingView = UIView()
 
-        topPaddingView.translatesAutoresizingMaskIntoConstraints = false
-        bottomPaddingView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            topPaddingView.heightAnchor.constraint(equalTo: bottomPaddingView.heightAnchor, multiplier: 0.8),
-        ])
+            emptyView.addArrangedSubview(topPaddingView)
+            emptyView.addArrangedSubview(friendsAssetImageView)
+            emptyView.addArrangedSubview(bottomPaddingView)
 
-        let buttonContainerStackView = UIStackView()
-        emptyView.addArrangedSubview(buttonContainerStackView)
-        buttonContainerStackView.isLayoutMarginsRelativeArrangement = true
-        buttonContainerStackView.layoutMargins = UIEdgeInsets(top: 0, left: 32, bottom: 22, right: 32)
-        buttonContainerStackView.axis = .vertical
-        buttonContainerStackView.spacing = 17
+            topPaddingView.translatesAutoresizingMaskIntoConstraints = false
+            bottomPaddingView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                topPaddingView.heightAnchor.constraint(equalTo: bottomPaddingView.heightAnchor, multiplier: 0.8),
+                manuallySearchButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 20),
+            ])
 
-        buttonContainerStackView.addArrangedSubview(findPeopleButton)
-        buttonContainerStackView.addArrangedSubview(manuallySearchButton)
+            let buttonContainerStackView = UIStackView()
+            emptyView.addArrangedSubview(buttonContainerStackView)
+            buttonContainerStackView.isLayoutMarginsRelativeArrangement = true
+            buttonContainerStackView.layoutMargins = UIEdgeInsets(top: 0, left: 32, bottom: 22, right: 32)
+            buttonContainerStackView.axis = .vertical
+            buttonContainerStackView.spacing = 17
+
+            buttonContainerStackView.addArrangedSubview(findPeopleButton)
+            buttonContainerStackView.addArrangedSubview(manuallySearchButton)
+        }
     }
 }
 
+//MARK: - Actions
 extension HomeTimelineViewController {
     
-    @objc private func findPeopleButtonPressed(_ sender: PrimaryActionButton) {
-        let suggestionAccountViewModel = SuggestionAccountViewModel(context: context, authContext: viewModel.authContext)
+    @objc private func findPeopleButtonPressed(_ sender: Any?) {
+        guard let authenticationBox = viewModel?.authenticationBox else { return }
+
+        let suggestionAccountViewModel = SuggestionAccountViewModel(authenticationBox: authenticationBox)
         suggestionAccountViewModel.delegate = viewModel
-        _ = coordinator.present(
+        _ = self.sceneCoordinator?.present(
             scene: .suggestionAccount(viewModel: suggestionAccountViewModel),
             from: self,
             transition: .modal(animated: true, completion: nil)
@@ -381,50 +630,135 @@ extension HomeTimelineViewController {
     }
     
     @objc private func manuallySearchButtonPressed(_ sender: UIButton) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-        let searchDetailViewModel = SearchDetailViewModel(authContext: viewModel.authContext)
-        _ = coordinator.present(scene: .searchDetail(viewModel: searchDetailViewModel), from: self, transition: .modal(animated: true, completion: nil))
+        self.sceneCoordinator?.switchToTabBar(tab: .search)
     }
     
     @objc private func settingBarButtonItemPressed(_ sender: UIBarButtonItem) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-        guard let setting = context.settingService.currentSetting.value else { return }
-        let settingsViewModel = SettingsViewModel(context: context, authContext: viewModel.authContext, setting: setting)
-        _ = coordinator.present(scene: .settings(viewModel: settingsViewModel), from: self, transition: .modal(animated: true, completion: nil))
+        guard let setting = SettingService.shared.currentSetting.value else { return }
+
+        _ = self.sceneCoordinator?.present(scene: .settings(setting: setting), from: self, transition: .none)
     }
 
     @objc private func refreshControlValueChanged(_ sender: RefreshControl) {
-        guard viewModel.loadLatestStateMachine.enter(HomeTimelineViewModel.LoadLatestState.LoadingManually.self) else {
+        guard let viewModel, viewModel.loadLatestStateMachine.enter(HomeTimelineViewModel.LoadLatestState.LoadingManually.self) else {
             sender.endRefreshing()
             return
         }
     }
     
     @objc func signOutAction(_ sender: UIAction) {
+
         Task { @MainActor in
-            try await context.authenticationService.signOutMastodonUser(authenticationBox: viewModel.authContext.mastodonAuthenticationBox)
-            self.coordinator.setup()
+            try await AuthenticationServiceProvider.shared.signOutMastodonUser(authentication: authenticationBox.authentication)
+            let userIdentifier = authenticationBox
+            PersistenceManager.shared.removeAllCaches(forUser: userIdentifier)
+            self.sceneCoordinator?.setup()
+            self.sceneCoordinator?.setup()
         }
     }
 
+    @objc private func timelinePillTouched(_ sender: TimelineStatusPill) {
+        UIView.animate(withDuration: 0.05) {
+            sender.transform = CGAffineTransform.identity.scaledBy(x: 0.95, y: 0.95)
+        }
+    }
+
+    @objc private func timelinePillTouchedOutside(_ sender: TimelineStatusPill) {
+        UIView.animate(withDuration: 0.05) {
+            sender.transform = CGAffineTransform.identity.scaledBy(x: 100/95.0, y: 100/95.0)
+        }
+    }
+
+    @objc private func timelinePillPressedInside(_ sender: TimelineStatusPill) {
+        guard let reason = sender.reason else { return }
+
+        UIView.animate(withDuration: 0.05) {
+            sender.transform = CGAffineTransform.identity.scaledBy(x: 100/95.0, y: 100/95.0)
+        }
+
+        switch reason {
+        case .newPosts:
+            scrollToTop(animated: true)
+            viewModel?.hasNewPosts.value = false
+        case .postSent:
+            scrollToTop(animated: true)
+            hideTimelinePill()
+        case .offline:
+            hideTimelinePill()
+        }
+    }
+
+    private func showTimelinePill() {
+        guard let timelinePillHiddenTopAnchor, let timelinePillVisibleTopAnchor else { return }
+
+        timelinePill.setNeedsLayout()
+        timelinePill.layoutIfNeeded()
+        timelinePill.alpha = 0
+        NSLayoutConstraint.deactivate([timelinePillHiddenTopAnchor])
+        NSLayoutConstraint.activate([timelinePillVisibleTopAnchor])
+
+        UIView.animate(withDuration: 0.5, delay: 0.0, usingSpringWithDamping: 0.75, initialSpringVelocity: 0.9) { [weak self] in
+            self?.timelinePill.alpha = 1
+            self?.view.layoutIfNeeded()
+        }
+    }
+
+    private func hideTimelinePill() {
+        guard let timelinePillHiddenTopAnchor, let timelinePillVisibleTopAnchor else { return }
+
+        NSLayoutConstraint.deactivate([timelinePillVisibleTopAnchor])
+        NSLayoutConstraint.activate([timelinePillHiddenTopAnchor])
+        timelinePill.alpha = 1
+        UIView.animate(withDuration: 0.5, animations: { [weak self] in
+            self?.timelinePill.alpha = 0
+            self?.view.layoutIfNeeded()
+        })
+    }
+    
+    private func showDonationCampaignBanner(_ campaign: Mastodon.Entity.DonationCampaign) {
+        guard let donationBannerHiddenBottomAnchor, let donationBannerVisibleBottomAnchor else { return }
+
+        donationBanner.update(campaign: campaign)
+        donationBanner.setNeedsLayout()
+        donationBanner.layoutIfNeeded()
+        NSLayoutConstraint.deactivate([donationBannerHiddenBottomAnchor])
+        NSLayoutConstraint.activate([donationBannerVisibleBottomAnchor])
+
+        UIView.animate(withDuration: 0.5, delay: 0.0, usingSpringWithDamping: 0.75, initialSpringVelocity: 0.9) { [weak self] in
+            self?.donationBanner.alpha = 1
+            self?.view.layoutIfNeeded()
+        }
+    }
+
+    private func hideDonationCampaignBanner() {
+        guard let donationBannerHiddenBottomAnchor, let donationBannerVisibleBottomAnchor else { return }
+
+        NSLayoutConstraint.deactivate([donationBannerVisibleBottomAnchor])
+        NSLayoutConstraint.activate([donationBannerHiddenBottomAnchor])
+        donationBanner.alpha = 1
+        UIView.animate(withDuration: 0.5, animations: { [weak self] in
+            self?.donationBanner.alpha = 0
+            self?.view.layoutIfNeeded()
+        })
+    }
+    
+    private func showDonationCampaign(_ campaign: Mastodon.Entity.DonationCampaign) {
+        hideDonationCampaignBanner()
+        guard let coordinator = self.sceneCoordinator else { return }
+        navigationFlow = NewDonationNavigationFlow(flowPresenter: self, campaign: campaign, authenticationBox: authenticationBox, sceneCoordinator: coordinator)
+        navigationFlow?.presentFlow { [weak self] in
+            self?.navigationFlow = nil
+        }
+    }
 }
 // MARK: - UIScrollViewDelegate
 extension HomeTimelineViewController {
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        switch scrollView {
-        case tableView:
-            viewModel.homeTimelineNavigationBarTitleViewModel.handleScrollViewDidScroll(scrollView)
-        default:
-            break
-        }
-    }
-    
     func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
         switch scrollView {
         case tableView:
             
             let indexPath = IndexPath(row: 0, section: 0)
-            guard viewModel.diffableDataSource?.itemIdentifier(for: indexPath) != nil else {
+            guard viewModel?.diffableDataSource?.itemIdentifier(for: indexPath) != nil else {
                 return true
             }
             // save position
@@ -437,11 +771,30 @@ extension HomeTimelineViewController {
             return true
         }
     }
-    
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        Self.scrollViewDidScrollToEnd(scrollView) {
+            guard let viewModel,
+                  let currentState = viewModel.loadLatestStateMachine.currentState as? HomeTimelineViewModel.LoadLatestState,
+                  (currentState.self is HomeTimelineViewModel.LoadLatestState.ContextSwitch) == false else { return }
+
+            viewModel.timelineDidReachEnd()
+        }
+
+        
+        guard (scrollView.safeAreaInsets.top + scrollView.contentOffset.y) == 0 else {
+            return
+        }
+
+        hideTimelinePill()
+
+
+    }
+
     private func savePositionBeforeScrollToTop() {
         // check save action interval
         // should not fast than 0.5s to prevent save when scrollToTop on-flying
-        if let record = viewModel.scrollPositionRecord {
+        if let record = viewModel?.scrollPositionRecord {
             let now = Date()
             guard now.timeIntervalSince(record.timestamp) > 0.5 else {
                 // skip this save action
@@ -449,7 +802,7 @@ extension HomeTimelineViewController {
             }
         }
         
-        guard let diffableDataSource = viewModel.diffableDataSource else { return }
+        guard let diffableDataSource = viewModel?.diffableDataSource else { return }
         guard let anchorIndexPaths = tableView.indexPathsForVisibleRows?.sorted() else { return }
         guard !anchorIndexPaths.isEmpty else { return }
         let anchorIndexPath = anchorIndexPaths[anchorIndexPaths.count / 2]
@@ -460,8 +813,7 @@ extension HomeTimelineViewController {
             let cellFrameInView = tableView.convert(anchorCell.frame, to: view)
             return cellFrameInView.origin.y
         }()
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): save position record for \(anchorIndexPath) with offset: \(offset)")
-        viewModel.scrollPositionRecord = HomeTimelineViewModel.ScrollPositionRecord(
+        viewModel?.scrollPositionRecord = HomeTimelineViewModel.ScrollPositionRecord(
             item: anchorItem,
             offset: offset,
             timestamp: Date()
@@ -476,19 +828,19 @@ extension HomeTimelineViewController {
     }
     
     private func restorePositionWhenScrollToTop() {
-        guard let diffableDataSource = self.viewModel.diffableDataSource else { return }
-        guard let record = self.viewModel.scrollPositionRecord,
+        guard let diffableDataSource = viewModel?.diffableDataSource else { return }
+        guard let record = viewModel?.scrollPositionRecord,
               let indexPath = diffableDataSource.indexPath(for: record.item)
         else { return }
         
         tableView.scrollToRow(at: indexPath, at: .middle, animated: true)
-        viewModel.scrollPositionRecord = nil
+        viewModel?.scrollPositionRecord = nil
     }
 }
 
 // MARK: - AuthContextProvider
 extension HomeTimelineViewController: AuthContextProvider {
-    var authContext: AuthContext { viewModel.authContext }
+    var authenticationBox: MastodonAuthenticationBox { viewModel!.authenticationBox }
 }
 
 // MARK: - UITableViewDelegate
@@ -518,23 +870,17 @@ extension HomeTimelineViewController: UITableViewDelegate, AutoGenerateTableView
     }
 
     // sourcery:end
-    
-    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        if indexPath.row == tableView.numberOfRows(inSection: indexPath.section) - 1 {
-            viewModel.timelineDidReachEnd()
-        }
-    }
 }
 
 // MARK: - TimelineMiddleLoaderTableViewCellDelegate
 extension HomeTimelineViewController: TimelineMiddleLoaderTableViewCellDelegate {
     func timelineMiddleLoaderTableViewCell(_ cell: TimelineMiddleLoaderTableViewCell, loadMoreButtonDidPressed button: UIButton) {
-        guard let diffableDataSource = viewModel.diffableDataSource else { return }
+        guard let diffableDataSource = viewModel?.diffableDataSource else { return }
         guard let indexPath = tableView.indexPath(for: cell) else { return }
         guard let item = diffableDataSource.itemIdentifier(for: indexPath) else { return }
 
         Task {
-            await viewModel.loadMore(item: item)
+            await viewModel?.loadMore(item: item, at: indexPath)
         }
     }
 }
@@ -545,6 +891,8 @@ extension HomeTimelineViewController: ScrollViewContainer {
     var scrollView: UIScrollView { return tableView }
     
     func scrollToTop(animated: Bool) {
+        guard let viewModel else { return }
+
         if scrollView.contentOffset.y < scrollView.frame.height,
            viewModel.loadLatestStateMachine.canEnterState(HomeTimelineViewModel.LoadLatestState.Loading.self),
            (scrollView.contentOffset.y + scrollView.adjustedContentInset.top) == 0.0,
@@ -568,37 +916,6 @@ extension HomeTimelineViewController: ScrollViewContainer {
 
 // MARK: - StatusTableViewCellDelegate
 extension HomeTimelineViewController: StatusTableViewCellDelegate { }
-
-// MARK: - HomeTimelineNavigationBarTitleViewDelegate
-extension HomeTimelineViewController: HomeTimelineNavigationBarTitleViewDelegate {
-    func homeTimelineNavigationBarTitleView(_ titleView: HomeTimelineNavigationBarTitleView, logoButtonDidPressed sender: UIButton) {
-        if shouldRestoreScrollPosition() {
-            restorePositionWhenScrollToTop()
-        } else {
-            savePositionBeforeScrollToTop()
-            scrollToTop(animated: true)
-        }
-    }
-    
-    func homeTimelineNavigationBarTitleView(_ titleView: HomeTimelineNavigationBarTitleView, buttonDidPressed sender: UIButton) {
-        switch titleView.state {
-        case .newPostButton:
-            guard let diffableDataSource = viewModel.diffableDataSource else { return }
-            let indexPath = IndexPath(row: 0, section: 0)
-            guard diffableDataSource.itemIdentifier(for: indexPath) != nil else { return }
-        
-            savePositionBeforeScrollToTop()
-            tableView.scrollToRow(at: indexPath, at: .top, animated: true)
-        case .offlineButton:
-            // TODO: retry
-            break
-        case .publishedButton:
-            break
-        default:
-            break
-        }
-    }
-}
 
 extension HomeTimelineViewController {
     override var keyCommands: [UIKeyCommand]? {

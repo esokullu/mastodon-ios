@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-7-9.
 //
 
-import os.log
 import Combine
 import CoreData
 import CoreDataStack
@@ -16,10 +15,10 @@ extension APIService {
 
     func filters(
         mastodonAuthenticationBox: MastodonAuthenticationBox
-    ) -> AnyPublisher<Mastodon.Response.Content<[Mastodon.Entity.Filter]>, Error> {
+    ) async throws -> [Mastodon.Entity.FilterInfo] {
         let authorization = mastodonAuthenticationBox.userAuthorization
         let domain = mastodonAuthenticationBox.domain
 
-        return Mastodon.API.Account.filters(session: session, domain: domain, authorization: authorization)
+        return try await Mastodon.API.Account.filters(session: session, domain: domain, authorization: authorization)
     }
 }

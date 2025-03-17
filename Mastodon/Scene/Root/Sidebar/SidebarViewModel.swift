@@ -15,24 +15,27 @@ import MastodonAsset
 import MastodonCore
 import MastodonLocalization
 
+@MainActor
 final class SidebarViewModel {
     var disposeBag = Set<AnyCancellable>()
     
     // input
-    let context: AppContext
-    let authContext: AuthContext?
+    let authenticationBox: MastodonAuthenticationBox?
     @Published private var isSidebarDataSourceReady = false
     @Published private var isAvatarButtonDataReady = false
-    @Published var currentTab: MainTabBarController.Tab = .home
+    @Published var currentTab: Tab = .home
 
     // output
     var diffableDataSource: UICollectionViewDiffableDataSource<Section, Item>?
     var secondaryDiffableDataSource: UICollectionViewDiffableDataSource<Section, Item>?
     @Published private(set) var isReadyForWizardAvatarButton = false
+    
+    private let chevronImage = UIImage.chevronUpChevronDown?.withConfiguration(
+        UIImage.SymbolConfiguration(weight: .bold)
+    )
 
-    init(context: AppContext, authContext: AuthContext?) {
-        self.context = context
-        self.authContext = authContext
+    init(authenticationBox: MastodonAuthenticationBox?) {
+        self.authenticationBox = authenticationBox
         
         Publishers.CombineLatest(
             $isSidebarDataSourceReady,
@@ -41,7 +44,7 @@ final class SidebarViewModel {
         .map { $0 && $1 }
         .assign(to: &$isReadyForWizardAvatarButton)
         
-        self.isAvatarButtonDataReady = authContext != nil
+        self.isAvatarButtonDataReady = authenticationBox != nil
     }
     
 }
@@ -53,7 +56,7 @@ extension SidebarViewModel {
     }
     
     enum Item: Hashable {
-        case tab(MainTabBarController.Tab)
+        case tab(Tab)
         case setting
         case compose
     }
@@ -65,24 +68,25 @@ extension SidebarViewModel {
         collectionView: UICollectionView,
         secondaryCollectionView: UICollectionView
     ) {
-        let tabCellRegistration = UICollectionView.CellRegistration<SidebarListCollectionViewCell, MainTabBarController.Tab> { [weak self] cell, indexPath, item in
-            guard let self = self else { return }
-            
-            let imageURL: URL? = {
-                switch item {
-                case .me:
-                    let user = self.authContext?.mastodonAuthenticationBox.authenticationRecord.object(in: self.context.managedObjectContext)?.user
-                    return user?.avatarImageURL()
-                default:
-                    return nil
-                }
-            }()
+        let tabCellRegistration = UICollectionView.CellRegistration<SidebarListCollectionViewCell, Tab> { [weak self] cell, indexPath, item in
+            guard let self else { return }
+
+            let imageURL: URL?
+            switch item {
+            case .me:
+                let account = self.authenticationBox?.authentication.cachedAccount()
+                imageURL = account?.avatarImageURL()
+            case .home, .search, .compose, .notifications:
+                // no custom avatar for other tabs
+                imageURL = nil
+            }
+
             cell.item = SidebarListContentView.Item(
                 isActive: false,
-                accessoryImage: item == .me ? .chevronUpChevronDown : nil,
+                accessoryImage: item == .me ? self.chevronImage : nil,
                 title: item.title,
                 image: item.image,
-                activeImage: item.selectedImage,
+                activeImage: item.selectedImage.withTintColor(Asset.Colors.Brand.blurple.color, renderingMode: .alwaysOriginal),
                 imageURL: imageURL
             )
             cell.setNeedsUpdateConfiguration()
@@ -100,39 +104,40 @@ extension SidebarViewModel {
                 .store(in: &cell.disposeBag)
             
             switch item {
-            case .notifications:
-                Publishers.CombineLatest(
-                    self.context.notificationService.unreadNotificationCountDidUpdate,
-                    self.$currentTab
-                )
-                .receive(on: DispatchQueue.main)
-                .sink { [weak cell] authentication, currentTab in
-                    guard let cell = cell else { return }
-                    
-                    let hasUnreadPushNotification: Bool = {
-                        guard let accessToken = self.authContext?.mastodonAuthenticationBox.userAuthorization.accessToken else { return false }
-                        let count = UserDefaults.shared.getNotificationCountWithAccessToken(accessToken: accessToken)
-                        return count > 0
-                    }()
-                    
-                    let image: UIImage = {
-                        if currentTab == .notifications {
-                            return hasUnreadPushNotification ? Asset.ObjectsAndTools.bellBadgeFill.image.withRenderingMode(.alwaysTemplate) : Asset.ObjectsAndTools.bellFill.image.withRenderingMode(.alwaysTemplate)
+                case .notifications:
+                    Publishers.CombineLatest(
+                        NotificationService.shared.unreadNotificationCountDidUpdate,
+                        self.$currentTab
+                    )
+                    .receive(on: DispatchQueue.main)
+                    .sink { [weak cell] authentication, currentTab in
+                        guard let cell = cell else { return }
+
+                        let hasUnreadPushNotification: Bool = {
+                            guard let accessToken = self.authenticationBox?.userAuthorization.accessToken else { return false }
+                            let count = UserDefaults.shared.getNotificationCountWithAccessToken(accessToken: accessToken)
+                            return count > 0
+                        }()
+
+                        let image: UIImage
+                        if hasUnreadPushNotification {
+                            let imageConfiguration = UIImage.SymbolConfiguration(paletteColors: [.red, SystemTheme.tabBarItemNormalIconColor])
+                            image = UIImage(systemName: "bell.badge", withConfiguration: imageConfiguration)!
                         } else {
-                            return hasUnreadPushNotification ? Asset.ObjectsAndTools.bellBadge.image.withRenderingMode(.alwaysTemplate) : Asset.ObjectsAndTools.bell.image.withRenderingMode(.alwaysTemplate)
+                            image = Tab.notifications.image
                         }
-                    }()
-                    cell.item?.image = image
-                    cell.item?.activeImage = image
-                    cell.setNeedsUpdateConfiguration()
-                }
-                .store(in: &cell.disposeBag)
-            case .me:
-                guard let user = self.authContext?.mastodonAuthenticationBox.authenticationRecord.object(in: self.context.managedObjectContext)?.user else { return }
-                let currentUserDisplayName = user.displayNameWithFallback
-                cell.accessibilityHint = L10n.Scene.AccountList.tabBarHint(currentUserDisplayName)
-            default:
-                break
+                        cell.item?.image = image
+                        cell.item?.activeImage = image.withTintColor(Asset.Colors.Brand.blurple.color, renderingMode: .alwaysOriginal)
+                        cell.setNeedsUpdateConfiguration()
+                    }
+                    .store(in: &cell.disposeBag)
+                case .me:
+                    guard let account = self.authenticationBox?.authentication.cachedAccount() else { return }
+
+                    let currentUserDisplayName = account.displayNameWithFallback
+                    cell.accessibilityHint = L10n.Scene.AccountList.tabBarHint(currentUserDisplayName)
+                case .compose, .home, .search:
+                    break
             }
         }
         
@@ -166,10 +171,10 @@ extension SidebarViewModel {
             case .compose:
                 let item = SidebarListContentView.Item(
                     isActive: false,
-                    accessoryImage: self.currentTab == .me ? .chevronUpChevronDown : nil,
+                    accessoryImage: self.currentTab == .me ? self.chevronImage : nil,
                     title: L10n.Common.Controls.Actions.compose,
-                    image: Asset.ObjectsAndTools.squareAndPencil.image.withRenderingMode(.alwaysTemplate),
-                    activeImage: Asset.ObjectsAndTools.squareAndPencil.image.withRenderingMode(.alwaysTemplate),
+                    image: UIImage(systemName: "square.and.pencil")!.withRenderingMode(.alwaysTemplate),
+                    activeImage: UIImage(systemName: "square.and.pencil")!.withRenderingMode(.alwaysTemplate),
                     imageURL: nil
                 )
                 return collectionView.dequeueConfiguredReusableCell(using: cellRegistration, for: indexPath, item: item)
@@ -215,8 +220,8 @@ extension SidebarViewModel {
             let item = SidebarListContentView.Item(
                 isActive: false,
                 title: L10n.Common.Controls.Actions.compose,
-                image: Asset.ObjectsAndTools.squareAndPencil.image.withRenderingMode(.alwaysTemplate),
-                activeImage: Asset.ObjectsAndTools.squareAndPencil.image.withRenderingMode(.alwaysTemplate),
+                image: UIImage(systemName: "square.and.pencil")!.withRenderingMode(.alwaysTemplate),
+                activeImage: UIImage(systemName: "square.and.pencil")!.withRenderingMode(.alwaysTemplate),
                 imageURL: nil
             )
             return collectionView.dequeueConfiguredReusableCell(using: cellRegistration, for: indexPath, item: item)

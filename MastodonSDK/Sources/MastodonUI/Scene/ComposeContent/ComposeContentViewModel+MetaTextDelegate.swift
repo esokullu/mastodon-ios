@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022/10/28.
 //
 
-import os.log
 import UIKit
 import MetaTextKit
 import TwitterMeta
@@ -33,8 +32,10 @@ extension ComposeContentViewModel: MetaTextDelegate {
             
         case .content:
             let textInput = textStorage.string
-            self.content = textInput
-            
+            Task {
+                self.content = textInput
+            }
+                
             let content = MastodonContent(
                 content: textInput,
                 emojis: [:] // customEmojiViewModel?.emojis.value.asDictionary ?? [:]

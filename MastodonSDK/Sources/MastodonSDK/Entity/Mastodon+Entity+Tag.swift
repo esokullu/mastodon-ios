@@ -16,7 +16,7 @@ extension Mastodon.Entity {
     ///   2022/11/22
     /// # Reference
     ///  [Document](https://docs.joinmastodon.org/entities/tag/)
-    public struct Tag: Hashable, Codable {
+    public struct Tag: Hashable, Codable, Sendable {
         
         // Base
         public let name: String
@@ -24,6 +24,13 @@ extension Mastodon.Entity {
         
         public let history: [History]?
         public let following: Bool?
+        
+        public init(name: String, url: String, history: [History]? = nil, following: Bool? = nil) {
+            self.name = name
+            self.url = url
+            self.history = history
+            self.following = following
+        }
         
         enum CodingKeys: String, CodingKey {
             case name

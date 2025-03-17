@@ -5,7 +5,6 @@
 //  Created by BradGao on 2021/3/30.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreData
@@ -15,9 +14,7 @@ import MastodonSDK
 import MastodonCore
 
 final class HashtagTimelineViewModel {
-    
-    let logger = Logger(subsystem: "HashtagTimelineViewModel", category: "ViewModel")
-    
+
     let hashtag: String
     
     var disposeBag = Set<AnyCancellable>()
@@ -25,16 +22,14 @@ final class HashtagTimelineViewModel {
     var needLoadMiddleIndex: Int? = nil
 
     // input
-    let context: AppContext
-    let authContext: AuthContext
-    let fetchedResultsController: StatusFetchedResultsController
+    let authenticationBox: MastodonAuthenticationBox
+    let dataController: StatusDataController
     let isFetchingLatestTimeline = CurrentValueSubject<Bool, Never>(false)
     let timelinePredicate = CurrentValueSubject<NSPredicate?, Never>(nil)
     let hashtagEntity = CurrentValueSubject<Mastodon.Entity.Tag?, Never>(nil)
-    let listBatchFetchViewModel = ListBatchFetchViewModel()
 
     // output
-    var diffableDataSource: UITableViewDiffableDataSource<StatusSection, StatusItem>?
+    var diffableDataSource: UITableViewDiffableDataSource<StatusSection, MastodonItemIdentifier>?
     let didLoadLatest = PassthroughSubject<Void, Never>()
     let hashtagDetails = CurrentValueSubject<Mastodon.Entity.Tag?, Never>(nil)
 
@@ -53,36 +48,17 @@ final class HashtagTimelineViewModel {
         return stateMachine
     }()
     
-    init(context: AppContext, authContext: AuthContext, hashtag: String) {
-        self.context  = context
-        self.authContext = authContext
+    @MainActor
+    init(authenticationBox: MastodonAuthenticationBox, hashtag: String) {
+        self.authenticationBox = authenticationBox
         self.hashtag = hashtag
-        self.fetchedResultsController = StatusFetchedResultsController(
-            managedObjectContext: context.managedObjectContext,
-            domain: authContext.mastodonAuthenticationBox.domain,
-            additionalTweetPredicate: nil
-        )
+        self.dataController = StatusDataController()
         updateTagInformation()
         // end init
     }
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s:", ((#file as NSString).lastPathComponent), #line, #function)
-    }
-    
     func viewWillAppear() {
-        let predicate = Tag.predicate(
-            domain: authContext.mastodonAuthenticationBox.domain,
-            name: hashtag
-        )
-
-        guard
-            let object = Tag.findOrFetch(in: context.managedObjectContext, matching: predicate)
-        else {
-            return hashtagDetails.send(hashtagDetails.value?.copy(following: false))
-        }
-
-        hashtagDetails.send(hashtagDetails.value?.copy(following: object.following))
+        hashtagDetails.send(hashtagDetails.value?.copy(following: hashtagEntity.value?.following ?? false))
     }
 }
 
@@ -90,9 +66,9 @@ extension HashtagTimelineViewModel {
     func followTag() {
         self.hashtagDetails.send(hashtagDetails.value?.copy(following: true))
         Task { @MainActor in
-            let tag = try? await context.apiService.followTag(
+            let tag = try? await APIService.shared.followTag(
                 for: hashtag,
-                authenticationBox: authContext.mastodonAuthenticationBox
+                authenticationBox: authenticationBox
             ).value
             self.hashtagDetails.send(tag)
         }
@@ -101,9 +77,9 @@ extension HashtagTimelineViewModel {
     func unfollowTag() {
         self.hashtagDetails.send(hashtagDetails.value?.copy(following: false))
         Task { @MainActor in
-            let tag = try? await context.apiService.unfollowTag(
+            let tag = try? await APIService.shared.unfollowTag(
                 for: hashtag,
-                authenticationBox: authContext.mastodonAuthenticationBox
+                authenticationBox: authenticationBox
             ).value
             self.hashtagDetails.send(tag)
         }
@@ -113,9 +89,9 @@ extension HashtagTimelineViewModel {
 private extension HashtagTimelineViewModel {
     func updateTagInformation() {
         Task { @MainActor in
-            let tag = try? await context.apiService.getTagInformation(
+            let tag = try? await APIService.shared.getTagInformation(
                 for: hashtag,
-                authenticationBox: authContext.mastodonAuthenticationBox
+                authenticationBox: authenticationBox
             ).value
             
             self.hashtagDetails.send(tag)

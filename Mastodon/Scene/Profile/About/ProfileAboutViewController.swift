@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022-1-22.
 //
 
-import os.log
 import UIKit
 import Combine
 import MetaTextKit
@@ -19,11 +18,6 @@ protocol ProfileAboutViewControllerDelegate: AnyObject {
 }
 
 final class ProfileAboutViewController: UIViewController {
-    
-    let logger = Logger(subsystem: "ProfileAboutViewController", category: "ViewController")
-    
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
     
     weak var delegate: ProfileAboutViewControllerDelegate?
     
@@ -39,43 +33,39 @@ final class ProfileAboutViewController: UIViewController {
         return collectionView
     }()
  
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
+    public var currentEditableFields: [ (String, String) ] {
+        return viewModel.profileInfoEditing.editedFields
     }
-    
 }
 
 extension ProfileAboutViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = ThemeService.shared.currentTheme.value.systemBackgroundColor
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.view.backgroundColor = theme.systemBackgroundColor
-            }
-            .store(in: &disposeBag)
+        view.backgroundColor = .systemBackground
         
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(collectionView)
         collectionView.pinToParent()
-        
-        collectionView.delegate = self
-        viewModel.setupDiffableDataSource(
-            collectionView: collectionView,
-            profileFieldCollectionViewCellDelegate: self,
-            profileFieldEditCollectionViewCellDelegate: self
-        )
-        
+
         let longPressReorderGesture = UILongPressGestureRecognizer(
             target: self,
             action: #selector(ProfileAboutViewController.longPressReorderGestureHandler(_:))
         )
         collectionView.addGestureRecognizer(longPressReorderGesture)
     }
-    
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        collectionView.delegate = self
+        viewModel.setupDiffableDataSource(
+            collectionView: collectionView,
+            profileFieldCollectionViewCellDelegate: self,
+            profileFieldEditCollectionViewCellDelegate: self
+        )
+
+    }
+
 }
 
 extension ProfileAboutViewController {
@@ -129,7 +119,6 @@ extension ProfileAboutViewController {
 // MARK: - UICollectionViewDelegate
 extension ProfileAboutViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): select \(indexPath.debugDescription)")
         
         guard let diffableDataSource = viewModel.diffableDataSource else { return }
         guard let item = diffableDataSource.itemIdentifier(for: indexPath) else { return }

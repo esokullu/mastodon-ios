@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-3-23.
 //
 
-import os.log
 import UIKit
 import MastodonAsset
 import MastodonCore
@@ -33,8 +32,8 @@ final class ComposeStatusPollOptionAppendEntryCollectionViewCell: UICollectionVi
     
     override var isHighlighted: Bool {
         didSet {
-            pollOptionView.roundedBackgroundView.backgroundColor = isHighlighted ? ThemeService.shared.currentTheme.value.tertiarySystemGroupedBackgroundColor.withAlphaComponent(0.6) : ThemeService.shared.currentTheme.value.tertiarySystemGroupedBackgroundColor
-            pollOptionView.plusCircleImageView.tintColor = isHighlighted ? Asset.Colors.brand.color.withAlphaComponent(0.5) : Asset.Colors.brand.color
+            pollOptionView.roundedBackgroundView.backgroundColor = isHighlighted ? UIColor.tertiarySystemGroupedBackground.withAlphaComponent(0.6) : .tertiarySystemGroupedBackground
+            pollOptionView.plusCircleImageView.tintColor = isHighlighted ? Asset.Colors.Brand.blurple.color.withAlphaComponent(0.5) : Asset.Colors.Brand.blurple.color
         }
     }
     
@@ -86,7 +85,7 @@ extension ComposeStatusPollOptionAppendEntryCollectionViewCell {
         pollOptionView.optionTextField.isHidden = true
         pollOptionView.plusCircleImageView.isHidden = false
         
-        pollOptionView.roundedBackgroundView.backgroundColor = ThemeService.shared.currentTheme.value.tertiarySystemGroupedBackgroundColor
+        pollOptionView.roundedBackgroundView.backgroundColor = .tertiarySystemGroupedBackground
         setupBorderColor()
         
         pollOptionView.addGestureRecognizer(singleTagGestureRecognizer)
@@ -97,7 +96,7 @@ extension ComposeStatusPollOptionAppendEntryCollectionViewCell {
     
     private func setupBorderColor() {
         pollOptionView.roundedBackgroundView.layer.borderWidth = 1
-        pollOptionView.roundedBackgroundView.layer.borderColor = ThemeService.shared.currentTheme.value.tableViewCellSelectionBackgroundColor.withAlphaComponent(0.3).cgColor
+        pollOptionView.roundedBackgroundView.layer.borderColor = SystemTheme.tableViewCellSelectionBackgroundColor.withAlphaComponent(0.3).cgColor
     }
     
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -111,7 +110,6 @@ extension ComposeStatusPollOptionAppendEntryCollectionViewCell {
 extension ComposeStatusPollOptionAppendEntryCollectionViewCell {
 
     @objc private func singleTagGestureRecognizerHandler(_ sender: UITapGestureRecognizer) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         delegate?.composeStatusPollOptionAppendEntryCollectionViewCellDidPressed(self)
     }
     

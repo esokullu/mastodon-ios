@@ -5,16 +5,13 @@
 //  Created by MainasuK on 2022-2-9.
 //
 
-import os.log
 import UIKit
 import AVKit
 import Combine
 import func AVFoundation.AVMakeRect
 
 final class MediaPreviewVideoViewController: UIViewController {
-    
-    let logger = Logger(subsystem: "MediaPreviewVideoViewController", category: "ViewController")
-    
+
     var disposeBag = Set<AnyCancellable>()
     var viewModel: MediaPreviewVideoViewModel!
     
@@ -23,10 +20,7 @@ final class MediaPreviewVideoViewController: UIViewController {
     let previewImageView = UIImageView()
     
     deinit {
-        os_log("%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-        playerViewController.player?.pause()
-        try? AVAudioSession.sharedInstance().setCategory(.ambient)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        viewModel.playbackState = .paused
     }
     
 }
@@ -36,11 +30,12 @@ extension MediaPreviewVideoViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        playerViewController.willMove(toParent: self)
         addChild(playerViewController)
         playerViewController.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(playerViewController.view)
-        playerViewController.view.pinToParent()
         playerViewController.didMove(toParent: self)
+        playerViewController.view.pinToParent()
         
         if let contentOverlayView = playerViewController.contentOverlayView {
             previewImageView.translatesAutoresizingMaskIntoConstraints = false
@@ -60,7 +55,6 @@ extension MediaPreviewVideoViewController {
             playerViewController.showsPlaybackControls = false
         }
         
-        viewModel.player?.play()
         viewModel.playbackState = .playing
      
         if let previewURL = viewModel.item.previewURL {
@@ -80,33 +74,9 @@ extension MediaPreviewVideoViewController {
         }
     }
     
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-
-        playerViewController.didMove(toParent: self)
-    }
-    
 }
 
 // MARK: - ShareActivityProvider
-//extension MediaPreviewVideoViewController: ShareActivityProvider {
-//    var activities: [Any] {
-//        return []
-//    }
-//
-//    var applicationActivities: [UIActivity] {
-//        switch viewModel.item {
-//        case .gif(let mediaContext):
-//            guard let url = mediaContext.assetURL else { return [] }
-//            return [
-//                SavePhotoActivity(context: viewModel.context, url: url, resourceType: .video)
-//            ]
-//        default:
-//            return []
-//        }
-//    }
-//}
-
 extension MediaPreviewVideoViewController: MediaPreviewPage {
     func setShowingChrome(_ showingChrome: Bool) {
         // TODO: does this do anything?

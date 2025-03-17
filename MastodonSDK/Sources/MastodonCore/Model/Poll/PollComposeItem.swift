@@ -8,6 +8,7 @@
 import UIKit
 import Combine
 import MastodonLocalization
+import MastodonAsset
 
 public enum PollComposeItem: Hashable {
     case option(Option)
@@ -24,16 +25,11 @@ extension PollComposeItem {
         // input
         @Published public var text = ""
         @Published public var shouldBecomeFirstResponder = false
-        
-        // output
-        @Published public var backgroundColor = ThemeService.shared.currentTheme.value.composePollRowBackgroundColor
+
+        public let backgroundColor = SystemTheme.composePollRowBackgroundColor
         
         public override init() {
             super.init()
-            
-            ThemeService.shared.currentTheme
-                .map { $0.composePollRowBackgroundColor }
-                .assign(to: &$backgroundColor)
         }
     }
 }
@@ -84,6 +80,26 @@ extension PollComposeItem {
                 case .oneDay: return 60 * 60 * 24
                 case .threeDays: return 60 * 60 * 24 * 3
                 case .sevenDays: return 60 * 60 * 24 * 7
+                }
+            }
+            
+            public init(closestDateToExpiry date: Date) {
+                let expiresInSeconds = Int(date.timeIntervalSince(.now))
+                switch expiresInSeconds {
+                case _ where expiresInSeconds <= Self.thirtyMinutes.seconds:
+                    self = .thirtyMinutes
+                case _ where expiresInSeconds > Self.thirtyMinutes.seconds && expiresInSeconds <= Self.oneHour.seconds:
+                    self = .oneHour
+                case _ where expiresInSeconds > Self.oneHour.seconds && expiresInSeconds <= Self.sixHours.seconds:
+                    self = .sixHours
+                case _ where expiresInSeconds > Self.sixHours.seconds && expiresInSeconds <= Self.oneDay.seconds:
+                    self = .oneDay
+                case _ where expiresInSeconds > Self.oneDay.seconds && expiresInSeconds <= Self.threeDays.seconds:
+                    self = .threeDays
+                case _ where expiresInSeconds > Self.threeDays.seconds && expiresInSeconds <= Self.sevenDays.seconds:
+                    self = .sevenDays
+                default:
+                    self = .oneDay
                 }
             }
         }

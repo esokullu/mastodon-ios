@@ -9,12 +9,10 @@ import CoreDataStack
 import Foundation
 import GameplayKit
 import MastodonSDK
-import os.log
+import MastodonCore
 
 extension NotificationTimelineViewModel {
     class LoadOldestState: GKState {
-        
-        let logger = Logger(subsystem: "NotificationTimelineViewModel.LoadOldestState", category: "StateMachine")
         
         let id = UUID()
 
@@ -24,30 +22,19 @@ extension NotificationTimelineViewModel {
             self.viewModel = viewModel
         }
         
-        override func didEnter(from previousState: GKState?) {
-            super.didEnter(from: previousState)
-            
-            let from = previousState.flatMap { String(describing: $0) } ?? "nil"
-            let to = String(describing: self)
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): \(from) -> \(to)")
-        }
-        
         @MainActor
         func enter(state: LoadOldestState.Type) {
             stateMachine?.enter(state)
-        }
-        
-        deinit {
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): [\(self.id.uuidString)] \(String(describing: self))")
         }
     }
 }
 
 extension NotificationTimelineViewModel.LoadOldestState {
+    @MainActor
     class Initial: NotificationTimelineViewModel.LoadOldestState {
         override func isValidNextState(_ stateClass: AnyClass) -> Bool {
             guard let viewModel = viewModel else { return false }
-            guard !viewModel.feedFetchedResultsController.records.isEmpty else { return false }
+            guard !viewModel.feedLoader.records.isEmpty else { return false }
             return stateClass == Loading.self
         }
     }
@@ -57,49 +44,58 @@ extension NotificationTimelineViewModel.LoadOldestState {
             stateClass == Fail.self || stateClass == Idle.self || stateClass == NoMore.self
         }
         
+        @MainActor
         override func didEnter(from previousState: GKState?) {
             super.didEnter(from: previousState)
             
             guard let viewModel = viewModel, let stateMachine = stateMachine else { return }
             
-            guard let lastFeedRecord = viewModel.feedFetchedResultsController.records.last else {
+            guard let lastFeedRecord = viewModel.feedLoader.records.last else {
                 stateMachine.enter(Fail.self)
                 return
             }
-            let scope = viewModel.scope
             
+            let scope: APIService.MastodonNotificationScope?
+            let accountID: String?
+
+            switch viewModel.scope {
+            case .everything:
+                scope = .everything
+                accountID = nil
+            case .mentions:
+                scope = .mentions
+                accountID = nil
+            case .fromAccount(let account):
+                scope = nil
+                accountID = account.id
+            }
+
             Task {
-                let managedObjectContext = viewModel.context.managedObjectContext
-                let _maxID: Mastodon.Entity.Notification.ID? = try await managedObjectContext.perform {
-                    guard let feed = lastFeedRecord.object(in: managedObjectContext),
-                          let notification = feed.notification
-                    else { return nil }
-                    return notification.id
-                }
+                let _maxID: Mastodon.Entity.Notification.ID? = lastFeedRecord.id
                 
                 guard let maxID = _maxID else {
-                    await self.enter(state: Fail.self)
+                    self.enter(state: Fail.self)
                     return
                 }
                 
                 do {
-                    let response = try await viewModel.context.apiService.notifications(
-                        maxID: maxID,
+                    let response = try await APIService.shared.notifications(
+                        olderThan: maxID,
+                        fromAccount: accountID,
                         scope: scope,
-                        authenticationBox: viewModel.authContext.mastodonAuthenticationBox
+                        authenticationBox: viewModel.authenticationBox
                     )
                     
                     let notifications = response.value
                     // enter no more state when no new statuses
                     if notifications.isEmpty || (notifications.count == 1 && notifications[0].id == maxID) {
-                        await self.enter(state: NoMore.self)
+                        self.enter(state: NoMore.self)
                     } else {
-                        await self.enter(state: Idle.self)
+                        self.enter(state: Idle.self)
                     }
                     
                 } catch {
-                    logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): fetch statues failed: \(error.localizedDescription)")
-                    await self.enter(state: Fail.self)
+                    self.enter(state: Fail.self)
                 }
             }   // end Task
         }
@@ -125,11 +121,11 @@ extension NotificationTimelineViewModel.LoadOldestState {
         
         override func didEnter(from previousState: GKState?) {
             guard let viewModel = viewModel else { return }
-            guard let diffableDataSource = viewModel.diffableDataSource else {
-                assertionFailure()
-                return
-            }
             DispatchQueue.main.async {
+                guard let diffableDataSource = viewModel.diffableDataSource else {
+                    assertionFailure()
+                    return
+                }
                 var snapshot = diffableDataSource.snapshot()
                 snapshot.deleteItems([.bottomLoader])
                 diffableDataSource.apply(snapshot)

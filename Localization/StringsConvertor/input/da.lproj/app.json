@@ -2,22 +2,18 @@
     "common": {
         "alerts": {
             "common": {
-                "please_try_again": "Please try again.",
-                "please_try_again_later": "Please try again later."
+                "please_try_again": "Prøv venligst igen.",
+                "please_try_again_later": "Prøv venligst igen senere."
             },
             "sign_up_failure": {
-                "title": "Sign Up Failure"
+                "title": "Tilmeldingsfejl"
             },
             "server_error": {
-                "title": "Server Error"
+                "title": "Serverfejl"
             },
             "vote_failure": {
                 "title": "Vote Failure",
-                "poll_ended": "The poll has ended"
-            },
-            "discard_post_content": {
-                "title": "Discard Draft",
-                "message": "Confirm to discard composed post content."
+                "poll_ended": "Afstemningen er slut"
             },
             "publish_post_failure": {
                 "title": "Publish Failure",
@@ -32,9 +28,9 @@
                 "message": "Cannot edit profile. Please try again."
             },
             "sign_out": {
-                "title": "Sign Out",
-                "message": "Are you sure you want to sign out?",
-                "confirm": "Sign Out"
+                "title": "Log ud",
+                "message": "Er du sikker på, at du vil logge ud?",
+                "confirm": "Log ud"
             },
             "block_domain": {
                 "title": "Are you really, really sure you want to block the entire %s? In most cases a few targeted blocks or mutes are sufficient and preferable. You will not see content from that domain and any of your followers from that domain will be removed.",
@@ -45,135 +41,170 @@
                 "message": "Please enable the photo library access permission to save the photo."
             },
             "delete_post": {
-                "title": "Delete Post",
+                "title": "Slet indlæg",
                 "message": "Are you sure you want to delete this post?"
             },
             "clean_cache": {
-                "title": "Clean Cache",
+                "title": "Ryd cache",
                 "message": "Successfully cleaned %s cache."
             },
             "translation_failed": {
                 "title": "Note",
                 "message": "Translation failed. Maybe the administrator has not enabled translations on this server or this server is running an older version of Mastodon where translations are not yet supported.",
                 "button": "OK"
+            },
+            "media_missing_alt_text": {
+                "title": "Media Missing Alt Text",
+                "message": "%d of your images are missing alt text.\nPost Anyway?",
+                "cancel": "Annuller",
+                "post": "Fremhæv"
+            },
+            "boost_a_post": {
+                "title_boost": "Fremhæv indlæg?",
+                "title_unboost": "Fjern fremhævning?",
+                "cancel": "Annuller",
+                "boost": "Fremhæv",
+                "unboost": "Unboost"
+            },
+            "unfollow_user": {
+                "title": "Unfollow %@?",
+                "cancel": "Annuller",
+                "unfollow": "Unfollow"
             }
         },
         "controls": {
             "actions": {
-                "back": "Back",
-                "next": "Next",
-                "previous": "Previous",
-                "open": "Open",
-                "add": "Add",
-                "remove": "Remove",
-                "edit": "Edit",
-                "save": "Save",
+                "back": "Tilbage",
+                "next": "Næste",
+                "previous": "Forrige",
+                "open": "Åbn",
+                "add": "Tilføj",
+                "remove": "Fjern",
+                "edit": "Rediger",
+                "save": "Gem",
                 "ok": "OK",
-                "done": "Done",
-                "confirm": "Confirm",
-                "continue": "Continue",
-                "compose": "Compose",
-                "cancel": "Cancel",
-                "discard": "Discard",
-                "try_again": "Try Again",
-                "take_photo": "Take Photo",
-                "save_photo": "Save Photo",
-                "copy_photo": "Copy Photo",
-                "sign_in": "Log in",
-                "sign_up": "Create account",
-                "see_more": "See More",
+                "done": "Færdig",
+                "confirm": "Bekræft",
+                "continue": "Fortsæt",
+                "compose": "Skriv",
+                "cancel": "Annuller",
+                "discard": "Kassér",
+                "try_again": "Forsøg igen",
+                "take_photo": "Tag foto",
+                "save_photo": "Gem foto",
+                "copy_photo": "Kopier foto",
+                "sign_in": "Log ind",
+                "see_more": "Se mere",
                 "preview": "Preview",
-                "copy": "Copy",
-                "share": "Share",
-                "share_user": "Share %s",
-                "share_post": "Share Post",
-                "open_in_safari": "Open in Safari",
-                "open_in_browser": "Open in Browser",
+                "copy": "Kopier",
+                "share": "Del",
+                "share_user": "Del %s",
+                "share_post": "Del indlæg",
+                "open_in_safari": "Åbn i Safari",
+                "open_in_browser": "Åbn i browser",
                 "find_people": "Find people to follow",
                 "manually_search": "Manually search instead",
-                "skip": "Skip",
-                "reply": "Reply",
-                "report_user": "Report %s",
-                "block_domain": "Block %s",
+                "skip": "Spring over",
+                "reply": "Svar",
+                "report_user": "Anmeld %s",
+                "block_domain": "Bloker %s",
                 "unblock_domain": "Unblock %s",
-                "settings": "Settings",
-                "delete": "Delete",
+                "settings": "Indstillinger",
+                "delete": "Slet",
                 "translate_post": {
-                    "title": "Translate from %s",
-                    "unknown_language": "Unknown"
-                }
+                    "title": "Oversæt fra %s",
+                    "unknown_language": "Ukendt"
+                },
+                "edit_post": "Rediger",
+                "bookmark": "Tilføj bogmærke",
+                "remove_bookmark": "Fjern bogmærke",
+                "follow": "Følg %s",
+                "unfollow": "Følg ikke længere %s"
             },
             "tabs": {
-                "home": "Home",
-                "search_and_explore": "Search and Explore",
-                "notifications": "Notifications",
-                "profile": "Profile"
+                "home": "Hjem",
+                "search_and_explore": "Søg og udforsk",
+                "notifications": "Notifikationer",
+                "profile": "Profil",
+                "a11y": {
+                    "search": "Søg",
+                    "explore": "Udforsk"
+                }
             },
             "keyboard": {
                 "common": {
-                    "switch_to_tab": "Switch to %s",
-                    "compose_new_post": "Compose New Post",
-                    "show_favorites": "Show Favorites",
-                    "open_settings": "Open Settings"
+                    "switch_to_tab": "Skift til %s",
+                    "compose_new_post": "Skriv nyt indlæg",
+                    "show_favorites": "Vis favoritter",
+                    "open_settings": "Åbn indstillinger"
                 },
                 "timeline": {
-                    "previous_status": "Previous Post",
-                    "next_status": "Next Post",
-                    "open_status": "Open Post",
-                    "open_author_profile": "Open Author's Profile",
-                    "open_reblogger_profile": "Open Reblogger's Profile",
-                    "reply_status": "Reply to Post",
-                    "toggle_reblog": "Toggle Reblog on Post",
-                    "toggle_favorite": "Toggle Favorite on Post",
-                    "toggle_content_warning": "Toggle Content Warning",
-                    "preview_image": "Preview Image"
+                    "previous_status": "Forrige indlæg",
+                    "next_status": "Næste indlæg",
+                    "open_status": "Åbn indlæg",
+                    "open_author_profile": "Åbn forfatters profil",
+                    "open_reblogger_profile": "Åbn fremhævers profil",
+                    "reply_status": "Besvar indlæg",
+                    "toggle_reblog": "Slå fremhævning af indlæg til/fra",
+                    "toggle_favorite": "Slå favoritmarkering af indlæg til/fra",
+                    "toggle_content_warning": "Slå indholdsadvarsel til/fra",
+                    "preview_image": "Vis billede"
                 },
                 "segmented_control": {
-                    "previous_section": "Previous Section",
-                    "next_section": "Next Section"
+                    "previous_section": "Forrige afsnit",
+                    "next_section": "Næste afsnit"
                 }
             },
             "status": {
-                "user_reblogged": "%s reblogged",
-                "user_replied_to": "Replied to %s",
-                "show_post": "Show Post",
-                "show_user_profile": "Show user profile",
-                "content_warning": "Content Warning",
-                "sensitive_content": "Sensitive Content",
-                "media_content_warning": "Tap anywhere to reveal",
-                "tap_to_reveal": "Tap to reveal",
+                "reply": "Reply",
+                "private_reply": "Private reply",
+                "mention": "Mention",
+                "private_mention": "Private mention",
+                "user_reblogged": "%s fremhævede",
+                "user_replied_to": "Besvarede %s",
+                "show_post": "Vis indlæg",
+                "show_user_profile": "Vis brugerprofil",
+                "content_warning": "Indholdsadvarsel",
+                "sensitive_content": "Følsomt indhold",
+                "media_content_warning": "Tryk hvor som helst for at vise",
+                "tap_to_reveal": "Tryk for at vise",
                 "load_embed": "Load Embed",
                 "link_via_user": "%s via %s",
                 "poll": {
-                    "vote": "Vote",
-                    "closed": "Closed"
+                    "vote": "Stem",
+                    "closed": "Lukket"
                 },
                 "meta_entity": {
                     "url": "Link: %s",
                     "hashtag": "Hashtag: %s",
-                    "mention": "Show Profile: %s",
-                    "email": "Email address: %s"
+                    "mention": "Vis profil: %s",
+                    "email": "E-mailadresse: %s"
                 },
                 "actions": {
-                    "reply": "Reply",
-                    "reblog": "Reblog",
-                    "unreblog": "Undo reblog",
-                    "favorite": "Favorite",
-                    "unfavorite": "Unfavorite",
+                    "reply": "Svar",
+                    "reblog": "Fremhæv",
+                    "unreblog": "Fortryd fremhævning",
+                    "favorite": "Favoritmarkér",
+                    "unfavorite": "Fjern favoritmarkering",
                     "menu": "Menu",
-                    "hide": "Hide",
-                    "show_image": "Show image",
-                    "show_gif": "Show GIF",
-                    "show_video_player": "Show video player",
-                    "share_link_in_post": "Share Link in Post",
-                    "tap_then_hold_to_show_menu": "Tap then hold to show menu"
+                    "hide": "Skjul",
+                    "show_image": "Vis billede",
+                    "show_gif": "Vis GIF",
+                    "show_video_player": "Vis videoafspiller",
+                    "share_link_in_post": "Del link i indlæg",
+                    "tap_then_hold_to_show_menu": "Tap then hold to show menu",
+                    "a11y_labels": {
+                        "reblog": "Fremhæv",
+                        "unreblog": "Undo boost"
+                    },
+                    "copy_link": "Kopier link"
                 },
                 "tag": {
                     "url": "URL",
                     "mention": "Mention",
                     "link": "Link",
                     "hashtag": "Hashtag",
-                    "email": "Email",
+                    "email": "E-mail",
                     "emoji": "Emoji"
                 },
                 "visibility": {
@@ -183,44 +214,69 @@
                     "direct": "Only mentioned user can see this post."
                 },
                 "translation": {
-                    "translated_from": "Translated from %s using %s",
-                    "unknown_language": "Unknown",
-                    "unknown_provider": "Unknown",
-                    "show_original": "Shown Original"
+                    "translated_from": "Oversat fra %s ved brug af %s",
+                    "unknown_language": "Ukendt",
+                    "unknown_provider": "Ukendt",
+                    "show_original": "Vis oprindelig"
+                },
+                "media": {
+                    "accessibility_label": "%s, vedhæftning %d af %d",
+                    "expand_image_hint": "Expands the image. Double-tap and hold to show actions",
+                    "expand_gif_hint": "Expands the GIF. Double-tap and hold to show actions",
+                    "expand_video_hint": "Shows the video player. Double-tap and hold to show actions"
+                },
+                "posted_via_application": "%s via %s",
+                "buttons": {
+                    "reblogs_title": "Boosts",
+                    "favorites_title": "Favorites",
+                    "edit_history_title": "Redigeringshistorik",
+                    "edit_history_detail": "Last edit %s"
+                },
+                "edited_at_timestamp_prefix": "Redigeret %s",
+                "edit_history": {
+                    "title": "Redigeringshistorik",
+                    "original_post": "Oprindeligt indlæg · %s"
+                },
+                "card": {
+                    "by": "Af",
+                    "by_author": "Af %s"
                 }
             },
             "friendship": {
-                "follow": "Follow",
+                "follow": "Følg",
+                "follow_back": "Follow back",
                 "following": "Following",
+                "mutual": "Mutual",
                 "request": "Request",
                 "pending": "Pending",
                 "block": "Block",
                 "block_user": "Block %s",
-                "block_domain": "Block %s",
+                "block_domain": "Block domain %s",
                 "unblock": "Unblock",
                 "unblock_user": "Unblock %s",
                 "blocked": "Blocked",
+                "domain_blocked": "Domæne blokeret",
                 "mute": "Mute",
                 "mute_user": "Mute %s",
                 "unmute": "Unmute",
                 "unmute_user": "Unmute %s",
                 "muted": "Muted",
                 "edit_info": "Edit Info",
-                "show_reblogs": "Show Reblogs",
-                "hide_reblogs": "Hide Reblogs"
+                "show_reblogs": "Vis fremhævede indlæg",
+                "hide_reblogs": "Skjul fremhævede indlæg"
             },
             "timeline": {
-                "filtered": "Filtered",
+                "filtered": "Filtreret",
                 "timestamp": {
-                    "now": "Now"
+                    "now": "Nu"
                 },
                 "loader": {
-                    "load_missing_posts": "Load missing posts",
-                    "loading_missing_posts": "Loading missing posts...",
-                    "show_more_replies": "Show more replies"
+                    "load_missing_posts": "Indlæs manglende indlæg",
+                    "loading_missing_posts": "Indlæser manglende indlæg ...",
+                    "show_more_replies": "Vis flere svar"
                 },
                 "header": {
-                    "no_status_found": "No Post Found",
+                    "no_status_found": "Ingen indlæg fundet",
                     "blocking_warning": "You can’t view this user's profile\nuntil you unblock them.\nYour profile looks like this to them.",
                     "user_blocking_warning": "You can’t view %s’s profile\nuntil you unblock them.\nYour profile looks like this to them.",
                     "blocked_warning": "You can’t view this user’s profile\nuntil they unblock you.",
@@ -229,233 +285,307 @@
                     "user_suspended_warning": "%s’s account has been suspended."
                 }
             }
+        },
+        "user_list": {
+            "no_verified_link": "No verified link",
+            "followers_count": "%@ followers"
         }
     },
     "scene": {
         "welcome": {
-            "slogan": "Social networking\nback in your hands.",
-            "get_started": "Get Started",
-            "log_in": "Log In"
+            "log_in": "Log ind",
+            "learn_more": "Læs mere",
+            "join_default_server": "Join %@",
+            "pick_server": "Vælg en anden server",
+            "separator": {
+                "or": "eller"
+            },
+            "education": {
+                "mastodon": {
+                    "title": "Velkommen til Mastodon",
+                    "description": "Mastodon is a decentralized social network, meaning no single company controls it. It’s made up of many independently-run servers, all connected together."
+                },
+                "servers": {
+                    "title": "Hvad er servere?",
+                    "description": "Every Mastodon account is hosted on a server — each with its own values, rules, & admins. No matter which one you pick, you can follow and interact with people on any server."
+                },
+                "a11y": {
+                    "what_is_mastodon": {
+                        "title": "Hvad er Mastodon?"
+                    }
+                }
+            }
         },
         "login": {
-            "title": "Welcome back",
-            "subtitle": "Log you in on the server you created your account on.",
+            "title": "Velkommen tilbage",
+            "subtitle": "Log ind med den server, hvor du oprettede din konto.",
             "server_search_field": {
-                "placeholder": "Enter URL or search for your server"
+                "placeholder": "Indtast URL eller søg efter din server"
             }
         },
         "server_picker": {
-            "title": "Mastodon is made of users in different servers.",
-            "subtitle": "Pick a server based on your region, interests, or a general purpose one. You can still chat with anyone on Mastodon, regardless of your servers.",
+            "title": "Vælg server",
             "button": {
+                "language": "Sprog",
+                "signup_speed": "Sign-up Speed",
                 "category": {
-                    "all": "All",
-                    "all_accessiblity_description": "Category: All",
-                    "academia": "academia",
-                    "activism": "activism",
-                    "food": "food",
+                    "all": "Alle",
+                    "all_accessiblity_description": "Kategori: Alle",
+                    "academia": "forskning og højere uddannelser",
+                    "activism": "aktivisme",
+                    "food": "mad",
                     "furry": "furry",
-                    "games": "games",
-                    "general": "general",
-                    "journalism": "journalism",
+                    "games": "spil",
+                    "general": "generelt",
+                    "journalism": "journalistik",
                     "lgbt": "lgbt",
-                    "regional": "regional",
-                    "art": "art",
-                    "music": "music",
-                    "tech": "tech"
+                    "regional": "regionalt",
+                    "art": "kunst",
+                    "music": "musik",
+                    "tech": "teknologi"
                 },
                 "see_less": "See Less",
                 "see_more": "See More"
             },
             "label": {
-                "language": "LANGUAGE",
-                "users": "USERS",
-                "category": "CATEGORY"
+                "language": "SPROG",
+                "users": "BRUGERE",
+                "category": "KATEGORI"
             },
             "input": {
                 "search_servers_or_enter_url": "Search communities or enter URL"
             },
             "empty_state": {
-                "finding_servers": "Finding available servers...",
+                "finding_servers": "Finder tilgængelige servere...",
                 "bad_network": "Something went wrong while loading the data. Check your internet connection.",
-                "no_results": "No results"
+                "no_results": "Ingen resultater"
+            },
+            "signup_speed": {
+                "all": "All",
+                "instant": "Hurtig oprettelse",
+                "manually_reviewed": "Manuel godkendelse"
+            },
+            "language": {
+                "all": "All"
+            },
+            "search": {
+                "placeholder": "Search name or URL"
+            },
+            "no_server_selected_hint": "Vi vælger en server baseret på dit sprog, hvis du fortsætter uden at foretage et valg."
+        },
+        "privacy": {
+            "title": "Dit privatliv",
+            "description": "Although the Mastodon app does not collect any data, the server you sign up through may have a different policy.\n\nIf you disagree with the policy for **%s**, you can go back and pick a different server.",
+            "policy": {
+                "ios": "Privacy Policy - Mastodon for iOS",
+                "server": "Privatlivspolitik - %s"
+            },
+            "button": {
+                "confirm": "Jeg accepterer"
             }
         },
         "register": {
-            "title": "Let’s get you set up on %s",
-            "lets_get_you_set_up_on_domain": "Let’s get you set up on %s",
+            "title": "Opret konto",
             "input": {
                 "avatar": {
-                    "delete": "Delete"
+                    "delete": "Slet"
                 },
                 "username": {
-                    "placeholder": "username",
-                    "duplicate_prompt": "This username is taken."
+                    "placeholder": "brugernavn",
+                    "duplicate_prompt": "Dette brugernavn er allerede i brug.",
+                    "suggestion": "amazing_%@"
                 },
                 "display_name": {
-                    "placeholder": "display name"
+                    "placeholder": "visningsnavn"
                 },
                 "email": {
-                    "placeholder": "email"
+                    "placeholder": "e-mail"
                 },
                 "password": {
-                    "placeholder": "password",
-                    "require": "Your password needs at least:",
-                    "character_limit": "8 characters",
+                    "placeholder": "adgangskode",
+                    "confirmation_placeholder": "Bekræft adgangskode",
+                    "require": "Din adgangskode skal bestå af mindst:",
+                    "character_limit": "8 tegn",
                     "accessibility": {
                         "checked": "checked",
                         "unchecked": "unchecked"
                     },
-                    "hint": "Your password needs at least eight characters"
+                    "hint": "Din adgangskode skal bestå af mindst otte tegn"
                 },
                 "invite": {
-                    "registration_user_invite_request": "Why do you want to join?"
+                    "registration_user_invite_request": "Hvorfor vil du gerne oprette dig som bruger?"
                 }
             },
             "error": {
                 "item": {
-                    "username": "Username",
-                    "email": "Email",
-                    "password": "Password",
+                    "username": "Brugernavn",
+                    "email": "E-mail",
+                    "password": "Adgangskode",
                     "agreement": "Agreement",
                     "locale": "Locale",
-                    "reason": "Reason"
+                    "reason": "Begrundelse"
                 },
                 "reason": {
-                    "blocked": "%s contains a disallowed email provider",
-                    "unreachable": "%s does not seem to exist",
-                    "taken": "%s is already in use",
+                    "blocked": "%s indeholder en blokeret e-mailudbyder",
+                    "unreachable": "%s ser ikke ud til at eksistere",
+                    "taken": "%s is already taken. How about:",
                     "reserved": "%s is a reserved keyword",
                     "accepted": "%s must be accepted",
                     "blank": "%s is required",
-                    "invalid": "%s is invalid",
-                    "too_long": "%s is too long",
-                    "too_short": "%s is too short",
-                    "inclusion": "%s is not a supported value"
+                    "invalid": "%s er ugyldig",
+                    "too_long": "%s er for lang",
+                    "too_short": "%s er for kort",
+                    "inclusion": "%s er ikke en understøttet værdi"
                 },
                 "special": {
                     "username_invalid": "Username must only contain alphanumeric characters and underscores",
                     "username_too_long": "Username is too long (can’t be longer than 30 characters)",
-                    "email_invalid": "This is not a valid email address",
+                    "email_invalid": "Dette er ikke en gyldig e-mailadresse",
                     "password_too_short": "Password is too short (must be at least 8 characters)"
                 }
             }
         },
         "server_rules": {
-            "title": "Some ground rules.",
-            "subtitle": "These are set and enforced by the %s moderators.",
+            "title": "Serverregler",
+            "subtitle": "By continuing, you agree to follow by the following rules set and enforced by the **%s** moderators.",
             "prompt": "By continuing, you’re subject to the terms of service and privacy policy for %s.",
             "terms_of_service": "terms of service",
-            "privacy_policy": "privacy policy",
+            "privacy_policy": "privatlivspolitik",
             "button": {
-                "confirm": "I Agree"
+                "confirm": "Jeg accepterer",
+                "disagree": "Uenig"
             }
         },
         "confirm_email": {
-            "title": "One last thing.",
-            "subtitle": "Tap the link we emailed to you to verify your account.",
-            "tap_the_link_we_emailed_to_you_to_verify_your_account": "Tap the link we emailed to you to verify your account",
+            "title": "Tjek din indbakke",
+            "tap_the_link_we_emailed_to_you_to_verify_your_account": "Tap the link we sent you to verify %@. We’ll wait right here.",
             "button": {
-                "open_email_app": "Open Email App",
-                "resend": "Resend"
+                "resend": "Send igen"
             },
             "dont_receive_email": {
-                "title": "Check your email",
+                "title": "Tjek din email",
                 "description": "Check if your email address is correct as well as your junk folder if you haven’t.",
-                "resend_email": "Resend Email"
+                "resend_email": "Send e-mail igen"
             },
             "open_email_app": {
-                "title": "Check your inbox.",
+                "title": "Tjek din indbakke.",
                 "description": "We just sent you an email. Check your junk folder if you haven’t.",
                 "mail": "Mail",
-                "open_email_client": "Open Email Client"
+                "open_email_client": "Åbn e-mailklient"
+            },
+            "didnt_get_link": {
+                "prefix": "Didn’t get a link?",
+                "resend_in": "Resend (%@)",
+                "resend_now": "Resend now."
             }
         },
         "home_timeline": {
-            "title": "Home",
-            "navigation_bar_state": {
-                "offline": "Offline",
-                "new_posts": "See new posts",
-                "published": "Published!",
-                "Publishing": "Publishing post...",
-                "accessibility": {
-                    "logo_label": "Logo Button",
-                    "logo_hint": "Tap to scroll to top and tap again to previous location"
+            "title": "Hjem",
+            "timeline_menu": {
+                "following": "Following",
+                "local_community": "Local",
+                "lists": {
+                    "title": "Lister",
+                    "empty_message": "You don't have any Lists"
+                },
+                "hashtags": {
+                    "title": "Followed Hashtags",
+                    "empty_message": "You don't follow any Hashtags"
                 }
+            },
+            "timeline_pill": {
+                "offline": "Offline",
+                "new_posts": "Nye indlæg",
+                "post_sent": "Post Sent"
+            },
+            "empty_state": {
+                "list_empty_message_title": "Denne liste er tom"
             }
         },
         "suggestion_account": {
-            "title": "Find People to Follow",
-            "follow_explain": "When you follow someone, you’ll see their posts in your home feed."
+            "title": "Populært på Mastodon",
+            "follow_all": "Følg alle"
         },
         "compose": {
             "title": {
-                "new_post": "New Post",
-                "new_reply": "New Reply"
+                "new_post": "Nyt indlæg",
+                "new_reply": "Nyt svar",
+                "edit_post": "Rediger Indlæg"
             },
             "media_selection": {
-                "camera": "Take Photo",
-                "photo_library": "Photo Library",
-                "browse": "Browse"
+                "camera": "Tag foto",
+                "photo_library": "Fotobibliotek",
+                "browse": "Gennemse"
             },
             "content_input_placeholder": "Type or paste what’s on your mind",
             "compose_action": "Publish",
-            "replying_to_user": "replying to %s",
+            "replying_to_user": "svarer %s",
             "attachment": {
-                "photo": "photo",
+                "photo": "foto",
                 "video": "video",
                 "attachment_broken": "This %s is broken and can’t be\nuploaded to Mastodon.",
                 "description_photo": "Describe the photo for the visually-impaired...",
                 "description_video": "Describe the video for the visually-impaired...",
-                "load_failed": "Load Failed",
-                "upload_failed": "Upload Failed",
+                "load_failed": "Indlæsning mislykkedes",
+                "upload_failed": "Upload mislykkedes",
                 "can_not_recognize_this_media_attachment": "Can not recognize this media attachment",
                 "attachment_too_large": "Attachment too large",
-                "compressing_state": "Compressing...",
+                "compressing_state": "Komprimerer...",
                 "server_processing_state": "Server Processing..."
             },
             "poll": {
-                "duration_time": "Duration: %s",
-                "thirty_minutes": "30 minutes",
-                "one_hour": "1 Hour",
-                "six_hours": "6 Hours",
-                "one_day": "1 Day",
-                "three_days": "3 Days",
-                "seven_days": "7 Days",
-                "option_number": "Option %ld",
-                "the_poll_is_invalid": "The poll is invalid",
-                "the_poll_has_empty_option": "The poll has empty option"
+                "title": "Afstemning",
+                "duration_time": "Varighed: %s",
+                "thirty_minutes": "30 minutter",
+                "one_hour": "1 time",
+                "six_hours": "6 timer",
+                "one_day": "1 dag",
+                "three_days": "3 dage",
+                "seven_days": "7 dage",
+                "option_number": "Valgmulighed %ld",
+                "the_poll_is_invalid": "Afstemningen er ugyldig",
+                "the_poll_has_empty_option": "Afstemningen har en tom valgmulighed",
+                "add_option": "Tilføj valgmulighed",
+                "remove_option": "Fjern valgmulighed",
+                "move_up": "Flyt op",
+                "move_down": "Flyt ned"
             },
             "content_warning": {
                 "placeholder": "Write an accurate warning here..."
             },
             "visibility": {
-                "public": "Public",
-                "unlisted": "Unlisted",
-                "private": "Followers only",
-                "direct": "Only people I mention"
+                "public": "Offentlig",
+                "unlisted": "Tavsgøre offentligt",
+                "private": "Følgere",
+                "direct": "Kun personer nævnt i indlægget"
             },
             "auto_complete": {
                 "space_to_add": "Space to add"
             },
             "accessibility": {
-                "append_attachment": "Add Attachment",
-                "append_poll": "Add Poll",
-                "remove_poll": "Remove Poll",
+                "append_attachment": "Tilføj vedhæftning",
+                "append_poll": "Tilføj afstemning",
+                "remove_poll": "Fjern afstemning",
                 "custom_emoji_picker": "Custom Emoji Picker",
-                "enable_content_warning": "Enable Content Warning",
-                "disable_content_warning": "Disable Content Warning",
+                "enable_content_warning": "Aktiver indholdsadvarsel",
+                "disable_content_warning": "Deaktiver indholdsadvarsel",
                 "post_visibility_menu": "Post Visibility Menu",
                 "post_options": "Post Options",
                 "posting_as": "Posting as %s"
             },
             "keyboard": {
-                "discard_post": "Discard Post",
-                "publish_post": "Publish Post",
+                "discard_post": "Kassér indlæg",
+                "publish_post": "Offentliggør indlæg",
                 "toggle_poll": "Toggle Poll",
                 "toggle_content_warning": "Toggle Content Warning",
                 "append_attachment_entry": "Add Attachment - %s",
                 "select_visibility_entry": "Select Visibility - %s"
+            },
+            "language": {
+                "title": "Indlæggets sprog",
+                "suggested": "Foreslået",
+                "recent": "Seneste",
+                "other": "Other Language…"
             }
         },
         "profile": {
@@ -463,12 +593,13 @@
                 "follows_you": "Follows You"
             },
             "dashboard": {
-                "my_posts": "posts",
+                "my_posts": "indlæg",
                 "my_following": "following",
                 "my_followers": "followers",
                 "other_posts": "posts",
                 "other_following": "following",
-                "other_followers": "followers"
+                "other_followers": "followers",
+                "familiar_followers": "mutuals"
             },
             "fields": {
                 "joined": "Joined",
@@ -483,11 +614,11 @@
                 }
             },
             "segmented_control": {
-                "posts": "Posts",
-                "replies": "Replies",
-                "posts_and_replies": "Posts and Replies",
+                "posts": "Indlæg",
+                "replies": "Svar",
+                "posts_and_replies": "Indlæg og svar",
                 "media": "Media",
-                "about": "About"
+                "about": "Om"
             },
             "relationship_action_alert": {
                 "confirm_mute_user": {
@@ -507,12 +638,20 @@
                     "message": "Confirm to unblock %s"
                 },
                 "confirm_show_reblogs": {
-                    "title": "Show Reblogs",
-                    "message": "Confirm to show reblogs"
+                    "title": "Show Boosts",
+                    "message": "Confirm to show boosts"
                 },
                 "confirm_hide_reblogs": {
-                    "title": "Hide Reblogs",
-                    "message": "Confirm to hide reblogs"
+                    "title": "Hide Boosts",
+                    "message": "Confirm to hide boosts"
+                },
+                "confirm_block_domain": {
+                    "title": "Blokér domæne",
+                    "message": "Confirm to block domain %s"
+                },
+                "confirm_unblock_domain": {
+                    "title": "Unblock domain",
+                    "message": "Confirm to unblock domain %s"
                 }
             },
             "accessibility": {
@@ -538,13 +677,13 @@
             "title": "Favorited By"
         },
         "reblogged_by": {
-            "title": "Reblogged By"
+            "title": "Boosted By"
         },
         "search": {
-            "title": "Search",
+            "title": "Søg",
             "search_bar": {
-                "placeholder": "Search hashtags and users",
-                "cancel": "Cancel"
+                "placeholder": "Søg i hashtags og brugere",
+                "cancel": "Annuller"
             },
             "recommend": {
                 "button_text": "See All",
@@ -555,21 +694,26 @@
                 },
                 "accounts": {
                     "title": "Accounts you might like",
-                    "description": "You may like to follow these accounts",
+                    "description": "Du vil måske synes om at følge disse konti",
                     "follow": "Follow"
                 }
             },
             "searching": {
-                "segment": {
-                    "all": "All",
-                    "people": "People",
-                    "hashtags": "Hashtags",
-                    "posts": "Posts"
+                "posts": "Posts matching \"%s\"",
+                "people": "People matching \"%s\"",
+                "profile": "Go to @%s@%s",
+                "url": "Åbn URL i Mastodon",
+                "hashtag": "Gå til #%s",
+                "no_user": {
+                    "title": "No User Account Found",
+                    "message": "There's no Useraccount \"%s\" on %s"
                 },
                 "empty_state": {
-                    "no_results": "No results"
+                    "no_results": "Ingen resultater"
                 },
-                "recent_search": "Recent searches",
+                "recent_search": "Seneste søgninger",
+                "no_recent_searches": "No recent searches.",
+                "clear_all": "Clear all",
                 "clear": "Clear"
             }
         },
@@ -591,23 +735,88 @@
                 "Everything": "Everything",
                 "Mentions": "Mentions"
             },
+            "headers": {
+                "report": "Report",
+                "sign_up": "Signup",
+                "favourite": "Favorite",
+                "follow": "Follow",
+                "follow_request": "Follow request",
+                "moderation_warning": "Warning",
+                "poll": "Poll",
+                "boost": "Boost",
+                "severed_relationships": "Domain block",
+                "status": "Post",
+                "edit": "Edit"
+            },
+            "grouped_notification_description": {
+                "your_poll_has_ended": "Your poll has ended",
+                "single_name_ran_poll": "%@ ran %@",
+                "single_name_mentioned_you": "%@ mentioned you",
+                "single_name_requested_to_follow_you": "%@ requested to follow you",
+                "single_name_posted": "%@ posted:",
+                "single_name_boosted": "%@ boosted:",
+                "single_name_favourited": "%@ favorited:",
+                "single_name_followed_you": "%@ followed you",
+                "multiple_people_boosted": "%@ boosted:",
+                "multiple_people_favourited": "%@ favorited:",
+                "multiple_people_followed_you": "%@ followed you",
+                "single_name_signed_up": "%@ signed up",
+                "someone_reported_account_for_rule_violation": "Someone reported %@ for rule violation.",
+                "someone_reported_posts_from_account_for_rule_violation": "Someone reported %@ from %@ for rule violation."
+            },
             "notification_description": {
                 "followed_you": "followed you",
                 "favorited_your_post": "favorited your post",
-                "reblogged_your_post": "reblogged your post",
+                "reblogged_your_post": "boosted your post",
                 "mentioned_you": "mentioned you",
                 "request_to_follow_you": "request to follow you",
-                "poll_has_ended": "poll has ended"
+                "poll_has_ended": "poll has ended",
+                "relationship_severance": "An admin from %@ has blocked %@, including %@."
             },
             "keyobard": {
                 "show_everything": "Show Everything",
                 "show_mentions": "Show Mentions"
             },
             "follow_request": {
+                "accept": "Accepter",
+                "accepted": "Accepteret",
+                "reject": "afvis",
+                "rejected": "Afvist"
+            },
+            "warning": {
+                "none": "Your account has received a moderation warning.",
+                "disable": "Din konto er blevet deaktiveret.",
+                "mark_statuses_as_sensitive": "Some of your posts have been marked as sensitive.",
+                "delete_statuses": "Some of your posts have been removed.",
+                "sensitive": "Your posts will be marked as sensitive from now on.",
+                "silence": "Your account has been limited.",
+                "suspend": "Your account has been suspended.",
+                "learn_more": "Læs mere"
+            },
+            "learn_more_about_server_blocks": "Learn more about server blocks",
+            "filtered_notification": {
+                "title": "Filtered Notifications",
                 "accept": "Accept",
-                "accepted": "Accepted",
-                "reject": "reject",
-                "rejected": "Rejected"
+                "dismiss": "Dismiss"
+            },
+            "policy": {
+                "title": "Filter Notifications from…",
+                "not_following": {
+                    "title": "People you don't follow",
+                    "subtitle": "Until you manually approve them"
+                },
+                "no_follower": {
+                    "title": "People not following you",
+                    "subtitle": "Including people who have been following you fewer than 3 days"
+                },
+                "new_account": {
+                    "title": "New accounts",
+                    "subtitle": "Created within the past 30 days"
+                },
+                "private_mentions": {
+                    "title": "Unsolicited private mentions",
+                    "subtitle": "Filtered unless it’s in reply to your own mention or if you follow the sender"
+                }
             }
         },
         "thread": {
@@ -615,102 +824,142 @@
             "title": "Post from %s"
         },
         "settings": {
-            "title": "Settings",
-            "section": {
-                "appearance": {
-                    "title": "Appearance",
-                    "automatic": "Automatic",
-                    "light": "Always Light",
-                    "dark": "Always Dark"
-                },
-                "look_and_feel": {
-                    "title": "Look and Feel",
-                    "use_system": "Use System",
-                    "really_dark": "Really Dark",
-                    "sorta_dark": "Sorta Dark",
-                    "light": "Light"
-                },
-                "notifications": {
-                    "title": "Notifications",
-                    "favorites": "Favorites my post",
-                    "follows": "Follows me",
-                    "boosts": "Reblogs my post",
-                    "mentions": "Mentions me",
-                    "trigger": {
-                        "anyone": "anyone",
-                        "follower": "a follower",
-                        "follow": "anyone I follow",
-                        "noone": "no one",
-                        "title": "Notify me when"
-                    }
-                },
-                "preference": {
-                    "title": "Preferences",
-                    "true_black_dark_mode": "True black dark mode",
-                    "disable_avatar_animation": "Disable animated avatars",
-                    "disable_emoji_animation": "Disable animated emojis",
-                    "using_default_browser": "Use default browser to open links",
-                    "open_links_in_mastodon": "Open links in Mastodon"
-                },
-                "boring_zone": {
-                    "title": "The Boring Zone",
-                    "account_settings": "Account Settings",
-                    "terms": "Terms of Service",
-                    "privacy": "Privacy Policy"
-                },
-                "spicy_zone": {
-                    "title": "The Spicy Zone",
-                    "clear": "Clear Media Cache",
-                    "signout": "Sign Out"
+            "overview": {
+                "title": "Indstillinger",
+                "general": "Generelt",
+                "notifications": "Notifikationer",
+                "privacy_safety": "Privatliv og sikkerhed",
+                "support_mastodon": "Support Mastodon",
+                "about_mastodon": "Om Mastodon",
+                "server_details": "Serveroplysninger",
+                "logout": "Logout %@"
+            },
+            "about_mastodon": {
+                "title": "Om",
+                "more_settings": "Endnu flere indstillinger",
+                "contribute_to_mastodon": "Contribute to Mastodon",
+                "privacy_policy": "Privacy Policy",
+                "clear_media_storage": "Clear Media Storage"
+            },
+            "server_details": {
+                "about": "Om",
+                "rules": "Regler",
+                "about_instance": {
+                    "title": "Administrator",
+                    "message_admin": "Skriv til administrator",
+                    "legal_notice": "A legal notice"
                 }
             },
-            "footer": {
-                "mastodon_description": "Mastodon is open source software. You can report issues on GitHub at %s (%s)"
+            "general": {
+                "title": "Generelt",
+                "appearance": {
+                    "section_title": "Udseende",
+                    "dark": "Mørkt",
+                    "light": "Lyst",
+                    "system": "Use Device Appearance"
+                },
+                "ask_before": {
+                    "section_title": "Ask before…",
+                    "posting_without_alt_text": "Posting without Alt Text",
+                    "unfollowing_someone": "Unfollowing Someone",
+                    "boosting_a_post": "Boosting a Post",
+                    "deleting_a_post": "Deleting a Post"
+                },
+                "design": {
+                    "section_title": "Design",
+                    "show_animations": "Play Animated Avatars and Emoji"
+                },
+                "language": {
+                    "section_title": "Sprog",
+                    "default_post_language": "Standardsprog for indlæg"
+                },
+                "links": {
+                    "section_title": "Links",
+                    "open_in_mastodon": "Åbn i Mastodon",
+                    "open_in_browser": "Åbn i browser"
+                }
             },
-            "keyboard": {
-                "close_settings_window": "Close Settings Window"
+            "notifications": {
+                "title": "Notifikationer",
+                "policy": {
+                    "title": "Get Notifications from",
+                    "anyone": "Anyone",
+                    "followers": "People who follow you",
+                    "follow": "People you follow",
+                    "noone": "No one"
+                },
+                "alert": {
+                    "mentions_and_replies": "Mentions & Replies",
+                    "boosts": "Boosts",
+                    "favorites": "Favorites",
+                    "new_followers": "New Followers"
+                },
+                "disabled": {
+                    "notification_hint": "Turn on notifications from your device settings to see updates on your lock screen.",
+                    "go_to_settings": "Go to Notification Settings"
+                }
+            },
+            "privacy_safety": {
+                "title": "Privacy & Safety",
+                "preset": {
+                    "title": "Preset",
+                    "open_and_public": "Open & Public",
+                    "private_and_restricted": "Private & Restricted",
+                    "custom": "Custom"
+                },
+                "default_post_visibility": {
+                    "title": "Default Post Visibility"
+                },
+                "manually_approve_follow_requests": "Manually Approve Follow Requests",
+                "show_followers_and_following": "Show Followers & Following",
+                "suggest_my_account_to_others": "Suggest My Account to Others",
+                "appear_in_search_engines": "Appear in Search Engines"
+            },
+            "donation": {
+                "title": "Donate to Mastodon",
+                "manage": "Manage donations"
             }
         },
         "report": {
             "title_report": "Report",
             "title": "Report %s",
-            "step1": "Step 1 of 2",
-            "step2": "Step 2 of 2",
+            "step1": "Trin 1 af 2",
+            "step2": "Trin 2 af 2",
             "content1": "Are there any other posts you’d like to add to the report?",
             "content2": "Is there anything the moderators should know about this report?",
             "report_sent_title": "Thanks for reporting, we’ll look into this.",
-            "send": "Send Report",
+            "send": "Send anmeldelse",
             "skip_to_send": "Send without comment",
             "text_placeholder": "Type or paste additional comments",
             "reported": "REPORTED",
             "step_one": {
-                "step_1_of_4": "Step 1 of 4",
-                "whats_wrong_with_this_post": "What's wrong with this post?",
-                "whats_wrong_with_this_account": "What's wrong with this account?",
-                "whats_wrong_with_this_username": "What's wrong with %s?",
-                "select_the_best_match": "Select the best match",
-                "i_dont_like_it": "I don’t like it",
+                "step_1_of_4": "Trin 1 af 4",
+                "whats_wrong_with_this_post": "Hvad er der galt med dette indlæg?",
+                "whats_wrong_with_this_account": "Hvad er der galt med denne konto?",
+                "whats_wrong_with_this_username": "Hvad er der galt med %s?",
+                "select_the_best_match": "Vælg det som passer bedst",
+                "i_dont_like_it": "Jeg bryder mig ikke om det",
                 "it_is_not_something_you_want_to_see": "It is not something you want to see",
-                "its_spam": "It’s spam",
+                "its_spam": "Det er spam",
                 "malicious_links_fake_engagement_or_repetetive_replies": "Malicious links, fake engagement, or repetetive replies",
-                "it_violates_server_rules": "It violates server rules",
+                "it_violates_server_rules": "Det overtræder serverreglerne",
                 "you_are_aware_that_it_breaks_specific_rules": "You are aware that it breaks specific rules",
                 "its_something_else": "It’s something else",
                 "the_issue_does_not_fit_into_other_categories": "The issue does not fit into other categories"
             },
             "step_two": {
-                "step_2_of_4": "Step 2 of 4",
+                "step_2_of_4": "Trin 2 af 4",
                 "which_rules_are_being_violated": "Which rules are being violated?",
                 "select_all_that_apply": "Select all that apply",
                 "i_just_don’t_like_it": "I just don’t like it"
             },
             "step_three": {
-                "step_3_of_4": "Step 3 of 4",
+                "step_3_of_4": "Trin 3 af 4",
                 "are_there_any_posts_that_back_up_this_report": "Are there any posts that back up this report?",
                 "select_all_that_apply": "Select all that apply"
             },
             "step_four": {
-                "step_4_of_4": "Step 4 of 4",
+                "step_4_of_4": "Trin 4 af 4",
                 "is_there_anything_else_we_should_know": "Is there anything else we should know?"
             },
             "step_final": {
@@ -720,7 +969,7 @@
                 "unfollowed": "Unfollowed",
                 "unfollow_user": "Unfollow %s",
                 "mute_user": "Mute %s",
-                "you_wont_see_their_posts_or_reblogs_in_your_home_feed_they_wont_know_they_ve_been_muted": "You won’t see their posts or reblogs in your home feed. They won’t know they’ve been muted.",
+                "you_wont_see_their_posts_or_reblogs_in_your_home_feed_they_wont_know_they_ve_been_muted": "You won’t see their posts or boosts in your home feed. They won’t know they’ve been muted.",
                 "block_user": "Block %s",
                 "they_will_no_longer_be_able_to_follow_or_see_your_posts_but_they_can_see_if_theyve_been_blocked": "They will no longer be able to follow or see your posts, but they can see if they’ve been blocked.",
                 "while_we_review_this_you_can_take_action_against_user": "While we review this, you can take action against %s"
@@ -729,33 +978,93 @@
         "preview": {
             "keyboard": {
                 "close_preview": "Close Preview",
-                "show_next": "Show Next",
-                "show_previous": "Show Previous"
+                "show_next": "Vis næste",
+                "show_previous": "Vis forrige"
             }
         },
         "account_list": {
             "tab_bar_hint": "Current selected profile: %s. Double tap then hold to show account switcher",
             "dismiss_account_switcher": "Dismiss Account Switcher",
-            "add_account": "Add Account"
-        },
-        "wizard": {
-            "new_in_mastodon": "New in Mastodon",
-            "multiple_account_switch_intro_description": "Switch between multiple accounts by holding the profile button.",
-            "accessibility_hint": "Double tap to dismiss this wizard"
+            "add_account": "Tilføj konto",
+            "logout_all_accounts": "Log Out Of All Accounts",
+            "logout": "Logout"
         },
         "bookmark": {
-            "title": "Bookmarks"
+            "title": "Bogmærker"
         },
         "followed_tags": {
             "title": "Followed Tags",
             "header": {
-                "posts": "posts",
+                "posts": "indlæg",
                 "participants": "participants",
                 "posts_today": "posts today"
             },
             "actions": {
-                "follow": "Follow",
-                "unfollow": "Unfollow"
+                "follow": "Følg",
+                "unfollow": "Følg ikke længere"
+            }
+        },
+        "donation": {
+            "picker": {
+                "once_title": "Just once",
+                "monthly_title": "Monthly",
+                "yearly_title": "Yearly"
+            },
+            "donatebuttontitle": "Donate",
+            "currency": "Currency",
+            "success": {
+                "title": "Thank you for your contribution!",
+                "subtitle": "You should receive an email confirming your donation soon.",
+                "server_error_title": "Payment failed",
+                "server_error_message": "We are sorry, an error occurred and we have not been able to process your donation.\n\nPlease retry in a few minutes.",
+                "share_button_title": "Spread the word"
+            }
+        }
+    },
+    "extension": {
+        "open_in": {
+            "invalid_link_error": "This doesn't seem to be a valid Mastodon link."
+        }
+    },
+    "widget": {
+        "common": {
+            "unsupported_widget_family": "Sorry but this Widget family is unsupported.",
+            "user_not_logged_in": "Please open Mastodon to log in to an Account."
+        },
+        "followers_count": {
+            "configuration_display_name": "Followers",
+            "configuration_description": "Show number of followers.",
+            "title": "FOLLOWERS",
+            "followers_today": "%s followers today"
+        },
+        "multiple_followers": {
+            "configuration_display_name": "Multiple followers",
+            "configuration_description": "Show number of followers for multiple accounts.",
+            "mock_user": {
+                "display_name": "Another follower",
+                "account_name": "another@follower.social"
+            }
+        },
+        "latest_followers": {
+            "configuration_display_name": "Latest followers",
+            "configuration_description": "Show latest followers.",
+            "title": "Latest followers",
+            "last_update": "Last update: %s"
+        },
+        "hashtag": {
+            "configuration": {
+                "display_name": "Hashtag",
+                "description": "Shows a recent post with the selected hashtag."
+            },
+            "not_found": {
+                "account_name": "John Mastodon",
+                "account": "@johnMastodon@no-such.account",
+                "content": "Sorry, we couldn’t find any posts with the hashtag <a>#%@</a>. Please try a <a>#DifferentHashtag</a> or check the widget settings."
+            },
+            "placeholder": {
+                "account_name": "John Mastodon",
+                "account": "@johnMastodon@no-such.account",
+                "content": "This is how a post with a <a>#hashtag</a> would look. Pick whichever <a>#hashtag</a> you want in the widget settings."
             }
         }
     }

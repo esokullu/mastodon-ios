@@ -6,12 +6,8 @@
 //
 
 import Combine
-import CoreData
-import CoreDataStack
-import GameplayKit
 import MastodonSDK
 import MastodonCore
-import os.log
 import UIKit
     
 protocol SuggestionAccountViewModelDelegate: AnyObject {
@@ -24,79 +20,112 @@ final class SuggestionAccountViewModel: NSObject {
     weak var delegate: SuggestionAccountViewModelDelegate?
 
     // input
-    let context: AppContext
-    let authContext: AuthContext
-    let userFetchedResultsController: UserFetchedResultsController
-    let selectedUserFetchedResultsController: UserFetchedResultsController
-    
+    let authenticationBox: MastodonAuthenticationBox
+    @Published var accounts: [Mastodon.Entity.V2.SuggestionAccount]
+    var relationships: [Mastodon.Entity.Relationship]
+
     var viewWillAppear = PassthroughSubject<Void, Never>()
 
     // output
-    var collectionViewDiffableDataSource: UICollectionViewDiffableDataSource<SelectedAccountSection, SelectedAccountItem>?
     var tableViewDiffableDataSource: UITableViewDiffableDataSource<RecommendAccountSection, RecommendAccountItem>?
     
     init(
-        context: AppContext,
-        authContext: AuthContext
+        authenticationBox: MastodonAuthenticationBox
     ) {
-        self.context = context
-        self.authContext = authContext
-        self.userFetchedResultsController = UserFetchedResultsController(
-            managedObjectContext: context.managedObjectContext,
-            domain: nil,
-            additionalPredicate: nil
-        )
-        self.selectedUserFetchedResultsController = UserFetchedResultsController(
-            managedObjectContext: context.managedObjectContext,
-            domain: nil,
-            additionalPredicate: nil
-        )
+        self.authenticationBox = authenticationBox
+
+        accounts = []
+        relationships = []
+
         super.init()
-                
-        userFetchedResultsController.domain = authContext.mastodonAuthenticationBox.domain
-        selectedUserFetchedResultsController.domain = authContext.mastodonAuthenticationBox.domain
-        selectedUserFetchedResultsController.additionalPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
-            MastodonUser.predicate(followingBy: authContext.mastodonAuthenticationBox.userID),
-            MastodonUser.predicate(followRequestedBy: authContext.mastodonAuthenticationBox.userID)
-        ])
-    
-        // fetch recomment users
+
+        updateSuggestions()
+    }
+
+
+    func updateSuggestions() {
         Task {
-            var userIDs: [MastodonUser.ID] = []
+            var suggestedAccounts: [Mastodon.Entity.V2.SuggestionAccount] = []
             do {
-                let response = try await context.apiService.suggestionAccountV2(
-                    query: nil,
-                    authenticationBox: authContext.mastodonAuthenticationBox
+                let response = try await APIService.shared.suggestionAccountV2(
+                    query: .init(limit: 5),
+                    authenticationBox: authenticationBox
                 )
-                userIDs = response.value.map { $0.account.id }
-            } catch let error as Mastodon.API.Error where error.httpResponseStatus == .notFound {
-                let response = try await context.apiService.suggestionAccount(
-                    query: nil,
-                    authenticationBox: authContext.mastodonAuthenticationBox
-                )
-                userIDs = response.value.map { $0.id }
+                suggestedAccounts = response.value
+
+                guard suggestedAccounts.isNotEmpty else { return }
+
+                let accounts = suggestedAccounts.compactMap { $0.account }
+
+                let relationships = try await APIService.shared.relationship(
+                    forAccounts: accounts,
+                    authenticationBox: authenticationBox
+                ).value
+
+                self.relationships = relationships
+                self.accounts = suggestedAccounts
             } catch {
-                os_log("%{public}s[%{public}ld], %{public}s: fetch recommendAccountV2 failed. %s", (#file as NSString).lastPathComponent, #line, #function, error.localizedDescription)
+                self.relationships = []
+                self.accounts = []
             }
-            
-            guard !userIDs.isEmpty else { return }
-            userFetchedResultsController.userIDs = userIDs
-            selectedUserFetchedResultsController.userIDs = userIDs
         }
-        
-        // fetch relationship
-        userFetchedResultsController.$records
-            .removeDuplicates()
-            .sink { [weak self] records in
-                guard let _ = self else { return }
-                Task {
-                    _ = try await context.apiService.relationship(
-                        records: records,
-                        authenticationBox: authContext.mastodonAuthenticationBox
-                    )
+    }
+
+    func setupDiffableDataSource(
+        tableView: UITableView,
+        suggestionAccountTableViewCellDelegate: SuggestionAccountTableViewCellDelegate
+    ) {
+        tableViewDiffableDataSource = RecommendAccountSection.tableViewDiffableDataSource(
+            tableView: tableView,
+            configuration: RecommendAccountSection.Configuration(
+                authenticationBox: authenticationBox,
+                suggestionAccountTableViewCellDelegate: suggestionAccountTableViewCellDelegate
+            )
+        )
+
+        $accounts
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] suggestedAccounts in
+                guard let self, let tableViewDiffableDataSource = self.tableViewDiffableDataSource else { return }
+
+                let accounts = suggestedAccounts.compactMap { $0.account }
+
+                let accountsWithRelationship: [(account: Mastodon.Entity.Account, relationship: Mastodon.Entity.Relationship?)] = accounts.compactMap { account in
+                    guard let relationship = self.relationships.first(where: {$0.id == account.id }) else { return (account: account, relationship: nil)}
+
+                    return (account: account, relationship: relationship)
                 }
+
+                var snapshot = NSDiffableDataSourceSnapshot<RecommendAccountSection, RecommendAccountItem>()
+                snapshot.appendSections([.main])
+                let items: [RecommendAccountItem] = accountsWithRelationship.map { RecommendAccountItem.account($0.account, relationship: $0.relationship) }
+                snapshot.appendItems(items, toSection: .main)
+
+                tableViewDiffableDataSource.applySnapshotUsingReloadData(snapshot)
             }
             .store(in: &disposeBag)
     }
 
+    func followAllSuggestedAccounts(_ dependency: UIViewController & AuthContextProvider, presentedOn: UIViewController?, completion: (() -> Void)? = nil) {
+
+        let tmpAccounts = accounts.compactMap { $0.account }
+
+        Task {
+            await dependency.sceneCoordinator?.showLoading(on: presentedOn)
+            await withTaskGroup(of: Void.self, body: { taskGroup in
+                for account in tmpAccounts {
+                    taskGroup.addTask {
+                        try? await DataSourceFacade.responseToUserViewButtonAction(
+                            dependency: dependency,
+                            account: account,
+                            buttonState: .follow
+                        )
+                    }
+                }
+            })
+
+            delegate?.homeTimelineNeedRefresh.send()
+            completion?()
+        }
+    }
 }

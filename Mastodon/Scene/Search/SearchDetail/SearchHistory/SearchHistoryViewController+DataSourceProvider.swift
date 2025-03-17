@@ -6,9 +6,18 @@
 //
 
 import UIKit
+import MastodonSDK
 
 // MARK: - DataSourceProvider
 extension SearchHistoryViewController: DataSourceProvider {
+    var filterContext: MastodonSDK.Mastodon.Entity.FilterContext? {
+        return .none
+    }
+    
+    func didToggleContentWarningDisplayStatus(status: MastodonSDK.MastodonStatus) {
+        collectionView.reloadData()
+    }
+    
     func item(from source: DataSourceItem.Source) async -> DataSourceItem? {
         var _indexPath = source.indexPath
         if _indexPath == nil, let cell = source.collectionViewCell {
@@ -21,13 +30,17 @@ extension SearchHistoryViewController: DataSourceProvider {
         }
         
         switch item {
-        case .user(let record):
-            return .user(record: record)
-        case .hashtag(let record):
-            return .hashtag(tag: .record(record))
+        case .account(let account):
+            return .account(account: account, relationship: nil)
+        case .hashtag(let tag):
+            return .hashtag(tag: tag)
         }
     }
     
+    func update(status: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
+        assertionFailure("Not required")
+    }
+
     @MainActor
     private func indexPath(for cell: UICollectionViewCell) async -> IndexPath? {
         return collectionView.indexPath(for: cell)

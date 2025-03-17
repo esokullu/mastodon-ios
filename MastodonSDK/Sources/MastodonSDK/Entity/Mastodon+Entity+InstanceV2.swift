@@ -10,13 +10,13 @@ extension Mastodon.Entity.V2 {
     /// # Reference
     ///  [Document](https://docs.joinmastodon.org/entities/instance/)
     public struct Instance: Codable {
-        
+
         public let domain: String?
         public let title: String
         public let description: String
         public let shortDescription: String?
-        public let email: String?
         public let version: String?
+        public let apiVersions: [String : Int]?
         public let languages: [String]?     // (ISO 639 Part 1-5 language codes)
         public let registrations: Mastodon.Entity.V2.Instance.Registrations?
         public let approvalRequired: Bool?
@@ -25,7 +25,7 @@ extension Mastodon.Entity.V2 {
         public let statistics: Mastodon.Entity.Instance.Statistics?
         
         public let thumbnail: Thumbnail?
-        public let contactAccount: Mastodon.Entity.Account?
+        public let contact: Mastodon.Entity.V2.Instance.Contact?
         public let rules: [Mastodon.Entity.Instance.Rule]?
         
         // https://github.com/mastodon/mastodon/pull/16485
@@ -36,8 +36,9 @@ extension Mastodon.Entity.V2 {
             self.title = domain
             self.description = ""
             self.shortDescription = nil
-            self.email = ""
+            self.contact = nil
             self.version = nil
+            self.apiVersions = nil
             self.languages = nil
             self.registrations = nil
             self.approvalRequired = approvalRequired
@@ -45,7 +46,6 @@ extension Mastodon.Entity.V2 {
             self.urls = nil
             self.statistics = nil
             self.thumbnail = nil
-            self.contactAccount = nil
             self.rules = nil
             self.configuration = nil
         }
@@ -55,8 +55,8 @@ extension Mastodon.Entity.V2 {
             case title
             case description
             case shortDescription = "short_description"
-            case email
             case version
+            case apiVersions = "api_versions"
             case languages
             case registrations
             case approvalRequired = "approval_required"
@@ -65,7 +65,7 @@ extension Mastodon.Entity.V2 {
             case statistics = "stats"
             
             case thumbnail
-            case contactAccount = "contact_account"
+            case contact
             case rules
             
             case configuration
@@ -74,7 +74,7 @@ extension Mastodon.Entity.V2 {
 }
 
 extension Mastodon.Entity.V2.Instance {
-    public struct Configuration: Codable {
+    public struct Configuration: Codable, InstanceConfigLimitingPropertyContaining {
         public let statuses: Mastodon.Entity.Instance.Configuration.Statuses?
         public let mediaAttachments: Mastodon.Entity.Instance.Configuration.MediaAttachments?
         public let polls: Mastodon.Entity.Instance.Configuration.Polls?
@@ -104,5 +104,22 @@ extension Mastodon.Entity.V2.Instance.Configuration {
 extension Mastodon.Entity.V2.Instance {
     public struct Thumbnail: Codable {
         public let url: String?
+    }
+}
+
+extension Mastodon.Entity.V2.Instance {
+    public struct Contact: Codable {
+        public let email: String?
+        public let account: Mastodon.Entity.Account?
+    }
+}
+
+extension Mastodon.Entity.V2.Instance: Hashable {
+    public static func == (lhs: Mastodon.Entity.V2.Instance, rhs: Mastodon.Entity.V2.Instance) -> Bool {
+        lhs.domain == rhs.domain
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(domain)
     }
 }

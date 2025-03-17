@@ -5,27 +5,26 @@
 //  Created by MainasuK on 2022-1-17.
 //
 
-import Foundation
+import UIKit
 import CoreData
 import CoreDataStack
 import MastodonCore
+import MastodonSDK
 
 extension DataSourceFacade {
     static func coordinateToStatusThreadScene(
-        provider: DataSourceProvider & AuthContextProvider,
+        provider: UIViewController,
         target: StatusTarget,
-        status: ManagedObjectRecord<Status>
+        status: MastodonStatus
     ) async {
-        let _root: StatusItem.Thread? = await {
-            let _redirectRecord = await DataSourceFacade.status(
-                managedObjectContext: provider.context.managedObjectContext,
+        let _root: MastodonItemIdentifier.Thread? = {
+            let redirectRecord = DataSourceFacade.status(
                 status: status,
                 target: target
             )
-            guard let redirectRecord = _redirectRecord else { return nil }
-
-            let threadContext = StatusItem.Thread.Context(status: redirectRecord)
-            return StatusItem.Thread.root(context: threadContext)
+            
+            let threadContext = MastodonItemIdentifier.Thread.Context(status: redirectRecord)
+            return MastodonItemIdentifier.Thread.root(context: threadContext)
         }()
         guard let root = _root else {
             assertionFailure()
@@ -40,15 +39,16 @@ extension DataSourceFacade {
     
     @MainActor
     static func coordinateToStatusThreadScene(
-        provider: DataSourceProvider & AuthContextProvider,
-        root: StatusItem.Thread
+        provider: UIViewController,
+        root: MastodonItemIdentifier.Thread
     ) async {
+        guard let authBox = AuthenticationServiceProvider.shared.currentActiveUser.value else { return }
         let threadViewModel = ThreadViewModel(
-            context: provider.context,
-            authContext: provider.authContext,
+            authenticationBox: authBox,
             optionalRoot: root
         )
-        _ = provider.coordinator.present(
+        guard let coordinator = provider.sceneCoordinator else { return }
+        _ = coordinator.present(
             scene: .thread(viewModel: threadViewModel),
             from: provider,
             transition: .show

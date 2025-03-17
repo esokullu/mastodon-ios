@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022-2-8.
 //
 
-import os.log
 import UIKit
 import SwiftUI
 import Combine
@@ -13,13 +12,10 @@ import MastodonAsset
 import MastodonCore
 import MastodonLocalization
 
-final class ReportResultViewController: UIViewController, NeedsDependency, ReportViewControllerAppearance {
+final class ReportResultViewController: UIViewController, ReportViewControllerAppearance {
     
     var disposeBag = Set<AnyCancellable>()
     private var observations = Set<NSKeyValueObservation>()
-
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
     
     var viewModel: ReportResultViewModel!
     private(set) lazy var reportResultView = ReportResultView(viewModel: viewModel)
@@ -38,9 +34,6 @@ final class ReportResultViewController: UIViewController, NeedsDependency, Repor
         return navigationActionView
     }()
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
     
 }
 
@@ -92,10 +85,11 @@ extension ReportResultViewController {
                     guard !self.viewModel.isRequestFollow else { return }
                     self.viewModel.isRequestFollow = true
                     do {
-                        try await DataSourceFacade.responseToUserFollowAction(
+                        let newRelationship = try await DataSourceFacade.responseToUserFollowAction(
                             dependency: self,
-                            user: self.viewModel.user
+                            account: self.viewModel.account
                         )
+                        self.viewModel.relationship = newRelationship
                     } catch {
                         // handle error
                     }
@@ -112,10 +106,11 @@ extension ReportResultViewController {
                     guard !self.viewModel.isRequestMute else { return }
                     self.viewModel.isRequestMute = true
                     do {
-                        try await DataSourceFacade.responseToUserMuteAction(
+                        let newRelationship = try await DataSourceFacade.responseToUserMuteAction(
                             dependency: self,
-                            user: self.viewModel.user
+                            account: self.viewModel.account
                         )
+                        self.viewModel.relationship = newRelationship
                     } catch {
                         // handle error
                     }
@@ -132,10 +127,11 @@ extension ReportResultViewController {
                     guard !self.viewModel.isRequestBlock else { return }
                     self.viewModel.isRequestBlock = true
                     do {
-                        try await DataSourceFacade.responseToUserBlockAction(
+                        let newRelationship = try await DataSourceFacade.responseToUserBlockAction(
                             dependency: self,
-                            user: self.viewModel.user
+                            account: self.viewModel.account
                         )
+                        self.viewModel.relationship = newRelationship
                     } catch {
                         // handle error
                     }
@@ -161,7 +157,7 @@ extension ReportResultViewController {
 
 // MARK: - AuthContextProvider
 extension ReportResultViewController: AuthContextProvider {
-    var authContext: AuthContext { viewModel.authContext }
+    var authenticationBox: MastodonAuthenticationBox { viewModel.authenticationBox }
 }
 
 // MARK: - PanPopableViewController

@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-3-29.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreDataStack
@@ -19,25 +18,24 @@ import MastodonCore
 import MastodonUI
 import MastodonLocalization
 import TabBarPager
+import MastodonSDK
 
 protocol ProfileHeaderViewControllerDelegate: AnyObject {
     func profileHeaderViewController(_ profileHeaderViewController: ProfileHeaderViewController, profileHeaderView: ProfileHeaderView, relationshipButtonDidPressed button: ProfileRelationshipActionButton)
     func profileHeaderViewController(_ profileHeaderViewController: ProfileHeaderViewController, profileHeaderView: ProfileHeaderView, metaTextView: MetaTextView, metaDidPressed meta: Meta)
 }
 
-final class ProfileHeaderViewController: UIViewController, NeedsDependency, MediaPreviewableViewController {
+final class ProfileHeaderViewController: UIViewController, MediaPreviewableViewController {
     
-    let logger = Logger(subsystem: "ProfileHeaderViewController", category: "ViewController")
-
     static let segmentedControlHeight: CGFloat = 50
     static let headerMinHeight: CGFloat = segmentedControlHeight
     
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
-    
     var disposeBag = Set<AnyCancellable>()
-    var viewModel: ProfileHeaderViewModel!
-    
+    let viewModel: ProfileHeaderViewModel
+    var editedDetails: ProfileHeaderDetails {
+        return viewModel.editedDetails
+    }
+
     weak var delegate: ProfileHeaderViewControllerDelegate?
     weak var headerDelegate: TabBarPagerHeaderDelegate?
     
@@ -54,7 +52,7 @@ final class ProfileHeaderViewController: UIViewController, NeedsDependency, Medi
         return titleView
     }()
     
-    let profileHeaderView = ProfileHeaderView()
+    let profileHeaderView: ProfileHeaderView
 
 //    private var isBannerPinned = false
 
@@ -84,27 +82,30 @@ final class ProfileHeaderViewController: UIViewController, NeedsDependency, Medi
         return documentPickerController
     }()
 
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
-    
-}
+    init(authenticationBox: MastodonAuthenticationBox, account: Mastodon.Entity.Account, me: Mastodon.Entity.Account, relationship: Mastodon.Entity.Relationship?) {
+        self.viewModel = ProfileHeaderViewModel(authenticationBox: authenticationBox, account: account, me: me, relationship: relationship)
+        self.profileHeaderView = ProfileHeaderView(account: account, me: me, relationship: relationship)
 
-extension ProfileHeaderViewController {
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        view.setContentHuggingPriority(.required - 1, for: .vertical)
+        super.init(nibName: nil, bundle: nil)
 
-        view.backgroundColor = ThemeService.shared.currentTheme.value.systemBackgroundColor
-        ThemeService.shared.currentTheme
+        viewModel.$account
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.view.backgroundColor = theme.systemBackgroundColor
+            .sink { [weak self] account in
+                guard let self else { return }
+
+                self.profileHeaderView.configuration(account: account)
             }
             .store(in: &disposeBag)
+    }
+    
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        view.setContentHuggingPriority(.required - 1, for: .vertical)
+
+        view.backgroundColor = .systemBackground
 
 //        profileHeaderView.preservesSuperviewLayoutMargins = true
         profileHeaderView.translatesAutoresizingMaskIntoConstraints = false
@@ -141,17 +142,11 @@ extension ProfileHeaderViewController {
                 self.titleView.subtitleLabel.alpha = isTitleViewContentOffsetDidSet ? 1 : 0
             }
             .store(in: &disposeBag)
-        viewModel.$user
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] user in
-                guard let self = self else { return }
-                guard let user = user else { return }
-                self.profileHeaderView.prepareForReuse()
-                self.profileHeaderView.configuration(user: user)
-            }
+        viewModel.$relationship
+            .assign(to: \.relationship, on: profileHeaderView.viewModel)
             .store(in: &disposeBag)
-        viewModel.$relationshipActionOptionSet
-            .assign(to: \.relationshipActionOptionSet, on: profileHeaderView.viewModel)
+        viewModel.$account
+            .assign(to: \.account, on: profileHeaderView.viewModel)
             .store(in: &disposeBag)
         viewModel.$isMyself
             .assign(to: \.isMyself, on: profileHeaderView.viewModel)
@@ -202,7 +197,6 @@ extension ProfileHeaderViewController {
         var children: [UIMenuElement] = []
         let photoLibraryAction = UIAction(title: L10n.Scene.Compose.MediaSelection.photoLibrary, image: UIImage(systemName: "rectangle.on.rectangle"), identifier: nil, discoverabilityTitle: nil, attributes: [], state: .off) { [weak self] _ in
             guard let self = self else { return }
-            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: mediaSelectionType: .photoLibaray", ((#file as NSString).lastPathComponent), #line, #function)
             self.currentImageType = type
             self.present(self.imagePicker, animated: true, completion: nil)
         }
@@ -210,7 +204,6 @@ extension ProfileHeaderViewController {
         if UIImagePickerController.isSourceTypeAvailable(.camera) {
             let cameraAction = UIAction(title: L10n.Scene.Compose.MediaSelection.camera, image: UIImage(systemName: "camera"), identifier: nil, discoverabilityTitle: nil, attributes: [], state: .off, handler: { [weak self] _ in
                 guard let self = self else { return }
-                os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: mediaSelectionType: .camera", ((#file as NSString).lastPathComponent), #line, #function)
                 self.currentImageType = type
                 self.present(self.imagePickerController, animated: true, completion: nil)
             })
@@ -218,7 +211,6 @@ extension ProfileHeaderViewController {
         }
         let browseAction = UIAction(title: L10n.Scene.Compose.MediaSelection.browse, image: UIImage(systemName: "ellipsis"), identifier: nil, discoverabilityTitle: nil, attributes: [], state: .off) { [weak self] _ in
             guard let self = self else { return }
-            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: mediaSelectionType: .browse", ((#file as NSString).lastPathComponent), #line, #function)
             self.currentImageType = type
             self.present(self.documentPickerController, animated: true, completion: nil)
         }
@@ -254,8 +246,6 @@ extension ProfileHeaderViewController {
     }
     
     func updateHeaderScrollProgress(_ progress: CGFloat, throttle: CGFloat) {
-         os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: progress: %.2f", ((#file as NSString).lastPathComponent), #line, #function, progress)
-        
         // set title view offset
         let nameTextFieldInWindow = profileHeaderView.nameTextField.superview!.convert(profileHeaderView.nameTextField.frame, to: nil)
         let nameTextFieldTopToNavigationBarBottomOffset = containerSafeAreaInset.top - nameTextFieldInWindow.origin.y
@@ -281,41 +271,35 @@ extension ProfileHeaderViewController {
         profileHeaderView.avatarButton.alpha = alpha
         profileHeaderView.editAvatarBackgroundView.alpha = alpha
     }
-    
+
 }
 
 // MARK: - ProfileHeaderViewDelegate
 extension ProfileHeaderViewController: ProfileHeaderViewDelegate {
     func profileHeaderView(_ profileHeaderView: ProfileHeaderView, avatarButtonDidPressed button: AvatarButton) {
-        guard let user = viewModel.user else { return }
-        let record: ManagedObjectRecord<MastodonUser> = .init(objectID: user.objectID)
-
         Task {
             try await DataSourceFacade.coordinateToMediaPreviewScene(
                 dependency: self,
-                user: record,
+                account: viewModel.account,
                 previewContext: DataSourceFacade.ImagePreviewContext(
                     imageView: button.avatarImageView,
                     containerView: .profileAvatar(profileHeaderView)
                 )
             )
-        }   // end Task
+        }
     }
 
     func profileHeaderView(_ profileHeaderView: ProfileHeaderView, bannerImageViewDidPressed imageView: UIImageView) {
-        guard let user = viewModel.user else { return }
-        let record: ManagedObjectRecord<MastodonUser> = .init(objectID: user.objectID)
-
         Task {
             try await DataSourceFacade.coordinateToMediaPreviewScene(
                 dependency: self,
-                user: record,
+                account: viewModel.account,
                 previewContext: DataSourceFacade.ImagePreviewContext(
                     imageView: imageView,
                     containerView: .profileBanner(profileHeaderView)
                 )
             )
-        }   // end Task
+        }
     }
 
     func profileHeaderView(
@@ -344,50 +328,48 @@ extension ProfileHeaderViewController: ProfileHeaderViewDelegate {
         dashboardMeterViewDidPressed dashboardMeterView: ProfileStatusDashboardMeterView,
         meter: ProfileStatusDashboardView.Meter
     ) {
+
+        guard profileHeaderView.viewModel.isEditing == false else { return }
+
         switch meter {
         case .post:
             // do nothing
             break
         case .follower:
-            guard let domain = viewModel.user?.domain,
-                  let userID = viewModel.user?.id
-            else { return }
+            guard let domain = viewModel.account.domain else { return }
+            let userID = viewModel.account.id
             let followerListViewModel = FollowerListViewModel(
-                context: context,
-                authContext: viewModel.authContext,
+                authenticationBox: viewModel.authenticationBox,
                 domain: domain,
                 userID: userID
             )
-            _ = coordinator.present(
+            _ = self.sceneCoordinator?.present(
                 scene: .follower(viewModel: followerListViewModel),
                 from: self,
                 transition: .show
             )
+
         case .following:
-            guard let domain = viewModel.user?.domain,
-                  let userID = viewModel.user?.id
-            else { return }
+            guard let domain = viewModel.account.domain else { return }
+
+            let userID = viewModel.account.id
             let followingListViewModel = FollowingListViewModel(
-                context: context,
-                authContext: viewModel.authContext,
+                authenticationBox: viewModel.authenticationBox,
                 domain: domain,
                 userID: userID
             )
-            _ = coordinator.present(
+            _ = self.sceneCoordinator?.present(
                 scene: .following(viewModel: followingListViewModel),
                 from: self,
                 transition: .show
             )
         }
     }
-
 }
 
 // MARK: - MetaTextDelegate
 extension ProfileHeaderViewController: MetaTextDelegate {
     func metaText(_ metaText: MetaText, processEditing textStorage: MetaTextStorage) -> MetaContent? {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: text: %s", ((#file as NSString).lastPathComponent), #line, #function, metaText.backedString)
-        
         switch metaText {
         case profileHeaderView.bioMetaText:
             guard viewModel.isEditing else { break }
@@ -440,7 +422,6 @@ extension ProfileHeaderViewController: UIImagePickerControllerDelegate & UINavig
     }
         
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-        os_log("%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         picker.dismiss(animated: true, completion: nil)
     }
 }
@@ -457,7 +438,6 @@ extension ProfileHeaderViewController: UIDocumentPickerDelegate {
             guard let image = UIImage(data: imageData) else { return }
             cropImage(image: image, pickerViewController: controller)
         } catch {
-            os_log("%{public}s[%{public}ld], %{public}s: %s", ((#file as NSString).lastPathComponent), #line, #function, error.localizedDescription)
         }
     }
 }

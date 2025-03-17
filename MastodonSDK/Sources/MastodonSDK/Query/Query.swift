@@ -28,7 +28,7 @@ extension RequestQuery {
 // A `Get` query only contains queryItems, it should not be `Encodable`
 extension RequestQuery where Self: Encodable {
     var contentType: String? {
-        return "application/json; charset=utf-8"
+        return "application/json"
     }
     var body: Data? {
         return try? Mastodon.API.encoder.encode(self)
@@ -48,20 +48,30 @@ extension GetQuery {
 protocol PostQuery: RequestQuery { }
 
 extension PostQuery {
-    // By default a `PostQuery` does not has query items
+    // By default a `PostQuery` does not have query items
     var queryItems: [URLQueryItem]? { nil }
 }
 
 // PATCH
 protocol PatchQuery: RequestQuery { }
 
+extension PatchQuery {
+    // By default a `PatchQuery` does not have query items
+    var queryItems: [URLQueryItem]? { nil }
+}
+
 // PUT
 protocol PutQuery: RequestQuery { }
+
+extension PutQuery {
+    // By default a `PutQuery` does not have query items
+    var queryItems: [URLQueryItem]? { nil }
+}
 
 // DELETE
 protocol DeleteQuery: RequestQuery { }
 
 extension DeleteQuery {
-    // By default a `DeleteQuery` does not has query items
+    // By default a `DeleteQuery` does not have query items
     var queryItems: [URLQueryItem]? { nil }
 }

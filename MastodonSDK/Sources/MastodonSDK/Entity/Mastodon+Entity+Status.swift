@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import UIKit
+import MastodonLocalization
 
 extension Mastodon.Entity {
         
@@ -17,7 +19,7 @@ extension Mastodon.Entity {
     ///   2021/2/23
     /// # Reference
     ///  [Document](https://docs.joinmastodon.org/entities/status/)
-    public class Status: Codable {
+    public final class Status: Codable, Sendable {
         
         public typealias ID = String
 
@@ -25,6 +27,7 @@ extension Mastodon.Entity {
         public let id: ID
         public let uri: String
         public let createdAt: Date
+        public let editedAt: Date?
         public let account: Account
         public let content: String? // will be optional when delete status
         
@@ -35,9 +38,9 @@ extension Mastodon.Entity {
         public let application: Application?
         
         // Rendering
-        public let mentions: [Mention]?
-        public let tags: [Tag]?
-        public let emojis: [Emoji]?
+        public let mentions: [Mention]
+        public let tags: [Tag]
+        public let emojis: [Emoji]
         
         // Informational
         public let reblogsCount: Int
@@ -65,6 +68,7 @@ extension Mastodon.Entity {
             case id
             case uri
             case createdAt = "created_at"
+            case editedAt = "edited_at"
             case account
             case content
             
@@ -102,14 +106,14 @@ extension Mastodon.Entity {
 }
 
 extension Mastodon.Entity.Status {
-    public enum Visibility: RawRepresentable, Codable, Hashable {
+    public enum Visibility: RawRepresentable, Codable, Hashable, Sendable {
         case `public`
         case unlisted
         case `private`
         case direct
-        
+
         case _other(String)
-        
+
         public init?(rawValue: String) {
             switch rawValue {
             case "public":                      self = .public
@@ -119,7 +123,7 @@ extension Mastodon.Entity.Status {
             default:                            self = ._other(rawValue)
             }
         }
-        
+
         public var rawValue: String {
             switch self {
             case .public:                       return "public"
@@ -129,5 +133,50 @@ extension Mastodon.Entity.Status {
             case ._other(let value):            return value
             }
         }
+
+        public var title: String {
+            switch self {
+            case .public:               return L10n.Scene.Compose.Visibility.public
+            case .unlisted:             return L10n.Scene.Compose.Visibility.unlisted
+            case .private:              return L10n.Scene.Compose.Visibility.private
+            case .direct:               return L10n.Scene.Compose.Visibility.direct
+            case ._other(let value):    return value
+            }
+        }
+
+        public var image: UIImage {
+            switch self {
+            case .public:       return UIImage(systemName: "globe.europe.africa")!.withRenderingMode(.alwaysTemplate)
+            case .unlisted:     return UIImage(systemName: "moon")!.withRenderingMode(.alwaysTemplate)
+            case .private:      return UIImage(systemName: "lock")!.withRenderingMode(.alwaysTemplate)
+            case .direct:       return UIImage(systemName: "at")!.withRenderingMode(.alwaysTemplate)
+            case ._other:       return UIImage(systemName: "ellipsis")!.withRenderingMode(.alwaysTemplate)
+            }
+        }
+
+    }
+}
+
+extension Mastodon.Entity.Status: Hashable {
+    public static func == (lhs: Mastodon.Entity.Status, rhs: Mastodon.Entity.Status) -> Bool {
+        lhs.uri == rhs.uri &&
+        lhs.id == rhs.id &&
+        lhs.reblog == rhs.reblog &&
+        lhs.favourited == rhs.favourited &&
+        lhs.reblogged == rhs.reblogged &&
+        lhs.bookmarked == rhs.bookmarked &&
+        lhs.pinned == rhs.pinned &&
+        lhs.content == rhs.content
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(uri)
+        hasher.combine(id)
+        hasher.combine(reblog)
+        hasher.combine(favourited)
+        hasher.combine(reblogged)
+        hasher.combine(bookmarked)
+        hasher.combine(pinned)
+        hasher.combine(content)
     }
 }

@@ -15,10 +15,6 @@
                 "title": "Error al votar",
                 "poll_ended": "La encuesta finalizó"
             },
-            "discard_post_content": {
-                "title": "Descartar borrador",
-                "message": "Confirmá para descartar el contenido del mensaje redactado."
-            },
             "publish_post_failure": {
                 "title": "Error al enviar el mensaje",
                 "message": "Error al enviar en mensaje.\nPor favor, revisá tu conexión a Internet.",
@@ -56,6 +52,24 @@
                 "title": "Nota",
                 "message": "Falló la traducción. Tal vez el administrador no habilitó las traducciones en este servidor, o este servidor está ejecutando una versión antigua de Mastodon en donde las traducciones aún no estaban disponibles.",
                 "button": "Aceptar"
+            },
+            "media_missing_alt_text": {
+                "title": "Texto alternativo de medios, ausente",
+                "message": "%d de tus imágenes no tienen texto alternativo. ¿Querés enviar el mensaje de todos modos?",
+                "cancel": "Cancelar",
+                "post": "Enviar"
+            },
+            "boost_a_post": {
+                "title_boost": "¿Adherir al mensaje?",
+                "title_unboost": "¿Dejar de adherir al mensaje?",
+                "cancel": "Cancelar",
+                "boost": "Adherir",
+                "unboost": "Quitar adhesión"
+            },
+            "unfollow_user": {
+                "title": "¿Dejar de seguir a %@?",
+                "cancel": "Cancelar",
+                "unfollow": "Dejar de seguir"
             }
         },
         "controls": {
@@ -80,7 +94,6 @@
                 "save_photo": "Guardar foto",
                 "copy_photo": "Copiar foto",
                 "sign_in": "Iniciar sesión",
-                "sign_up": "Crear cuenta",
                 "see_more": "Ver más",
                 "preview": "Previsualización",
                 "copy": "Copiar",
@@ -101,13 +114,22 @@
                 "translate_post": {
                     "title": "Traducido desde el %s",
                     "unknown_language": "Desconocido"
-                }
+                },
+                "edit_post": "Editar",
+                "bookmark": "Marcar",
+                "remove_bookmark": "Quitar marcador",
+                "follow": "Seguir a %s",
+                "unfollow": "Dejar de seguir a %s"
             },
             "tabs": {
                 "home": "Principal",
                 "search_and_explore": "Buscar y explorar",
                 "notifications": "Notificaciones",
-                "profile": "Perfil"
+                "profile": "Perfil",
+                "a11y": {
+                    "search": "Buscar",
+                    "explore": "Explorá"
+                }
             },
             "keyboard": {
                 "common": {
@@ -121,9 +143,9 @@
                     "next_status": "Mensaje siguiente",
                     "open_status": "Abrir mensaje",
                     "open_author_profile": "Abrir perfil del autor",
-                    "open_reblogger_profile": "Abrir perfil del adherente",
+                    "open_reblogger_profile": "Abrir perfil de la cuenta adherente",
                     "reply_status": "Responder al mensaje",
-                    "toggle_reblog": "Cambiar adhesión al mensaje",
+                    "toggle_reblog": "Rotar adhesión en el mensaje",
                     "toggle_favorite": "Cambiar marca de favorito del mensaje",
                     "toggle_content_warning": "Cambiar modo de advertencia de contenido",
                     "preview_image": "Previsualizar imagen"
@@ -134,6 +156,10 @@
                 }
             },
             "status": {
+                "reply": "Respuesta",
+                "private_reply": "Respuesta privada",
+                "mention": "Mención",
+                "private_mention": "Mención privada",
                 "user_reblogged": "%s adhirió",
                 "user_replied_to": "Respondió a %s",
                 "show_post": "Mostrar mensaje",
@@ -166,7 +192,12 @@
                     "show_gif": "Mostrar GIF",
                     "show_video_player": "Mostrar reproductor de video",
                     "share_link_in_post": "Compartir enlace en mensaje",
-                    "tap_then_hold_to_show_menu": "Tocá y mantené presionado para mostrar el menú"
+                    "tap_then_hold_to_show_menu": "Tocá y mantené presionado para mostrar el menú",
+                    "a11y_labels": {
+                        "reblog": "Adherir",
+                        "unreblog": "Deshacer adhesión"
+                    },
+                    "copy_link": "Copiar enlace"
                 },
                 "tag": {
                     "url": "Dirección web",
@@ -187,19 +218,44 @@
                     "unknown_language": "Desconocido",
                     "unknown_provider": "Desconocido",
                     "show_original": "Mostrar original"
+                },
+                "media": {
+                    "accessibility_label": "%s, archivo adjunto %d de %d",
+                    "expand_image_hint": "Expande la imagen. Tocá dos veces y mantené pulsado para mostrar las acciones",
+                    "expand_gif_hint": "Expande el GIF. Tocá dos veces y mantené pulsado para mostrar acciones",
+                    "expand_video_hint": "Muestra el reproductor de vídeo. Tocá dos veces y mantené pulsado para mostrar acciones"
+                },
+                "posted_via_application": "%s vía %s",
+                "buttons": {
+                    "reblogs_title": "Adhesiones",
+                    "favorites_title": "Favoritos",
+                    "edit_history_title": "Editar historial",
+                    "edit_history_detail": "Última edición: %s"
+                },
+                "edited_at_timestamp_prefix": "Editado el %s",
+                "edit_history": {
+                    "title": "Editar historial",
+                    "original_post": "Mensaje original · %s"
+                },
+                "card": {
+                    "by": "Por",
+                    "by_author": "Por %s"
                 }
             },
             "friendship": {
                 "follow": "Seguir",
+                "follow_back": "Seguir también",
                 "following": "Siguiendo",
+                "mutual": "Seguimiento mutuo",
                 "request": "Solicitar",
                 "pending": "Pendientes",
                 "block": "Bloquear",
                 "block_user": "Bloquear a %s",
-                "block_domain": "Bloquear %s",
+                "block_domain": "Bloquear dominio %s",
                 "unblock": "Desbloquear",
                 "unblock_user": "Desbloquear a %s",
                 "blocked": "Bloqueado",
+                "domain_blocked": "Dominio bloqueado",
                 "mute": "Silenciar",
                 "mute_user": "Silenciar a %s",
                 "unmute": "Dejar de silenciar",
@@ -229,25 +285,49 @@
                     "user_suspended_warning": "La cuenta de %s está suspendida."
                 }
             }
+        },
+        "user_list": {
+            "no_verified_link": "Enlace no verificado",
+            "followers_count": "%@ seguidores"
         }
     },
     "scene": {
         "welcome": {
-            "slogan": "La red social,\nnuevamente en tu poder.",
-            "get_started": "Comenzá",
-            "log_in": "Iniciar sesión"
+            "log_in": "Iniciar sesión",
+            "learn_more": "Aprendé más",
+            "join_default_server": "Unite a %@",
+            "pick_server": "Elegí otro servidor",
+            "separator": {
+                "or": "o"
+            },
+            "education": {
+                "mastodon": {
+                    "title": "Te damos la bienvenida a Mastodon",
+                    "description": "Mastodon es una red social descentralizada, lo que significa que no la controla una sola compañía. Está conformada por varios servidores administrados independientemente, conectados entre sí."
+                },
+                "servers": {
+                    "title": "¿Qué son los servidores?",
+                    "description": "Cada cuenta de Mastodon está alojada en un servidor, y cada servidor tiene con sus propios valores, reglas y administradores. No importa cuál servidor elijas, podés seguir e interactuar con cuentas alojadas en cualquier servidor."
+                },
+                "a11y": {
+                    "what_is_mastodon": {
+                        "title": "¿Qué es Mastodon?"
+                    }
+                }
+            }
         },
         "login": {
-            "title": "Hola de nuevo",
+            "title": "Te volvemos a dar la bienvenida",
             "subtitle": "Iniciá sesión en el servidor en donde creaste tu cuenta.",
             "server_search_field": {
                 "placeholder": "Ingresá la dirección web o buscá tu servidor"
             }
         },
         "server_picker": {
-            "title": "Mastodon está compuesto de cuentas en diferentes servidores.",
-            "subtitle": "Elegí un servidor basado en tu región, en tus intereses o uno de propósitos generales. Vas a poder interactuar con cualquier cuenta de Mastodon, independientemente del servidor.",
+            "title": "Elegir servidor",
             "button": {
+                "language": "Idioma",
+                "signup_speed": "Velocidad de registro",
                 "category": {
                     "all": "Todas",
                     "all_accessiblity_description": "Categoría: Todas",
@@ -279,18 +359,41 @@
                 "finding_servers": "Buscando servidores disponibles…",
                 "bad_network": "Algo salió mal al cargar los datos. Revisá tu conexión de Internet.",
                 "no_results": "No hay resultados"
+            },
+            "signup_speed": {
+                "all": "Todos",
+                "instant": "Registro instantáneo",
+                "manually_reviewed": "Revisión manual"
+            },
+            "language": {
+                "all": "Todos"
+            },
+            "search": {
+                "placeholder": "Buscar nombre o dirección web"
+            },
+            "no_server_selected_hint": "Seleccionaremos un servidor basado en tu idioma si continuás sin hacer una selección."
+        },
+        "privacy": {
+            "title": "Tu privacidad",
+            "description": "Aunque la aplicación Mastodon no recopila ningún dato, el servidor en el cual te registrás puede tener una política diferente.\n\nSi no estás de acuerdo con la política de **%s**, podés volver atrás y elegir un servidor diferente.",
+            "policy": {
+                "ios": "Política de privacidad - Mastodon para iOS",
+                "server": "Política de privacidad - %s"
+            },
+            "button": {
+                "confirm": "Estoy de acuerdo"
             }
         },
         "register": {
-            "title": "Vamos a prepararte en %s",
-            "lets_get_you_set_up_on_domain": "Vamos a prepararte en %s",
+            "title": "Crear cuenta",
             "input": {
                 "avatar": {
                     "delete": "Eliminar"
                 },
                 "username": {
                     "placeholder": "nombre de usuario",
-                    "duplicate_prompt": "Este nombre de usuario ya está en uso."
+                    "duplicate_prompt": "Este nombre de usuario ya está en uso.",
+                    "suggestion": "arg_%@"
                 },
                 "display_name": {
                     "placeholder": "nombre para mostrar"
@@ -300,6 +403,7 @@
                 },
                 "password": {
                     "placeholder": "contraseña",
+                    "confirmation_placeholder": "Confirmar contraseña",
                     "require": "Tu contraseña necesita al menos:",
                     "character_limit": "8 caracteres",
                     "accessibility": {
@@ -324,7 +428,7 @@
                 "reason": {
                     "blocked": "%s contiene un proveedor de correo electrónico no permitido",
                     "unreachable": "%s parece no existir",
-                    "taken": "%s ya está en uso",
+                    "taken": "%s ya está ocupado. Qué tal:",
                     "reserved": "%s es una palabra clave reservada",
                     "accepted": "%s debe ser aceptado",
                     "blank": "%s es obligatorio",
@@ -342,21 +446,20 @@
             }
         },
         "server_rules": {
-            "title": "Algunas reglas básicas.",
-            "subtitle": "Estas reglas son establecidas por los administradores de %s.",
+            "title": "Reglas del servidor",
+            "subtitle": "Al continuar, aceptás seguir las siguientes reglas establecidas y aplicadas por los moderadores de **%s**.",
             "prompt": "Al continuar, estás sujeto a los términos de servicio y política de privacidad de %s.",
             "terms_of_service": "términos del servicio",
             "privacy_policy": "política de privacidad",
             "button": {
-                "confirm": "Estoy de acuerdo"
+                "confirm": "Estoy de acuerdo",
+                "disagree": "Rechazar"
             }
         },
         "confirm_email": {
-            "title": "Una última cosa.",
-            "subtitle": "Tocá el enlace que te enviamos por correo electrónico para verificar tu cuenta.",
-            "tap_the_link_we_emailed_to_you_to_verify_your_account": "Tocá el enlace que te enviamos por correo electrónico para verificar tu cuenta",
+            "title": "Revisá tu bandeja de entrada",
+            "tap_the_link_we_emailed_to_you_to_verify_your_account": "Pulsá el enlace que te enviamos para verificar %@. Te esperamos por acá.",
             "button": {
-                "open_email_app": "Abrir aplicación de correo electrónico",
                 "resend": "Reenviar"
             },
             "dont_receive_email": {
@@ -369,29 +472,45 @@
                 "description": "Te acabamos de enviar un correo electrónico. Revisá tu carpeta de correo basura / correo no deseado / spam, si todavía no lo hiciste.",
                 "mail": "Correo",
                 "open_email_client": "Abrir cliente de correo electrónico"
+            },
+            "didnt_get_link": {
+                "prefix": "¿No recibiste un enlace?",
+                "resend_in": "Reenviar (%@)",
+                "resend_now": "Reenviar ahora."
             }
         },
         "home_timeline": {
             "title": "Principal",
-            "navigation_bar_state": {
-                "offline": "Desconectado",
-                "new_posts": "Ver nuevos msjs",
-                "published": "¡Enviado!",
-                "Publishing": "Enviando mensaje…",
-                "accessibility": {
-                    "logo_label": "Botón de logo",
-                    "logo_hint": "Tocá para desplazarte hacia arriba y tocá de nuevo para ir a la ubicación anterior"
+            "timeline_menu": {
+                "following": "Seguimientos",
+                "local_community": "Local",
+                "lists": {
+                    "title": "Listas",
+                    "empty_message": "No tenés ninguna lista"
+                },
+                "hashtags": {
+                    "title": "Etiquetas seguidas",
+                    "empty_message": "No seguís ninguna etiqueta"
                 }
+            },
+            "timeline_pill": {
+                "offline": "Desconectado",
+                "new_posts": "Nuevos mensajes",
+                "post_sent": "Mensaje enviado"
+            },
+            "empty_state": {
+                "list_empty_message_title": "Esta lista está vacía"
             }
         },
         "suggestion_account": {
-            "title": "Encontrá cuentas para seguir",
-            "follow_explain": "Cuando sigás una cuenta, verás sus mensajes en tu línea temporal principal."
+            "title": "Popular en Mastodon",
+            "follow_all": "Seguir a todos"
         },
         "compose": {
             "title": {
                 "new_post": "Nuevo mensaje",
-                "new_reply": "Nueva respuesta"
+                "new_reply": "Nueva respuesta",
+                "edit_post": "Editar mensaje"
             },
             "media_selection": {
                 "camera": "Tomar foto",
@@ -415,6 +534,7 @@
                 "server_processing_state": "Servidor procesando…"
             },
             "poll": {
+                "title": "Encuesta",
                 "duration_time": "Duración: %s",
                 "thirty_minutes": "30 minutos",
                 "one_hour": "1 hora",
@@ -424,7 +544,11 @@
                 "seven_days": "7 días",
                 "option_number": "Opción %ld",
                 "the_poll_is_invalid": "La encuesta no es válida",
-                "the_poll_has_empty_option": "La encuesta tiene opción vacía"
+                "the_poll_has_empty_option": "La encuesta tiene opción vacía",
+                "add_option": "Agregar opción",
+                "remove_option": "Quitar opción",
+                "move_up": "Subir",
+                "move_down": "Bajar"
             },
             "content_warning": {
                 "placeholder": "Escribí una advertencia precisa acá…"
@@ -456,6 +580,12 @@
                 "toggle_content_warning": "Cambiar advertencia de contenido",
                 "append_attachment_entry": "Agregar archivo adjunto - %s",
                 "select_visibility_entry": "Seleccionar visibilidad - %s"
+            },
+            "language": {
+                "title": "Idioma del mensaje",
+                "suggested": "Sugerido",
+                "recent": "Reciente",
+                "other": "Otro idioma…"
             }
         },
         "profile": {
@@ -468,7 +598,8 @@
                 "my_followers": "seguidores",
                 "other_posts": "mensajes",
                 "other_following": "siguiendo",
-                "other_followers": "seguidores"
+                "other_followers": "seguidores",
+                "familiar_followers": "mutuales"
             },
             "fields": {
                 "joined": "En este servidor desde",
@@ -513,6 +644,14 @@
                 "confirm_hide_reblogs": {
                     "title": "Ocultar adhesiones",
                     "message": "Confirmá para ocultar adhesiones"
+                },
+                "confirm_block_domain": {
+                    "title": "Bloquear dominio",
+                    "message": "Confirmar para bloquear el dominio %s"
+                },
+                "confirm_unblock_domain": {
+                    "title": "Desbloquear dominio",
+                    "message": "Confirmar para desbloquear el dominio %s"
                 }
             },
             "accessibility": {
@@ -560,16 +699,21 @@
                 }
             },
             "searching": {
-                "segment": {
-                    "all": "Todo",
-                    "people": "Cuentas",
-                    "hashtags": "Etiquetas",
-                    "posts": "Mensajes"
+                "posts": "Mensajes que coinciden con %s\"",
+                "people": "Personas que coinciden con \"%s\"",
+                "profile": "Ir a @%s@%s",
+                "url": "Abrir dirección web en Mastodon",
+                "hashtag": "Ir a %s",
+                "no_user": {
+                    "title": "No se encontró la cuenta del usuario",
+                    "message": "No se encontró la cuenta de usuario \"%s\" en %s"
                 },
                 "empty_state": {
                     "no_results": "No hay resultados"
                 },
                 "recent_search": "Búsquedas recientes",
+                "no_recent_searches": "Sin búsquedas recientes.",
+                "clear_all": "Limpiar todo",
                 "clear": "Limpiar"
             }
         },
@@ -584,12 +728,41 @@
             "intro": "Estos son los mensajes que están ganando tracción en tu rincón de Mastodon."
         },
         "favorite": {
-            "title": "Tus favoritos"
+            "title": "Favoritos"
         },
         "notification": {
             "title": {
                 "Everything": "Todo",
                 "Mentions": "Menciones"
+            },
+            "headers": {
+                "report": "Denunciar",
+                "sign_up": "Registrarse",
+                "favourite": "Marcar como favorito",
+                "follow": "Seguir",
+                "follow_request": "Solicitud de seguimiento",
+                "moderation_warning": "Advertencia",
+                "poll": "Encuesta",
+                "boost": "Adherir",
+                "severed_relationships": "Bloqueo de dominio",
+                "status": "Enviar",
+                "edit": "Editar"
+            },
+            "grouped_notification_description": {
+                "your_poll_has_ended": "Tu encuesta finalizó",
+                "single_name_ran_poll": "%@ ejecutó %@",
+                "single_name_mentioned_you": "%@ te mencionó",
+                "single_name_requested_to_follow_you": "%@ solicitó seguirte",
+                "single_name_posted": "%@ envió:",
+                "single_name_boosted": "%@ adhirió:",
+                "single_name_favourited": "%@ marcó como favorito:",
+                "single_name_followed_you": "%@ te empezó a seguir",
+                "multiple_people_boosted": "%@ adhirió:",
+                "multiple_people_favourited": "%@ marcó como favorito:",
+                "multiple_people_followed_you": "%@ te empezó a seguir",
+                "single_name_signed_up": "Se registró %@",
+                "someone_reported_account_for_rule_violation": "Alguien denunció a %@ por violación de reglas.",
+                "someone_reported_posts_from_account_for_rule_violation": "Alguien denunció a %@ de %@ por violación de reglas."
             },
             "notification_description": {
                 "followed_you": "te sigue",
@@ -597,7 +770,8 @@
                 "reblogged_your_post": "adhirió a tu mensaje",
                 "mentioned_you": "te mencionó",
                 "request_to_follow_you": "solicitó seguirte",
-                "poll_has_ended": "la encuesta terminó"
+                "poll_has_ended": "la encuesta terminó",
+                "relationship_severance": "Un administrador de %@ bloqueó a %@, incluyendo %@."
             },
             "keyobard": {
                 "show_everything": "Mostrar todo",
@@ -608,6 +782,41 @@
                 "accepted": "Aceptada",
                 "reject": "rechazar",
                 "rejected": "Rechazada"
+            },
+            "warning": {
+                "none": "Tu cuenta recibió una advertencia de moderación.",
+                "disable": "Se deshabilitó tu cuenta.",
+                "mark_statuses_as_sensitive": "Se marcaron como sensibles a algunos de tus mensajes.",
+                "delete_statuses": "Se eliminaron algunos de tus mensajes.",
+                "sensitive": "A partir de ahora, tus mensajes serán marcados como sensibles.",
+                "silence": "Tu cuenta fue limitada.",
+                "suspend": "Tu cuenta fue suspendida.",
+                "learn_more": "Aprendé más"
+            },
+            "learn_more_about_server_blocks": "Aprende más sobre los bloqueos de servidor",
+            "filtered_notification": {
+                "title": "Notificaciones filtradas",
+                "accept": "Aceptar",
+                "dismiss": "Descartar"
+            },
+            "policy": {
+                "title": "Filtrar notificaciones de…",
+                "not_following": {
+                    "title": "Cuentas que no seguís",
+                    "subtitle": "Hasta que las aprobés manualmente"
+                },
+                "no_follower": {
+                    "title": "Cuentas que no te siguen",
+                    "subtitle": "Incluyendo a las cuentas que te han seguido por menos de 3 días"
+                },
+                "new_account": {
+                    "title": "Cuentas nuevas",
+                    "subtitle": "Creadas en los últimos 30 días"
+                },
+                "private_mentions": {
+                    "title": "Menciones privadas no solicitadas",
+                    "subtitle": "Filtradas, a menos que sean respuestas a tu propia mención, o sigás al remitente"
+                }
             }
         },
         "thread": {
@@ -615,60 +824,100 @@
             "title": "Mensaje de %s"
         },
         "settings": {
-            "title": "Configuración",
-            "section": {
-                "appearance": {
-                    "title": "Apariencia",
-                    "automatic": "Automática",
-                    "light": "Siempre clara",
-                    "dark": "Siempre oscura"
-                },
-                "look_and_feel": {
-                    "title": "Apariencia",
-                    "use_system": "Usar sistema",
-                    "really_dark": "Oscuro de verdad",
-                    "sorta_dark": "Algo oscuro",
-                    "light": "Claro"
-                },
-                "notifications": {
-                    "title": "Notificaciones",
-                    "favorites": "Marca mi mensaje como favorito",
-                    "follows": "Me sigue",
-                    "boosts": "Adhiere a mi mensaje",
-                    "mentions": "Me menciona",
-                    "trigger": {
-                        "anyone": "cualquiera",
-                        "follower": "un seguidor",
-                        "follow": "alguien a quien sigo",
-                        "noone": "nadie",
-                        "title": "Notificarme cuando"
-                    }
-                },
-                "preference": {
-                    "title": "Configuración",
-                    "true_black_dark_mode": "Modo negro oscuro real",
-                    "disable_avatar_animation": "Deshabilitar avatares animados",
-                    "disable_emoji_animation": "Deshabilitar emojis animados",
-                    "using_default_browser": "Usar navegador web predet. para abrir enlaces",
-                    "open_links_in_mastodon": "Abrir enlaces en Mastodon"
-                },
-                "boring_zone": {
-                    "title": "La zona aburrida",
-                    "account_settings": "Configuración de la cuenta",
-                    "terms": "Términos del servicio",
-                    "privacy": "Política de privacidad"
-                },
-                "spicy_zone": {
-                    "title": "La zona picante",
-                    "clear": "Limpiar memoria caché multimedia",
-                    "signout": "Cerrar sesión"
+            "overview": {
+                "title": "Configuración",
+                "general": "General",
+                "notifications": "Notificaciones",
+                "privacy_safety": "Privacidad y seguridad",
+                "support_mastodon": "Apoyá a Mastodon",
+                "about_mastodon": "Acerca de Mastodon",
+                "server_details": "Detalles del servidor",
+                "logout": "Cerrar sesión en %@"
+            },
+            "about_mastodon": {
+                "title": "Información",
+                "more_settings": "Configuración extra",
+                "contribute_to_mastodon": "Contribuí a Mastodon",
+                "privacy_policy": "Política de privacidad",
+                "clear_media_storage": "Limpiar almacenamiento multimedia"
+            },
+            "server_details": {
+                "about": "Información",
+                "rules": "Reglas",
+                "about_instance": {
+                    "title": "Administración",
+                    "message_admin": "Enviar mensaje a la administración",
+                    "legal_notice": "Un aviso legal"
                 }
             },
-            "footer": {
-                "mastodon_description": "Mastodon es software de código abierto. Podés informar errores en GitHub en %s (%s)"
+            "general": {
+                "title": "General",
+                "appearance": {
+                    "section_title": "Apariencia",
+                    "dark": "Oscura",
+                    "light": "Clara",
+                    "system": "Usar apariencia del dispositivo"
+                },
+                "ask_before": {
+                    "section_title": "Preguntar antes de…",
+                    "posting_without_alt_text": "Enviar sin texto alternativo",
+                    "unfollowing_someone": "Dejar de seguir a alguien",
+                    "boosting_a_post": "Adherir a un mensaje",
+                    "deleting_a_post": "Eliminar un mensaje"
+                },
+                "design": {
+                    "section_title": "Diseño",
+                    "show_animations": "Reproducir avatares animados y emojis"
+                },
+                "language": {
+                    "section_title": "Idioma",
+                    "default_post_language": "Idioma predeterminado de mensajes"
+                },
+                "links": {
+                    "section_title": "Enlaces",
+                    "open_in_mastodon": "Abrir en Mastodon",
+                    "open_in_browser": "Abrir en el navegador web"
+                }
             },
-            "keyboard": {
-                "close_settings_window": "Cerrar ventana de configuración"
+            "notifications": {
+                "title": "Notificaciones",
+                "policy": {
+                    "title": "Recibir notificaciones de",
+                    "anyone": "Cualquier cuenta",
+                    "followers": "Cuentas que te siguen",
+                    "follow": "Cuentas que seguís",
+                    "noone": "Ninguna cuenta"
+                },
+                "alert": {
+                    "mentions_and_replies": "Menciones y respuestas",
+                    "boosts": "Adhesiones",
+                    "favorites": "Favoritos",
+                    "new_followers": "Nuevos seguidores"
+                },
+                "disabled": {
+                    "notification_hint": "Activá las notificaciones desde la configuración de tu dispositivo para ver actualizaciones en la pantalla de bloqueo.",
+                    "go_to_settings": "Ir a la configuración de notificaciones"
+                }
+            },
+            "privacy_safety": {
+                "title": "Privacidad y seguridad",
+                "preset": {
+                    "title": "Prestablecido",
+                    "open_and_public": "Abierto y público",
+                    "private_and_restricted": "Privado y restringido",
+                    "custom": "Personalizar"
+                },
+                "default_post_visibility": {
+                    "title": "Visibilidad predeterminada de mensajes"
+                },
+                "manually_approve_follow_requests": "Aprobar manualmente solicitudes de seguimiento",
+                "show_followers_and_following": "Mostrar seguidores y a quiénes sigo",
+                "suggest_my_account_to_others": "Sugerir mi cuenta a otros",
+                "appear_in_search_engines": "Aparecer en los motores de búsqueda"
+            },
+            "donation": {
+                "title": "Doná a Mastodon",
+                "manage": "Administrar donaciones"
             }
         },
         "report": {
@@ -720,7 +969,7 @@
                 "unfollowed": "Dejaste de seguir a esta cuenta",
                 "unfollow_user": "Dejar de seguir a %s",
                 "mute_user": "Silenciar a %s",
-                "you_wont_see_their_posts_or_reblogs_in_your_home_feed_they_wont_know_they_ve_been_muted": "No verás sus publicaciones ni sus adhesiones en tu línea temporal. El usuario de esta cuenta no sabrá que fue silenciado.",
+                "you_wont_see_their_posts_or_reblogs_in_your_home_feed_they_wont_know_they_ve_been_muted": "No verás sus mensajes o adhesiones en tu línea temporal principal. No sabrán que los silenciaste.",
                 "block_user": "Bloquear a %s",
                 "they_will_no_longer_be_able_to_follow_or_see_your_posts_but_they_can_see_if_theyve_been_blocked": "El usuario de esta cuenta ya no podrá seguirte o leer tus mensajes, pero podrá fijarse si fue bloqueado.",
                 "while_we_review_this_you_can_take_action_against_user": "Mientras revisamos esto, podés tomar medidas contra %s"
@@ -736,12 +985,9 @@
         "account_list": {
             "tab_bar_hint": "Perfil seleccionado actualmente: %s. Tocá dos veces y mantenelo presionado para cambiar de cuenta",
             "dismiss_account_switcher": "Descartar cambio de cuenta",
-            "add_account": "Agregar cuenta"
-        },
-        "wizard": {
-            "new_in_mastodon": "Novedad en Mastodon",
-            "multiple_account_switch_intro_description": "Cambiá entre varias cuentas manteniendo presionado el botón del perfil.",
-            "accessibility_hint": "Tocá dos veces para descartar este asistente"
+            "add_account": "Agregar cuenta",
+            "logout_all_accounts": "Cerrar sesión en todas las cuentas",
+            "logout": "Cerrar sesión"
         },
         "bookmark": {
             "title": "Marcadores"
@@ -756,6 +1002,69 @@
             "actions": {
                 "follow": "Seguir",
                 "unfollow": "Dejar de seguir"
+            }
+        },
+        "donation": {
+            "picker": {
+                "once_title": "Solo una vez",
+                "monthly_title": "Mensualmente",
+                "yearly_title": "Anual"
+            },
+            "donatebuttontitle": "Donar",
+            "currency": "Moneda",
+            "success": {
+                "title": "¡Gracias por tu contribución!",
+                "subtitle": "Recibirás un correo electrónico pronto confirmando tu donación.",
+                "server_error_title": "Falló el pago",
+                "server_error_message": "Lo sentimos, se produjo un error y no pudimos procesar tu donación.\n\nPor favor, volvé a intentarlo en unos minutos.",
+                "share_button_title": "Corré la voz"
+            }
+        }
+    },
+    "extension": {
+        "open_in": {
+            "invalid_link_error": "Este no parece ser un enlace válido de Mastodon."
+        }
+    },
+    "widget": {
+        "common": {
+            "unsupported_widget_family": "Lo sentimos, pero esta familia de widgets no es compatible.",
+            "user_not_logged_in": "Por favor, abrí la aplicación de Mastodon para iniciar sesión en una cuenta."
+        },
+        "followers_count": {
+            "configuration_display_name": "Seguidores",
+            "configuration_description": "Mostrar número de seguidores.",
+            "title": "SEGUIDORES",
+            "followers_today": "%s seguidores hoy"
+        },
+        "multiple_followers": {
+            "configuration_display_name": "Múltiples seguidores",
+            "configuration_description": "Mostrar número de seguidores para múltiples cuentas.",
+            "mock_user": {
+                "display_name": "Otro seguidor",
+                "account_name": "otro@seguidor.social"
+            }
+        },
+        "latest_followers": {
+            "configuration_display_name": "Últimos seguidores",
+            "configuration_description": "Mostrar los últimos seguidores.",
+            "title": "Últimos seguidores",
+            "last_update": "Última actualización: %s"
+        },
+        "hashtag": {
+            "configuration": {
+                "display_name": "Etiqueta",
+                "description": "Muestra un mensaje reciente con la etiqueta seleccionada."
+            },
+            "not_found": {
+                "account_name": "Eugenio Mastodon",
+                "account": "@eugeniomastodon@no-existe-la.cuenta",
+                "content": "Lo sentimos, pero no pudimos encontrar ningún mensaje con la etiqueta <a>#%@</a>. Por favor, probá una <a>#EtiquetaDiferente</a> o revisá la configuración del widget."
+            },
+            "placeholder": {
+                "account_name": "Eugenio Mastodon",
+                "account": "@eugeniomastodon@no-existe-la.cuenta",
+                "content": "Así es cómo se vería un mensaje con una <a>#etiqueta</a>. Elegí una <a>#etiqueta</a> que quieras en la configuración del widget."
             }
         }
     }

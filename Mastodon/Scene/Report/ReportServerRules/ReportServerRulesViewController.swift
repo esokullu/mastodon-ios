@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022-5-10.
 //
 
-import os.log
 import UIKit
 import SwiftUI
 import Combine
@@ -18,12 +17,7 @@ protocol ReportServerRulesViewControllerDelegate: AnyObject {
     func reportServerRulesViewController(_ viewController: ReportServerRulesViewController, nextButtonPressed button: UIButton)
 }
 
-final class ReportServerRulesViewController: UIViewController, NeedsDependency, ReportViewControllerAppearance {
-    
-    let logger = Logger(subsystem: "ReportReasonViewController", category: "ViewController")
-
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+final class ReportServerRulesViewController: UIViewController, ReportViewControllerAppearance {
     
     var disposeBag = Set<AnyCancellable>()
     private var observations = Set<NSKeyValueObservation>()
@@ -44,9 +38,6 @@ final class ReportServerRulesViewController: UIViewController, NeedsDependency, 
         return navigationActionView
     }()
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
     
 }
 
@@ -101,8 +92,6 @@ extension ReportServerRulesViewController {
     }
     
     @objc private func nextButtonPressed(_ sender: UIButton) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
-        
         assert(viewModel.delegate != nil)
         viewModel.delegate?.reportServerRulesViewController(self, nextButtonPressed: sender)
     }

@@ -17,13 +17,11 @@ final class FavoriteViewModel {
     var disposeBag = Set<AnyCancellable>()
     
     // input
-    let context: AppContext
-    let authContext: AuthContext
-    let statusFetchedResultsController: StatusFetchedResultsController
-    let listBatchFetchViewModel = ListBatchFetchViewModel()
+    let authenticationBox: MastodonAuthenticationBox
+    let dataController: StatusDataController
 
     // output
-    var diffableDataSource: UITableViewDiffableDataSource<StatusSection, StatusItem>?
+    var diffableDataSource: UITableViewDiffableDataSource<StatusSection, MastodonItemIdentifier>?
     private(set) lazy var stateMachine: GKStateMachine = {
         let stateMachine = GKStateMachine(states: [
             State.Initial(viewModel: self),
@@ -37,14 +35,10 @@ final class FavoriteViewModel {
         return stateMachine
     }()
     
-    init(context: AppContext, authContext: AuthContext) {
-        self.context = context
-        self.authContext = authContext
-        self.statusFetchedResultsController = StatusFetchedResultsController(
-            managedObjectContext: context.managedObjectContext,
-            domain: authContext.mastodonAuthenticationBox.domain,
-            additionalTweetPredicate: nil
-        )
+    @MainActor
+    init(authenticationBox: MastodonAuthenticationBox) {
+        self.authenticationBox = authenticationBox
+        self.dataController = StatusDataController()
     }
     
 }

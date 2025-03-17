@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022/11/8.
 //
 
-import os.log
 import UIKit
 import AVKit
 import UniformTypeIdentifiers
@@ -22,27 +21,25 @@ extension AttachmentViewModel {
             }
             return .image(data, imageKind: .png)
         case .url(let url):
-            do {
-                let output = try await AttachmentViewModel.load(url: url)
-                return output
-            } catch {
-                throw error
-            }
+            let output = try await AttachmentViewModel.load(url: url)
+            return output
+        case .mastodonAssetUrl(let url, _):
+            return try await Self.loadMastodonAsset(url: url)
         case .pickerResult(let pickerResult):
-            do {
-                let output = try await AttachmentViewModel.load(itemProvider: pickerResult.itemProvider)
-                return output
-            } catch {
-                throw error
-            }
+            let output = try await AttachmentViewModel.load(itemProvider: pickerResult.itemProvider)
+            return output
         case .itemProvider(let itemProvider):
-            do {
-                let output = try await AttachmentViewModel.load(itemProvider: itemProvider)
-                return output
-            } catch {
-                throw error
-            }
+            let output = try await AttachmentViewModel.load(itemProvider: itemProvider)
+            return output
         }
+    }
+    
+    private static func loadMastodonAsset(url: URL) async throws -> Output {
+        guard !url.isFileURL else {
+            throw AttachmentError.invalidAttachmentType
+        }
+        let (imageData, _) = try await URLSession.shared.data(from: url)
+        return .image(imageData, imageKind: AssetType(imageData) == .png ? .png : .jpg)
     }
     
     private static func load(url: URL) async throws -> Output {
@@ -79,7 +76,7 @@ extension AttachmentViewModel {
             guard let result = try await itemProvider.loadImageData() else {
                 throw AttachmentError.invalidAttachmentType
             }
-            let imageKind: Output.ImageKind = {
+            let imageKind: Output.ImageKind = try {
                 if let type = result.type {
                     if type == UTType.png {
                         return .png
@@ -98,9 +95,8 @@ extension AttachmentViewModel {
                 if assetType == .jpeg {
                     return .jpg
                 }
-                
-                assertionFailure("unknown image kind")
-                return .jpg
+                assertionFailure()
+                throw AttachmentError.invalidAttachmentType
             }()
             return .image(result.data, imageKind: imageKind)
         } else if itemProvider.isMovie() {
@@ -127,7 +123,6 @@ extension AttachmentViewModel {
             let image = UIImage(cgImage: cgImage)
             return image
         } catch {
-            AttachmentViewModel.logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): thumbnail generate fail: \(error.localizedDescription)")
             return nil
         }
     }

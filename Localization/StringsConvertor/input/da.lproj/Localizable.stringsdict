@@ -53,7 +53,7 @@
     <key>a11y.plural.count.characters_left</key>
     <dict>
       <key>NSStringLocalizedFormatKey</key>
-      <string>%#@character_count@ left</string>
+      <string>%#@character_count@</string>
       <key>character_count</key>
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
@@ -61,52 +61,89 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 character</string>
+        <string>1 character left</string>
         <key>other</key>
-        <string>%ld characters</string>
+        <string>%ld characters left</string>
       </dict>
     </dict>
-    <key>plural.count.followed_by_and_mutual</key>
+    <key>plural.count.others</key>
     <dict>
       <key>NSStringLocalizedFormatKey</key>
-      <string>%#@names@%#@count_mutual@</string>
-      <key>names</key>
-      <dict>
-        <key>one</key>
-        <string></string>
-        <key>NSStringFormatSpecTypeKey</key>
-        <string>NSStringPluralRuleType</string>
-        <key>NSStringFormatValueTypeKey</key>
-        <string>ld</string>
-        <key>other</key>
-        <string></string>
-      </dict>
-      <key>count_mutual</key>
+      <string>%#@count_others@</string>
+      <key>count_others</key>
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
         <string>NSStringPluralRuleType</string>
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>Followed by %1$@, and another mutual</string>
+        <string>one other</string>
         <key>other</key>
-        <string>Followed by %1$@, and %ld mutuals</string>
+        <string>%ld others</string>
       </dict>
     </dict>
-    <key>plural.count.metric_formatted.post</key>
+    <key>plural.count.people_boosted</key>
     <dict>
       <key>NSStringLocalizedFormatKey</key>
-      <string>%@ %#@post_count@</string>
-      <key>post_count</key>
+      <string>%#@count_people@</string>
+      <key>count_people</key>
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
         <string>NSStringPluralRuleType</string>
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>post</string>
+        <string>one person boosted:</string>
         <key>other</key>
-        <string>posts</string>
+        <string>%ld people boosted:</string>
+      </dict>
+    </dict>
+    <key>plural.count.people_favourited</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@count_people@</string>
+      <key>count_people</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>one person favorited:</string>
+        <key>other</key>
+        <string>%ld people favorited:</string>
+      </dict>
+    </dict>
+    <key>plural.count.people_followed_you</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@count_people@</string>
+      <key>count_people</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>one person followed you</string>
+        <key>other</key>
+        <string>%ld people followed you</string>
+      </dict>
+    </dict>
+    <key>plural.count.poll_that_you_and_others_voted_in</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@count_others@</string>
+      <key>count_others</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>a poll that you and one other voted in</string>
+        <key>other</key>
+        <string>a poll that you and %ld others voted in</string>
       </dict>
     </dict>
     <key>plural.count.media</key>
@@ -123,6 +160,102 @@
         <string>1 media</string>
         <key>other</key>
         <string>%ld media</string>
+      </dict>
+    </dict>
+    <key>plural.count.image</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@image_count@</string>
+      <key>image_count</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 image</string>
+        <key>other</key>
+        <string>%ld images</string>
+      </dict>
+    </dict>
+    <key>plural.count.gif</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@gif_count@</string>
+      <key>gif_count</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 gif</string>
+        <key>other</key>
+        <string>%ld gifs</string>
+      </dict>
+    </dict>
+    <key>plural.count.video</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@video_count@</string>
+      <key>video_count</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 video</string>
+        <key>other</key>
+        <string>%ld videos</string>
+      </dict>
+    </dict>
+    <key>plural.count.audio</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@audio_count@</string>
+      <key>audio_count</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 audio</string>
+        <key>other</key>
+        <string>%ld audios</string>
+      </dict>
+    </dict>
+    <key>plural.count.attachment</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@attachment_count@</string>
+      <key>attachment_count</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 attachment</string>
+        <key>other</key>
+        <string>%ld attachments</string>
+      </dict>
+    </dict>
+    <key>plural.count.poll</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@poll_count@</string>
+      <key>poll_count</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 poll</string>
+        <key>other</key>
+        <string>%ld polls</string>
       </dict>
     </dict>
     <key>plural.count.post</key>
@@ -171,6 +304,22 @@
         <string>1 reblog</string>
         <key>other</key>
         <string>%ld reblogs</string>
+      </dict>
+    </dict>
+    <key>plural.count.reblog_a11y</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@reblog_count@</string>
+      <key>reblog_count</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 re-blog</string>
+        <key>other</key>
+        <string>%ld re-blogs</string>
       </dict>
     </dict>
     <key>plural.count.reply</key>
@@ -269,6 +418,38 @@
         <string>%ld followers</string>
       </dict>
     </dict>
+    <key>plural.count.of_your_followers</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@count_of_your_followers@</string>
+      <key>count_of_your_followers</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 of your followers</string>
+        <key>other</key>
+        <string>%ld of your followers</string>
+      </dict>
+    </dict>
+    <key>plural.count.accounts_that_you_follow</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@count_accounts_that_you_follow@</string>
+      <key>count_accounts_that_you_follow</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>1 account that you follow</string>
+        <key>other</key>
+        <string>%ld accounts that you follow</string>
+      </dict>
+    </dict>
     <key>date.year.left</key>
     <dict>
       <key>NSStringLocalizedFormatKey</key>
@@ -280,9 +461,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 year left</string>
+        <string>1 år tilbage</string>
         <key>other</key>
-        <string>%ld years left</string>
+        <string>%ld år tilbage</string>
       </dict>
     </dict>
     <key>date.month.left</key>
@@ -296,9 +477,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 months left</string>
+        <string>1 måned tilbage</string>
         <key>other</key>
-        <string>%ld months left</string>
+        <string>%ld måneder tilbage</string>
       </dict>
     </dict>
     <key>date.day.left</key>
@@ -312,9 +493,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 day left</string>
+        <string>1 dag tilbage</string>
         <key>other</key>
-        <string>%ld days left</string>
+        <string>%ld dage tilbage</string>
       </dict>
     </dict>
     <key>date.hour.left</key>
@@ -330,7 +511,7 @@
         <key>one</key>
         <string>1 hour left</string>
         <key>other</key>
-        <string>%ld hours left</string>
+        <string>%ld timer tilbage</string>
       </dict>
     </dict>
     <key>date.minute.left</key>
@@ -346,7 +527,7 @@
         <key>one</key>
         <string>1 minute left</string>
         <key>other</key>
-        <string>%ld minutes left</string>
+        <string>%ld minutter tilbage</string>
       </dict>
     </dict>
     <key>date.second.left</key>
@@ -362,7 +543,7 @@
         <key>one</key>
         <string>1 second left</string>
         <key>other</key>
-        <string>%ld seconds left</string>
+        <string>%ld sekunder tilbage</string>
       </dict>
     </dict>
     <key>date.year.ago.abbr</key>
@@ -378,7 +559,7 @@
         <key>one</key>
         <string>1y ago</string>
         <key>other</key>
-        <string>%ldy ago</string>
+        <string>%ldå siden</string>
       </dict>
     </dict>
     <key>date.month.ago.abbr</key>
@@ -392,9 +573,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1M ago</string>
+        <string>1 md. siden</string>
         <key>other</key>
-        <string>%ldM ago</string>
+        <string>%ld mdr. siden</string>
       </dict>
     </dict>
     <key>date.day.ago.abbr</key>
@@ -410,7 +591,7 @@
         <key>one</key>
         <string>1d ago</string>
         <key>other</key>
-        <string>%ldd ago</string>
+        <string>%ld dage siden</string>
       </dict>
     </dict>
     <key>date.hour.ago.abbr</key>
@@ -424,9 +605,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1h ago</string>
+        <string>1 t. siden</string>
         <key>other</key>
-        <string>%ldh ago</string>
+        <string>%ld t. siden</string>
       </dict>
     </dict>
     <key>date.minute.ago.abbr</key>
@@ -440,7 +621,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1m ago</string>
+        <string>1 min. siden</string>
         <key>other</key>
         <string>%ldm ago</string>
       </dict>
@@ -456,9 +637,25 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1s ago</string>
+        <string>1 sek. siden</string>
         <key>other</key>
-        <string>%lds ago</string>
+        <string>%ld sek. siden</string>
+      </dict>
+    </dict>
+    <key>plural.filtered_notification_banner.subtitle</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@number_of_requests@</string>
+      <key>number_of_requests</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>ld</string>
+        <key>one</key>
+        <string>En person, du måske kender</string>
+        <key>other</key>
+        <string>%ld personer, du måske kender</string>
       </dict>
     </dict>
   </dict>

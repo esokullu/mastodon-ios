@@ -15,10 +15,6 @@
                 "title": "Napaka glasovanja",
                 "poll_ended": "Anketa je zaključena"
             },
-            "discard_post_content": {
-                "title": "Zavrzi osnutek",
-                "message": "Potrdite za opustitev sestavljene vsebine objave."
-            },
             "publish_post_failure": {
                 "title": "Spodletela objava",
                 "message": "Objava je spodletela.\nPreverite svojo internetno povezavo.",
@@ -56,6 +52,24 @@
                 "title": "Opomba",
                 "message": "Prevod je spodletel. Morda skrbnik ni omogočil prevajanja na tem strežniku ali pa strežnik teče na starejši različici Masotodona, na kateri prevajanje še ni podprto.",
                 "button": "V redu"
+            },
+            "media_missing_alt_text": {
+                "title": "Manjka nadomestno besedilo za večpredstavnostno vsebino",
+                "message": "Manjka nadomestno besedilo za %d slik.\nAli želite vseeno opraviti objavo?",
+                "cancel": "Prekliči",
+                "post": "Objavi"
+            },
+            "boost_a_post": {
+                "title_boost": "Ali želite izpostaviti objavo?",
+                "title_unboost": "Ali želite preklicati izpostavitev objave?",
+                "cancel": "Prekliči",
+                "boost": "Izpostavi",
+                "unboost": "Prekliči izpostavitev"
+            },
+            "unfollow_user": {
+                "title": "Ali želite prenehati slediti %@?",
+                "cancel": "Prekliči",
+                "unfollow": "Ne sledi več"
             }
         },
         "controls": {
@@ -80,7 +94,6 @@
                 "save_photo": "Shrani fotografijo",
                 "copy_photo": "Kopiraj fotografijo",
                 "sign_in": "Prijava",
-                "sign_up": "Ustvari račun",
                 "see_more": "Pokaži več",
                 "preview": "Predogled",
                 "copy": "Kopiraj",
@@ -101,13 +114,22 @@
                 "translate_post": {
                     "title": "Prevedi iz: %s",
                     "unknown_language": "Neznano"
-                }
+                },
+                "edit_post": "Uredi",
+                "bookmark": "Zaznamek",
+                "remove_bookmark": "Odstrani zaznamek",
+                "follow": "Sledi %s",
+                "unfollow": "Prenehaj slediti %s"
             },
             "tabs": {
                 "home": "Domov",
                 "search_and_explore": "Poišči in razišči",
                 "notifications": "Obvestila",
-                "profile": "Profil"
+                "profile": "Profil",
+                "a11y": {
+                    "search": "Iskanje",
+                    "explore": "Razišči"
+                }
             },
             "keyboard": {
                 "common": {
@@ -123,7 +145,7 @@
                     "open_author_profile": "Pokaži profil avtorja",
                     "open_reblogger_profile": "Odpri profil poobjavitelja",
                     "reply_status": "Odgovori",
-                    "toggle_reblog": "Preklopi poobjavo za objavo",
+                    "toggle_reblog": "Preklopi izpostavitev objave",
                     "toggle_favorite": "Preklopi priljubljenost objave",
                     "toggle_content_warning": "Preklopi opozorilo o vsebini",
                     "preview_image": "Predogled slike"
@@ -134,7 +156,11 @@
                 }
             },
             "status": {
-                "user_reblogged": "%s je poobjavil_a",
+                "reply": "Reply",
+                "private_reply": "Private reply",
+                "mention": "Mention",
+                "private_mention": "Private mention",
+                "user_reblogged": "%s je izpostavil/a",
                 "user_replied_to": "Odgovarja %s",
                 "show_post": "Pokaži objavo",
                 "show_user_profile": "Prikaži uporabnikov profil",
@@ -156,8 +182,8 @@
                 },
                 "actions": {
                     "reply": "Odgovori",
-                    "reblog": "Poobjavi",
-                    "unreblog": "Razveljavi poobjavo",
+                    "reblog": "Izpostavi",
+                    "unreblog": "Razveljavi izpostavitev",
                     "favorite": "Priljubljen",
                     "unfavorite": "Odstrani iz priljubljenih",
                     "menu": "Meni",
@@ -166,7 +192,12 @@
                     "show_gif": "Pokaži GIF",
                     "show_video_player": "Pokaži predvajalnik",
                     "share_link_in_post": "Deli povezavo v objavi",
-                    "tap_then_hold_to_show_menu": "Tapnite, nato držite, da se pojavi meni"
+                    "tap_then_hold_to_show_menu": "Tapnite, nato držite, da se pojavi meni",
+                    "a11y_labels": {
+                        "reblog": "Izpostavi",
+                        "unreblog": "Razveljavi izpostavitev"
+                    },
+                    "copy_link": "Kopiraj povezavo"
                 },
                 "tag": {
                     "url": "URL",
@@ -187,27 +218,52 @@
                     "unknown_language": "Neznano",
                     "unknown_provider": "Neznano",
                     "show_original": "Pokaži izvirnik"
+                },
+                "media": {
+                    "accessibility_label": "%s, priponka %d od %d",
+                    "expand_image_hint": "Razširi sliko. Dvakrat tapnite in držite, da se pokažejo dejanja",
+                    "expand_gif_hint": "Razširi GIF. Dvakrat tapnite in držite, da se pokažejo dejanja",
+                    "expand_video_hint": "Pokaže predvajalnik videoposnetkov. Dvakrat tapnite in držite, da se pokažejo dejanja"
+                },
+                "posted_via_application": "%s prek %s",
+                "buttons": {
+                    "reblogs_title": "Izpostavitve",
+                    "favorites_title": "Priljubljeni",
+                    "edit_history_title": "Uredi zgodovino",
+                    "edit_history_detail": "Zadnjič urejano %s"
+                },
+                "edited_at_timestamp_prefix": "Urejeno %s",
+                "edit_history": {
+                    "title": "Zgodovina urejanja",
+                    "original_post": "Izvodna objava · %s"
+                },
+                "card": {
+                    "by": "Od/avtor_ica",
+                    "by_author": "Avtor_ica %s"
                 }
             },
             "friendship": {
                 "follow": "Sledi",
+                "follow_back": "Follow back",
                 "following": "Sledi",
+                "mutual": "Mutual",
                 "request": "Zahteva",
                 "pending": "Na čakanju",
                 "block": "Blokiraj",
                 "block_user": "Blokiraj %s",
-                "block_domain": "Blokiraj %s",
+                "block_domain": "Blokiraj domeno %s",
                 "unblock": "Odblokiraj",
                 "unblock_user": "Odblokiraj %s",
                 "blocked": "Blokirano",
+                "domain_blocked": "Domena blokirana",
                 "mute": "Utišaj",
                 "mute_user": "Utišaj %s",
                 "unmute": "Odtišaj",
                 "unmute_user": "Odtišaj %s",
                 "muted": "Utišan",
                 "edit_info": "Uredi podatke",
-                "show_reblogs": "Pokaži poobjave",
-                "hide_reblogs": "Skrij poobjave"
+                "show_reblogs": "Pokaži izpostavitve",
+                "hide_reblogs": "Skrij izpostavitve"
             },
             "timeline": {
                 "filtered": "Filtrirano",
@@ -229,25 +285,49 @@
                     "user_suspended_warning": "Račun osebe %s je suspendiran."
                 }
             }
+        },
+        "user_list": {
+            "no_verified_link": "Ni preverjenih povezav",
+            "followers_count": "%@ sledilcev"
         }
     },
     "scene": {
         "welcome": {
-            "slogan": "Družbeno mreženje\nspet v vaših rokah.",
-            "get_started": "Začnite",
-            "log_in": "Prijava"
+            "log_in": "Prijava",
+            "learn_more": "Več o tem",
+            "join_default_server": "Pridruži se %@",
+            "pick_server": "Izberi drug strežnik",
+            "separator": {
+                "or": "ali"
+            },
+            "education": {
+                "mastodon": {
+                    "title": "Dobrodošli na Mastodon",
+                    "description": "Mastodon je decentralizirano družbeno omrežje, kar pomeni, da ga ne upravlja nobeno posamezno podjetje. Sestavljajo ga številni neodvisni strežniki, ki so medsebojno povezani."
+                },
+                "servers": {
+                    "title": "Kaj so strežniki?",
+                    "description": "Vsak račun Mastodon gostuje na strežniku — vsak strežnik ima svoje vrednote, pravila in skbrnike. Vseeno je, katerega izberete - sledite in komunicirate lahko z osebbami na poljubnem strežniku."
+                },
+                "a11y": {
+                    "what_is_mastodon": {
+                        "title": "Kaj je Mastodon?"
+                    }
+                }
+            }
         },
         "login": {
             "title": "Dobrodošli nazaj",
-            "subtitle": "Prijavite se na strežniku, na katerem ste ustvarili račun.",
+            "subtitle": "Prijavite se na strežniku, na katerem ste ustvarili svoj račun.",
             "server_search_field": {
                 "placeholder": "Vnesite URL ali poiščite svoj strežnik"
             }
         },
         "server_picker": {
-            "title": "Mastodon tvorijo uporabniki z različnih strežnikov.",
-            "subtitle": "Strežnik izberite glede na svojo regijo, zanimanje ali pa kar splošno. Še vedno lahko klepetate s komer koli na Mastodonu, ne glede na strežnik.",
+            "title": "Izberite strežnik",
             "button": {
+                "language": "Jezik",
+                "signup_speed": "Hitrost prijave",
                 "category": {
                     "all": "Vse",
                     "all_accessiblity_description": "Kategorija: vse",
@@ -279,18 +359,41 @@
                 "finding_servers": "Iskanje razpoložljivih strežnikov ...",
                 "bad_network": "Med nalaganjem podatkov je prišlo do napake. Preverite svojo internetno povezavo.",
                 "no_results": "Ni rezultatov"
+            },
+            "signup_speed": {
+                "all": "Vse",
+                "instant": "Takojšnja prijava",
+                "manually_reviewed": "Ročni pregled"
+            },
+            "language": {
+                "all": "Vse"
+            },
+            "search": {
+                "placeholder": "Iščite po imenu ali URL-ju"
+            },
+            "no_server_selected_hint": "Izbrali bomo strežnik na osnovi vašega jezika, če nadaljujete brez izbire."
+        },
+        "privacy": {
+            "title": "Vaša zasebnost",
+            "description": "Čeprav program Mastodon ne zbira nobenih podatkov, ima lahko strežnik, prek katerega se prijavite, drugačno pravila glede zasebnosti.\n\nČe se s pravili za **%s** ne strinjate, se lahko vrnete in izberete drug strežnik.",
+            "policy": {
+                "ios": "Pravilnik o zasebnosti - Mastodon za iOS",
+                "server": "Pravilnik o zasebnosti - %s"
+            },
+            "button": {
+                "confirm": "Strinjam se"
             }
         },
         "register": {
-            "title": "Naj vas namestimo na %s",
-            "lets_get_you_set_up_on_domain": "Naj vas namestimo na %s",
+            "title": "Ustvari račun",
             "input": {
                 "avatar": {
                     "delete": "Izbriši"
                 },
                 "username": {
                     "placeholder": "uporabniško ime",
-                    "duplicate_prompt": "To ime je že zasedeno."
+                    "duplicate_prompt": "To ime je že zasedeno.",
+                    "suggestion": "super_%@"
                 },
                 "display_name": {
                     "placeholder": "pojavno ime"
@@ -300,6 +403,7 @@
                 },
                 "password": {
                     "placeholder": "geslo",
+                    "confirmation_placeholder": "Potrdi geslo",
                     "require": "Vaše geslo potrebuje vsaj:",
                     "character_limit": "8 znakov",
                     "accessibility": {
@@ -324,7 +428,7 @@
                 "reason": {
                     "blocked": "%s vsebuje nedovoljenega ponudnika e-poštnih storitev",
                     "unreachable": "%s kot kaže ne obstaja",
-                    "taken": "%s je že v uporabi",
+                    "taken": "%s je že zasedeno. Kaj pravite na:",
                     "reserved": "%s je rezervirana ključna beseda",
                     "accepted": "%s mora biti sprejet",
                     "blank": "%s je zahtevan",
@@ -342,21 +446,20 @@
             }
         },
         "server_rules": {
-            "title": "Nekaj osnovnih pravil.",
-            "subtitle": "Slednje določajo in njihovo spoštovanje zagotavljajo moderatorji %s.",
+            "title": "Pravila strežnika",
+            "subtitle": "Če nadaljujete, to pomeni, da se strinjate in da boste sledili naslednjim pravilom, ki so jih določili in jih uveljavljajo moderatorji **%s**.",
             "prompt": "Če boste nadaljevali, za vas veljajo pogoji storitve in pravilnik o zasebnosti za %s.",
             "terms_of_service": "pogoji uporabe",
             "privacy_policy": "pravilnik o zasebnosti",
             "button": {
-                "confirm": "Strinjam se"
+                "confirm": "Strinjam se",
+                "disagree": "Ne strinjam se"
             }
         },
         "confirm_email": {
-            "title": "Še zadnja stvar.",
-            "subtitle": "Tapnite povezavo, ki smo vam jo poslali po e-pošti, da overite svoj račun.",
-            "tap_the_link_we_emailed_to_you_to_verify_your_account": "Tapnite povezavo, ki smo vam jo poslali po e-pošti, da overite svoj račun",
+            "title": "Preverite svojo dohodno e-pošto",
+            "tap_the_link_we_emailed_to_you_to_verify_your_account": "Tapnite povezavo, ki smo vam jo poslali, da overite %@. Počakali bomo.",
             "button": {
-                "open_email_app": "Odpri aplikacijo za e-pošto",
                 "resend": "Ponovno pošlji"
             },
             "dont_receive_email": {
@@ -369,29 +472,45 @@
                 "description": "Ravnokar smo vam poslali e-sporočilo. Preverite neželeno pošto, če sporočila ne najdete med dohodno pošto.",
                 "mail": "E-pošta",
                 "open_email_client": "Odpri odjemalca e-pošte"
+            },
+            "didnt_get_link": {
+                "prefix": "Niste prejeli povezave?",
+                "resend_in": "Znova pošlji (%@)",
+                "resend_now": "Ponovno pošlji zdaj."
             }
         },
         "home_timeline": {
             "title": "Domov",
-            "navigation_bar_state": {
-                "offline": "Nepovezan",
-                "new_posts": "Pokaži nove objave",
-                "published": "Objavljeno!",
-                "Publishing": "Objavljanje objave ...",
-                "accessibility": {
-                    "logo_label": "Gumb logotipa",
-                    "logo_hint": "Tapnite, da podrsate na vrh; tapnite znova, da se pomaknete na prejšnji položaj"
+            "timeline_menu": {
+                "following": "Sledi",
+                "local_community": "Krajevno",
+                "lists": {
+                    "title": "Seznami",
+                    "empty_message": "Ustvarili niste še nobenega seznama"
+                },
+                "hashtags": {
+                    "title": "Sledeni ključniki",
+                    "empty_message": "Ne sledite še nobenemu ključniku"
                 }
+            },
+            "timeline_pill": {
+                "offline": "Nepovezan",
+                "new_posts": "Nove objave",
+                "post_sent": "Objava poslana"
+            },
+            "empty_state": {
+                "list_empty_message_title": "Ta seznam je prazen"
             }
         },
         "suggestion_account": {
-            "title": "Poiščite osebe, ki jim želite slediti",
-            "follow_explain": "Ko nekomu sledite, vidite njihove objave v svojem domačem viru."
+            "title": "Priljubljeno na Mastodonu",
+            "follow_all": "Sledi vsem"
         },
         "compose": {
             "title": {
                 "new_post": "Nova objava",
-                "new_reply": "Nov odgovor"
+                "new_reply": "Nov odgovor",
+                "edit_post": "Uredi objavo"
             },
             "media_selection": {
                 "camera": "Posnemi fotografijo",
@@ -415,6 +534,7 @@
                 "server_processing_state": "Obdelovanje na strežniku ..."
             },
             "poll": {
+                "title": "Anketa",
                 "duration_time": "Trajanje: %s",
                 "thirty_minutes": "30 minut",
                 "one_hour": "1 ura",
@@ -424,7 +544,11 @@
                 "seven_days": "7 dni",
                 "option_number": "Možnost %ld",
                 "the_poll_is_invalid": "Anketa je neveljavna",
-                "the_poll_has_empty_option": "Anketa ima prazno izbiro"
+                "the_poll_has_empty_option": "Anketa ima prazno izbiro",
+                "add_option": "Dodaj možnost",
+                "remove_option": "Odstrani možnost",
+                "move_up": "Premakni navzgor",
+                "move_down": "Premakni navzdol"
             },
             "content_warning": {
                 "placeholder": "Tukaj zapišite opozorilo ..."
@@ -456,6 +580,12 @@
                 "toggle_content_warning": "Preklopi opozorilo o vsebini",
                 "append_attachment_entry": "Dodaj priponko - %s",
                 "select_visibility_entry": "Izberite vidnost - %s"
+            },
+            "language": {
+                "title": "Jezik objave",
+                "suggested": "Predlagano",
+                "recent": "Nedavno",
+                "other": "Drug jezik ..."
             }
         },
         "profile": {
@@ -468,7 +598,8 @@
                 "my_followers": "sledilcev",
                 "other_posts": "objav",
                 "other_following": "sledi",
-                "other_followers": "sledilcev"
+                "other_followers": "sledilcev",
+                "familiar_followers": "vzajemni"
             },
             "fields": {
                 "joined": "Pridružen_a",
@@ -507,12 +638,20 @@
                     "message": "Potrdite za umik blokade %s"
                 },
                 "confirm_show_reblogs": {
-                    "title": "Pokaži poobjave",
-                    "message": "Potrdite, da bodo poobjave prikazane"
+                    "title": "Pokaži izpostavitve",
+                    "message": "Potrdite, da bodo izpostavitve prikazane"
                 },
                 "confirm_hide_reblogs": {
                     "title": "Skrij poobjave",
                     "message": "Potrdite, da poobjave ne bodo prikazane"
+                },
+                "confirm_block_domain": {
+                    "title": "Blokiraj domeno",
+                    "message": "Potrdite blokado domene %s"
+                },
+                "confirm_unblock_domain": {
+                    "title": "Odblokiraj domeno",
+                    "message": "Potrdite umik blokade domene %s"
                 }
             },
             "accessibility": {
@@ -538,7 +677,7 @@
             "title": "Med priljubljene dal_a"
         },
         "reblogged_by": {
-            "title": "Poobjavil_a"
+            "title": "Poobjavil/a"
         },
         "search": {
             "title": "Iskanje",
@@ -560,16 +699,21 @@
                 }
             },
             "searching": {
-                "segment": {
-                    "all": "Vse",
-                    "people": "Ljudje",
-                    "hashtags": "Ključniki",
-                    "posts": "Objave"
+                "posts": "Objave, ki se ujemajo s/z »%s«",
+                "people": "Osebe, ki se ujemajo s/z »%s«",
+                "profile": "Pojdi na @%s@%s",
+                "url": "Odpri URL v Mastodonu",
+                "hashtag": "Pojdi na #%s",
+                "no_user": {
+                    "title": "Uporabniškega računa ni mogoče najti",
+                    "message": "Uporabniškega računa %s ni na %s"
                 },
                 "empty_state": {
                     "no_results": "Ni rezultatov"
                 },
                 "recent_search": "Nedavna iskanja",
+                "no_recent_searches": "No recent searches.",
+                "clear_all": "Počisti vse",
                 "clear": "Počisti"
             }
         },
@@ -584,20 +728,50 @@
             "intro": "To so objave, ki plenijo pozornost na vašem koncu Mastodona."
         },
         "favorite": {
-            "title": "Vaši priljubljeni"
+            "title": "Priljubljeni"
         },
         "notification": {
             "title": {
                 "Everything": "Vse",
                 "Mentions": "Omembe"
             },
+            "headers": {
+                "report": "Report",
+                "sign_up": "Signup",
+                "favourite": "Favorite",
+                "follow": "Follow",
+                "follow_request": "Follow request",
+                "moderation_warning": "Warning",
+                "poll": "Poll",
+                "boost": "Boost",
+                "severed_relationships": "Domain block",
+                "status": "Post",
+                "edit": "Edit"
+            },
+            "grouped_notification_description": {
+                "your_poll_has_ended": "Your poll has ended",
+                "single_name_ran_poll": "%@ ran %@",
+                "single_name_mentioned_you": "%@ mentioned you",
+                "single_name_requested_to_follow_you": "%@ requested to follow you",
+                "single_name_posted": "%@ posted:",
+                "single_name_boosted": "%@ boosted:",
+                "single_name_favourited": "%@ favorited:",
+                "single_name_followed_you": "%@ followed you",
+                "multiple_people_boosted": "%@ boosted:",
+                "multiple_people_favourited": "%@ favorited:",
+                "multiple_people_followed_you": "%@ followed you",
+                "single_name_signed_up": "%@ signed up",
+                "someone_reported_account_for_rule_violation": "Someone reported %@ for rule violation.",
+                "someone_reported_posts_from_account_for_rule_violation": "Someone reported %@ from %@ for rule violation."
+            },
             "notification_description": {
                 "followed_you": "vam sledi",
                 "favorited_your_post": "je vzljubil/a vašo objavo",
-                "reblogged_your_post": "je poobjavil_a vašo objavo",
+                "reblogged_your_post": "je izpostavil/a vašo objavo",
                 "mentioned_you": "vas je omenil/a",
                 "request_to_follow_you": "vas je zaprosil za sledenje",
-                "poll_has_ended": "anketa je zaključena"
+                "poll_has_ended": "anketa je zaključena",
+                "relationship_severance": "An admin from %@ has blocked %@, including %@."
             },
             "keyobard": {
                 "show_everything": "Pokaži vse",
@@ -608,6 +782,41 @@
                 "accepted": "Sprejeto",
                 "reject": "Zavrni",
                 "rejected": "Zavrnjeno"
+            },
+            "warning": {
+                "none": "Vaš račun je prejel opozorilo moderatorjev.",
+                "disable": "Vaš račun je bil onemogočen.",
+                "mark_statuses_as_sensitive": "Nekatere vaše objave so bile označene kot občutljive.",
+                "delete_statuses": "Nekatere vaše objave so odstranjene.",
+                "sensitive": "Vaše objave bodo odslej označene kot občutljive.",
+                "silence": "Vaš račun je bil omejen.",
+                "suspend": "Vaš račun je bil suspendiran.",
+                "learn_more": "Več o tem"
+            },
+            "learn_more_about_server_blocks": "Learn more about server blocks",
+            "filtered_notification": {
+                "title": "Filtered Notifications",
+                "accept": "Accept",
+                "dismiss": "Dismiss"
+            },
+            "policy": {
+                "title": "Filter Notifications from…",
+                "not_following": {
+                    "title": "People you don't follow",
+                    "subtitle": "Until you manually approve them"
+                },
+                "no_follower": {
+                    "title": "People not following you",
+                    "subtitle": "Including people who have been following you fewer than 3 days"
+                },
+                "new_account": {
+                    "title": "New accounts",
+                    "subtitle": "Created within the past 30 days"
+                },
+                "private_mentions": {
+                    "title": "Unsolicited private mentions",
+                    "subtitle": "Filtered unless it’s in reply to your own mention or if you follow the sender"
+                }
             }
         },
         "thread": {
@@ -615,60 +824,100 @@
             "title": "Objavil/a"
         },
         "settings": {
-            "title": "Nastavitve",
-            "section": {
-                "appearance": {
-                    "title": "Videz",
-                    "automatic": "Samodejno",
-                    "light": "Vedno svetlo",
-                    "dark": "Vedno temno"
-                },
-                "look_and_feel": {
-                    "title": "Videz in občutek",
-                    "use_system": "Uporabi sistemsko",
-                    "really_dark": "Zares temno",
-                    "sorta_dark": "Nekako temno",
-                    "light": "Svetlo"
-                },
-                "notifications": {
-                    "title": "Obvestila",
-                    "favorites": "mojo objavo da med priljubljene",
-                    "follows": "me sledi",
-                    "boosts": "prepošlje mojo objavo",
-                    "mentions": "me omeni",
-                    "trigger": {
-                        "anyone": "kdor koli",
-                        "follower": "sledilec/ka",
-                        "follow": "nekdo, ki mu sledim,",
-                        "noone": "nihče",
-                        "title": "Obvesti me, ko"
-                    }
-                },
-                "preference": {
-                    "title": "Nastavitve",
-                    "true_black_dark_mode": "Resnično črni temni način",
-                    "disable_avatar_animation": "Onemogoči animirane avatarje",
-                    "disable_emoji_animation": "Onemogoči animirane emotikone",
-                    "using_default_browser": "Uporabi privzeti brskalnik za odpiranje povezav",
-                    "open_links_in_mastodon": "Odpri povezave v Mastodonu"
-                },
-                "boring_zone": {
-                    "title": "Cona dolgočasja",
-                    "account_settings": "Nastavitve računa",
-                    "terms": "Pogoji uporabe",
-                    "privacy": "Pravilnik o zasebnosti"
-                },
-                "spicy_zone": {
-                    "title": "Pikantna cona",
-                    "clear": "Počisti medijski predpomnilnik",
-                    "signout": "Odjava"
+            "overview": {
+                "title": "Nastavitve",
+                "general": "Splošno",
+                "notifications": "Obvestila",
+                "privacy_safety": "Zasebnost in varnost",
+                "support_mastodon": "Podprite Mastodon",
+                "about_mastodon": "O Mastodonu",
+                "server_details": "Podrobnosti strežnika",
+                "logout": "Odjavi %@"
+            },
+            "about_mastodon": {
+                "title": "O programu",
+                "more_settings": "Še več nastavitev",
+                "contribute_to_mastodon": "Prispevajte Mastodonu",
+                "privacy_policy": "Pravilnik o zasebnosti",
+                "clear_media_storage": "Počisti medijsko shrambo"
+            },
+            "server_details": {
+                "about": "O strežniku",
+                "rules": "Pravila",
+                "about_instance": {
+                    "title": "Skrbnik",
+                    "message_admin": "Pošlji e-pošto skrbniku",
+                    "legal_notice": "Pravno obvestilo"
                 }
             },
-            "footer": {
-                "mastodon_description": "Mastodon je odprtokodna programska oprema. Na GitHubu na %s (%s) lahko poročate o napakah"
+            "general": {
+                "title": "Splošno",
+                "appearance": {
+                    "section_title": "Videz",
+                    "dark": "Temno",
+                    "light": "Svetlo",
+                    "system": "Uporabi videz naprave"
+                },
+                "ask_before": {
+                    "section_title": "Vprašaj, preden ...",
+                    "posting_without_alt_text": "Objavljanje brez nadomestnega besedila",
+                    "unfollowing_someone": "Prenehanje sledenja uporabniku",
+                    "boosting_a_post": "Izpostavljanje določene objave",
+                    "deleting_a_post": "Brisanje objave"
+                },
+                "design": {
+                    "section_title": "Oblikovanje",
+                    "show_animations": "Predvajaj animirane avatarje in emotikone"
+                },
+                "language": {
+                    "section_title": "Jezik",
+                    "default_post_language": "Privzeti jezik objav"
+                },
+                "links": {
+                    "section_title": "Povezave",
+                    "open_in_mastodon": "Odpri v Mastodonu",
+                    "open_in_browser": "Odpri v brskalniku"
+                }
             },
-            "keyboard": {
-                "close_settings_window": "Zapri okno nastavitev"
+            "notifications": {
+                "title": "Obvestila",
+                "policy": {
+                    "title": "Prejemanje obvestil od",
+                    "anyone": "kogarkoli",
+                    "followers": "oseb, ki vam sledijo",
+                    "follow": "oseb, ki jim sledite",
+                    "noone": "nikogar"
+                },
+                "alert": {
+                    "mentions_and_replies": "Omembe in odgovori",
+                    "boosts": "Izpostavitve",
+                    "favorites": "Priljubljeni",
+                    "new_followers": "Novi sledilci"
+                },
+                "disabled": {
+                    "notification_hint": "Da vidite posodobitve za zaklepu zaslona, omogočite obvestila v nastavitvah naprave.",
+                    "go_to_settings": "Pojdi k nastavitvam obvestil"
+                }
+            },
+            "privacy_safety": {
+                "title": "Zasebnost in varnost",
+                "preset": {
+                    "title": "Prednastavitev",
+                    "open_and_public": "Odprto in javno",
+                    "private_and_restricted": "Zasebno in omejeno",
+                    "custom": "Po meri"
+                },
+                "default_post_visibility": {
+                    "title": "Privzeta vidnost objav"
+                },
+                "manually_approve_follow_requests": "Ročno odobri prošnje za sledenje",
+                "show_followers_and_following": "Pokaži sledilce in sledene",
+                "suggest_my_account_to_others": "Predlagaj moj račun drugim",
+                "appear_in_search_engines": "Prikaži v iskalnikih"
+            },
+            "donation": {
+                "title": "Donate to Mastodon",
+                "manage": "Manage donations"
             }
         },
         "report": {
@@ -736,12 +985,9 @@
         "account_list": {
             "tab_bar_hint": "Trenutno izbran profil: %s. Dvakrat tapnite, nato držite, da se pojavi preklopnik med računi.",
             "dismiss_account_switcher": "Umakni preklopnik med računi",
-            "add_account": "Dodaj račun"
-        },
-        "wizard": {
-            "new_in_mastodon": "Novo v Mastodonu",
-            "multiple_account_switch_intro_description": "Preklopite med več računi s pritiskom gumba profila.",
-            "accessibility_hint": "Dvakrat tapnite, da zapustite tega čarovnika"
+            "add_account": "Dodaj račun",
+            "logout_all_accounts": "Odjava iz vseh računov",
+            "logout": "Odjavi"
         },
         "bookmark": {
             "title": "Zaznamki"
@@ -756,6 +1002,69 @@
             "actions": {
                 "follow": "Sledi",
                 "unfollow": "Prenehaj slediti"
+            }
+        },
+        "donation": {
+            "picker": {
+                "once_title": "Just once",
+                "monthly_title": "Monthly",
+                "yearly_title": "Yearly"
+            },
+            "donatebuttontitle": "Donate",
+            "currency": "Currency",
+            "success": {
+                "title": "Thank you for your contribution!",
+                "subtitle": "You should receive an email confirming your donation soon.",
+                "server_error_title": "Payment failed",
+                "server_error_message": "We are sorry, an error occurred and we have not been able to process your donation.\n\nPlease retry in a few minutes.",
+                "share_button_title": "Spread the word"
+            }
+        }
+    },
+    "extension": {
+        "open_in": {
+            "invalid_link_error": "To se ne zdi veljavna povezava Mastodon."
+        }
+    },
+    "widget": {
+        "common": {
+            "unsupported_widget_family": "Žal ta družina gradnikov ni podprta.",
+            "user_not_logged_in": "Odprite Mastodon, da se prijavite v račun."
+        },
+        "followers_count": {
+            "configuration_display_name": "Sledilci",
+            "configuration_description": "Pokaži število sledilcev.",
+            "title": "SLEDILCI",
+            "followers_today": "%s sledilcev danes"
+        },
+        "multiple_followers": {
+            "configuration_display_name": "Več sledilcev",
+            "configuration_description": "Pokaži število sledilcev za več računov.",
+            "mock_user": {
+                "display_name": "Drug sledilec",
+                "account_name": "drug@follower.social"
+            }
+        },
+        "latest_followers": {
+            "configuration_display_name": "Najnovejši sledilci",
+            "configuration_description": "Pokaži najnovejše sledilce.",
+            "title": "Najnovejši sledilci",
+            "last_update": "Zadnja posodobitev: %s"
+        },
+        "hashtag": {
+            "configuration": {
+                "display_name": "Ključnik",
+                "description": "Pokaže nedavno objavo z izbranim ključnikom."
+            },
+            "not_found": {
+                "account_name": "Janez Mastodon",
+                "account": "@janezMastodon@ni-takega.racuna",
+                "content": "Žal ne najdemo objav s ključnikom <a>#%@</a>. Poskusite z <a>#drugimKljučnikom</a> ali preverite nastavitve gradnika."
+            },
+            "placeholder": {
+                "account_name": "Janez Mastodon",
+                "account": "@janezMastodon@ni-takega.racuna",
+                "content": "Tako je videti objava s <a>#ključnikom</a>. Izberite želeni <a>#ključnik</a> v nastavitvah gradnika."
             }
         }
     }

@@ -5,22 +5,20 @@
 //  Created by Cirno MainasuK on 2021-9-24.
 //
 
-import os.log
 import UIKit
 import MetaTextKit
 import FLAnimatedImage
 import MastodonCore
 import MastodonUI
+import MastodonAsset
 
 final class SidebarListContentView: UIView, UIContentView {
-    
-    let logger = Logger(subsystem: "SidebarListContentView", category: "UI")
     
     let imageView = UIImageView()
     let avatarButton: CircleAvatarButton = {
         let button = CircleAvatarButton()
         button.borderWidth = 2
-        button.borderColor = UIColor.label
+        button.borderColor = Asset.Colors.Brand.blurple.color
         return button
     }()
     private let accessoryImageView = UIImageView(image: nil)
@@ -88,25 +86,23 @@ extension SidebarListContentView {
     }
     
     private func apply(configuration: ContentConfiguration) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
-        
         guard currentConfiguration != configuration else { return }
         currentConfiguration = configuration
         
         guard let item = configuration.item else { return }
         
         // configure state
-        let tintColor = item.isHighlighted ? ThemeService.tintColor.withAlphaComponent(0.5) : ThemeService.tintColor
+        let tintColor = item.isHighlighted ? SystemTheme.tintColor.withAlphaComponent(0.5) : SystemTheme.tintColor
         imageView.tintColor = tintColor
         avatarButton.tintColor = tintColor
         
         // configure model
         imageView.isHidden = item.imageURL != nil
         avatarButton.isHidden = item.imageURL == nil
-        imageView.image = item.isActive ? item.activeImage.withRenderingMode(.alwaysTemplate) : item.image.withRenderingMode(.alwaysTemplate)
+        imageView.image = item.isActive ? item.activeImage : item.image.withRenderingMode(.alwaysTemplate)
         accessoryImageView.image = item.accessoryImage
         accessoryImageView.isHidden = item.accessoryImage == nil
-        accessoryImageView.tintColor = item.isActive ? .label : .secondaryLabel
+        accessoryImageView.tintColor = item.isActive ? Asset.Colors.Brand.blurple.color : .secondaryLabel
         avatarButton.avatarImageView.setImage(
             url: item.imageURL,
             placeholder: avatarButton.avatarImageView.image ?? .placeholder(color: .systemFill),  // reuse to avoid blink
@@ -156,17 +152,13 @@ extension SidebarListContentView {
     }
     
     struct ContentConfiguration: UIContentConfiguration, Hashable {
-        let logger = Logger(subsystem: "SidebarListContentView.ContentConfiguration", category: "ContentConfiguration")
-        
         var item: Item?
         
         func makeContentView() -> UIView & UIContentView {
             SidebarListContentView(configuration: self)
         }
         
-        func updated(for state: UIConfigurationState) -> ContentConfiguration {
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
-            
+        func updated(for state: UIConfigurationState) -> ContentConfiguration {            
             var updatedConfiguration = self
             
             if let state = state as? UICellConfigurationState {

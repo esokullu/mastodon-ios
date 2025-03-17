@@ -7,8 +7,6 @@
 
 import Foundation
 import Combine
-import CoreData
-import CoreDataStack
 import GameplayKit
 import MastodonCore
 import MastodonSDK
@@ -18,14 +16,17 @@ final class FollowingListViewModel {
     var disposeBag = Set<AnyCancellable>()
     
     // input
-    let context: AppContext
-    let authContext: AuthContext
-    let userFetchedResultsController: UserFetchedResultsController
-    let listBatchFetchViewModel = ListBatchFetchViewModel()
-    
+    let authenticationBox: MastodonAuthenticationBox
+    @Published var accounts: [Mastodon.Entity.Account]
+    @Published var relationships: [Mastodon.Entity.Relationship]
+
     @Published var domain: String?
     @Published var userID: String?
-    
+
+    let shouldFetch = PassthroughSubject<Void, Never>()
+
+    var tableView: UITableView?
+
     // output
     var diffableDataSource: UITableViewDiffableDataSource<UserSection, UserItem>?
     private(set) lazy var stateMachine: GKStateMachine = {
@@ -40,23 +41,16 @@ final class FollowingListViewModel {
         stateMachine.enter(State.Initial.self)
         return stateMachine
     }()
-    
+
     init(
-        context: AppContext,
-        authContext: AuthContext,
+        authenticationBox: MastodonAuthenticationBox,
         domain: String?,
         userID: String?
     ) {
-        self.context = context
-        self.authContext = authContext
-        self.userFetchedResultsController = UserFetchedResultsController(
-            managedObjectContext: context.managedObjectContext,
-            domain: domain,
-            additionalPredicate: nil
-        )
+        self.authenticationBox = authenticationBox
         self.domain = domain
         self.userID = userID
-        // super.init()
-        
+        self.accounts = []
+        self.relationships = []
     }
 }

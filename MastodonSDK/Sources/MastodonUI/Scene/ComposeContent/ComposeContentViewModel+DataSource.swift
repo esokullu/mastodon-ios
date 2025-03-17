@@ -28,6 +28,17 @@ extension ComposeContentViewModel {
         case replyTo
         case status
     }
+    
+    private func composeContentTableViewCellIsInTableView(_ tableView: UIView) -> Bool {
+        var superview = composeContentTableViewCell.superview
+        while superview != nil {
+            if superview == tableView {
+                return true
+            }
+            superview = superview?.superview
+        }
+        return false
+    }
 
     private func setupTableViewCell(tableView: UITableView) {        
         composeContentTableViewCell.contentConfiguration = UIHostingConfigurationBackport {
@@ -39,11 +50,14 @@ extension ComposeContentViewModel {
             .removeDuplicates()
             .sink { [weak self] height in
                 guard let self = self else { return }
-                guard !tableView.visibleCells.isEmpty else { return }
+                guard self.composeContentTableViewCellIsInTableView(tableView) else { return }
                 UIView.performWithoutAnimation {
-                    tableView.beginUpdates()
-                    self.composeContentTableViewCell.frame.size.height = height
-                    tableView.endUpdates()                    
+                    if height != self.composeContentTableViewCell.contentHeight {
+                        tableView.beginUpdates()
+                        self.composeContentTableViewCell.contentHeight = height
+                        self.composeContentTableViewCell.invalidateIntrinsicContentSize()
+                        tableView.endUpdates()
+                    }
                 }
             }
             .store(in: &disposeBag)
@@ -60,10 +74,7 @@ extension ComposeContentViewModel {
             cell.statusView.frame.size.width = tableView.frame.width
 
             // configure status
-            context.managedObjectContext.performAndWait {
-                guard let replyTo = status.object(in: context.managedObjectContext) else { return }
-                cell.statusView.configure(status: replyTo)
-            }
+            cell.statusView.configure(status: status, contentDisplayMode: .neverConceal)
         }
     }
 }
@@ -102,16 +113,17 @@ extension ComposeContentViewModel {
     ) {
         let diffableDataSource = CustomEmojiPickerSection.collectionViewDiffableDataSource(
             collectionView: collectionView,
-            context: context
+            authenticationBox: authenticationBox
         )
         self.customEmojiPickerDiffableDataSource = diffableDataSource
 
-        let domain = authContext.mastodonAuthenticationBox.domain.uppercased()
         customEmojiViewModel?.emojis
             // Don't block the main queue
             .receive(on: DispatchQueue.global(qos: .userInteractive))
             // Sort emojis
-            .map({ (emojis) -> [Mastodon.Entity.Emoji] in
+            .compactMap({ (emojis) -> [Mastodon.Entity.Emoji]? in
+                guard let emojis else { return nil }
+
                 return emojis.sorted { a, b in
                     a.shortcode.lowercased() < b.shortcode.lowercased()
                 }
@@ -144,11 +156,13 @@ extension ComposeContentViewModel {
             .map({ (emojiMap) -> NSDiffableDataSourceSnapshot<CustomEmojiPickerSection, CustomEmojiPickerItem> in
 
                 var snapshot = NSDiffableDataSourceSnapshot<CustomEmojiPickerSection, CustomEmojiPickerItem>()
-                let customEmojiSection = CustomEmojiPickerSection.emoji(name: domain)
-                snapshot.appendSections([customEmojiSection])
-                snapshot.appendItems(emojiMap.noCategory.map({ emoji in
-                    CustomEmojiPickerItem.emoji(attribute: CustomEmojiPickerItem.CustomEmojiAttribute(emoji: emoji))
-                }), toSection: customEmojiSection)
+                if !emojiMap.noCategory.isEmpty {
+                    let customEmojiSection = CustomEmojiPickerSection.uncategorized
+                    snapshot.appendSections([customEmojiSection])
+                    snapshot.appendItems(emojiMap.noCategory.map({ emoji in
+                        CustomEmojiPickerItem.emoji(attribute: CustomEmojiPickerItem.CustomEmojiAttribute(emoji: emoji))
+                    }), toSection: customEmojiSection)
+                }
                 emojiMap.categorised.keys.sorted().forEach { category in
                     let section = CustomEmojiPickerSection.emoji(name: category)
                     snapshot.appendSections([section])

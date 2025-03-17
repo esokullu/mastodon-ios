@@ -5,7 +5,6 @@
 //  Created by Jed Fox on 2022-10-31.
 //
 
-import os.log
 import UIKit
 import Combine
 import Meta
@@ -13,9 +12,9 @@ import MetaTextKit
 import MastodonAsset
 import MastodonCore
 import MastodonLocalization
+import MastodonSDK
 
 public class StatusAuthorView: UIStackView {
-    let logger = Logger(subsystem: "StatusAuthorView", category: "View")
     private var _disposeBag = Set<AnyCancellable>() // which lifetime same to view scope
 
     weak var statusView: StatusView?
@@ -31,8 +30,16 @@ public class StatusAuthorView: UIStackView {
 
     // author username
     public let authorUsernameLabel = MetaLabel(style: .statusUsername)
-
-    public let usernameTrialingDotLabel: MetaLabel = {
+    
+    public let visibilityIcon: UIImageView = {
+        var imageView = UIImageView()
+        imageView.tintColor = Asset.Colors.Label.secondary.color
+        var config = UIImage.SymbolConfiguration(font: UIFont.systemFont(ofSize: 15, weight: .regular))
+        imageView.preferredSymbolConfiguration = config
+        return imageView
+    }()
+    
+    public let timestampTrialingDotLabel: MetaLabel = {
         let label = MetaLabel(style: .statusUsername)
         label.configure(content: PlaintextMetaContent(string: "·"))
         return label
@@ -42,8 +49,7 @@ public class StatusAuthorView: UIStackView {
     public let dateLabel = MetaLabel(style: .statusUsername)
 
     public let menuButton: UIButton = {
-        let button = HitTestExpandedButton(type: .system)
-        button.expandEdgeInsets = UIEdgeInsets(top: -20, left: -10, bottom: -5, right: -10)
+        let button = MinimumHitTargetButton(type: .system)
         button.tintColor = Asset.Colors.Label.secondary.color
         let image = UIImage(systemName: "ellipsis", withConfiguration: UIImage.SymbolConfiguration(font: .systemFont(ofSize: 15)))
         button.setImage(image, for: .normal)
@@ -52,12 +58,10 @@ public class StatusAuthorView: UIStackView {
     }()
 
     public let contentSensitiveeToggleButton: UIButton = {
-        let button = HitTestExpandedButton(type: .system)
-        button.expandEdgeInsets = UIEdgeInsets(top: -5, left: -10, bottom: -20, right: -10)
+        let button = MinimumHitTargetButton(type: .system)
         button.tintColor = Asset.Colors.Label.secondary.color
-        button.imageView?.contentMode = .scaleAspectFill
-        button.imageView?.clipsToBounds = false
-        let image = UIImage(systemName: "eye.slash.fill", withConfiguration: UIImage.SymbolConfiguration(font: .systemFont(ofSize: 15)))
+        button.imageView?.contentMode = .scaleAspectFit
+        let image = UIImage(systemName: "eye.slash.fill")
         button.setImage(image, for: .normal)
         return button
     }()
@@ -81,6 +85,7 @@ public class StatusAuthorView: UIStackView {
         case .notificationQuote:    layoutNotificationQuote()
         case .composeStatusReplica: layoutComposeStatusReplica()
         case .composeStatusAuthor:  layoutComposeStatusAuthor()
+        case .editHistory:          layoutBase()
         }
     }
 
@@ -115,6 +120,23 @@ public class StatusAuthorView: UIStackView {
 }
 
 extension StatusAuthorView {
+    public override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let superHit = super.hitTest(point, with: event)
+        if superHit == avatarButton {
+            return avatarButton
+        } else {
+            if menuButton.point(inside: convert(point, to: menuButton), with: event) {
+                return menuButton
+            }
+            if contentSensitiveeToggleButton.point(inside: convert(point, to: contentSensitiveeToggleButton), with: event) {
+                return contentSensitiveeToggleButton
+            }
+            return self
+        }
+    }
+}
+
+extension StatusAuthorView {
     func _init() {
         axis = .horizontal
         spacing = 12
@@ -129,7 +151,7 @@ extension StatusAuthorView {
 
         // avatar button
         avatarButton.addTarget(self, action: #selector(StatusAuthorView.authorAvatarButtonDidPressed(_:)), for: .touchUpInside)
-        authorNameLabel.isUserInteractionEnabled = false
+        authorNameLabel.isUserInteractionEnabled = true
         authorUsernameLabel.isUserInteractionEnabled = false
 
         // contentSensitiveeToggleButton
@@ -137,6 +159,7 @@ extension StatusAuthorView {
 
         // dateLabel
         dateLabel.isUserInteractionEnabled = false
+        self.addTapGestureToSelf()
     }
 }
 
@@ -148,75 +171,96 @@ extension StatusAuthorView {
         public let isMuting: Bool
         public let isBlocking: Bool
         public let isMyself: Bool
-        public let isBookmarking: Bool
+        public let isBookmarked: Bool
+        public let isFollowed: Bool
         
         public let isTranslationEnabled: Bool
         public let isTranslated: Bool
         public let statusLanguage: String?
+        public let isFavorited: Bool
+        public let isBoosted: Bool
     }
 
     public func setupAuthorMenu(menuContext: AuthorMenuContext) -> (UIMenu, [UIAccessibilityCustomAction]) {
-        var actions = [MastodonMenu.Action]()
+        var items: [MastodonMenu.Submenu] = []
 
-        if !menuContext.isMyself {
-            if let statusLanguage = menuContext.statusLanguage, menuContext.isTranslationEnabled, !menuContext.isTranslated {
-                actions.append(
-                    .translateStatus(.init(language: statusLanguage))
-                )
-            }
-            
-            actions.append(contentsOf: [
-                .muteUser(.init(
-                    name: menuContext.name,
-                    isMuting: menuContext.isMuting
-                )),
-                .blockUser(.init(
-                    name: menuContext.name,
-                    isBlocking: menuContext.isBlocking
-                )),
-                .reportUser(
-                    .init(name: menuContext.name)
-                )
-            ])
-        }
-        
-        actions.append(contentsOf: [
-            .bookmarkStatus(
-                .init(isBookmarking: menuContext.isBookmarking)
-            ),
-            .shareStatus
-        ])
+        items.append(MastodonMenu.Submenu(
+            actions: [
+                .boostStatus(.init(isBoosted: menuContext.isBoosted)),
+                .favoriteStatus(.init(isFavorited: menuContext.isFavorited)),
+                .bookmarkStatus(.init(isBookmarked: menuContext.isBookmarked)),
+            ],
+            preferredElementSize: .medium
+        ))
 
         if menuContext.isMyself {
-            actions.append(.deleteStatus)
+            items.append(MastodonMenu.Submenu(actions: [.editStatus]))
+        } else if menuContext.isTranslationEnabled,
+                  let statusLanguage = menuContext.statusLanguage,
+                  let deviceLanguage = Bundle.main.preferredLocalizations.first,
+                  deviceLanguage != statusLanguage {
+            let action: MastodonMenu.Action
+
+            if menuContext.isTranslated == false {
+                action = .translateStatus(.init(language: statusLanguage))
+            } else {
+                action = .showOriginal
+            }
+
+            items.append(MastodonMenu.Submenu(actions: [action]))
         }
 
+        items.append(MastodonMenu.Submenu(actions: [.shareStatus, .openStatusInBrowser, .copyStatusLink]))
+
+        if menuContext.isMyself {
+            items.append(MastodonMenu.Submenu(actions: [.deleteStatus]))
+        } else {
+            items.append(MastodonMenu.Submenu(actions: [
+                .followUser(.init(name: menuContext.name, isFollowing: menuContext.isFollowed)),
+                .muteUser(.init( name: menuContext.name, isMuting: menuContext.isMuting))
+            ]))
+
+            items.append(MastodonMenu.Submenu(actions: [
+                .blockUser(.init(name: menuContext.name, isBlocking: menuContext.isBlocking)),
+                .reportUser(.init(name: menuContext.name))
+            ]))
+        }
 
         let menu = MastodonMenu.setupMenu(
-            actions: actions,
+            submenus: items,
             delegate: self.statusView!
         )
 
         let accessibilityActions = MastodonMenu.setupAccessibilityActions(
-            actions: actions,
+            actions: items.compactMap { $0.actions } ,
             delegate: self.statusView!
         )
 
         return (menu, accessibilityActions)
     }
 
+    private func addTapGestureToSelf() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(StatusAuthorView.authorNameDidPressed(_:)))
+        addGestureRecognizer(tapGesture)
+    }
 }
 
 extension StatusAuthorView {
     @objc private func authorAvatarButtonDidPressed(_ sender: UIButton) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
         guard let statusView = statusView else { return }
+
+        statusView.delegate?.statusView(statusView, authorAvatarButtonDidPressed: avatarButton)
+    }
+
+    @objc private func authorNameDidPressed(_ sender: UIButton) {
+        guard let statusView = statusView else { return }
+
         statusView.delegate?.statusView(statusView, authorAvatarButtonDidPressed: avatarButton)
     }
 
     @objc private func contentSensitiveeToggleButtonDidPressed(_ sender: UIButton) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
         guard let statusView = statusView else { return }
+
         statusView.delegate?.statusView(statusView, contentSensitiveeToggleButtonDidPressed: sender)
     }
 }
@@ -224,6 +268,7 @@ extension StatusAuthorView {
 extension StatusAuthorView {
     // author container: H - [ avatarButton | authorMetaContainer ]
     private func layoutBase() {
+        assert(arrangedSubviews.count == 0)
         // avatarButton
         avatarButton.size = CGSize.authorAvatarButtonSize
         avatarButton.avatarImageView.imageViewSize = CGSize.authorAvatarButtonSize
@@ -245,47 +290,51 @@ extension StatusAuthorView {
         // authorPrimaryMetaContainer: H - [ authorNameLabel | (padding) | menuButton ]
         let authorPrimaryMetaContainer = UIStackView()
         authorPrimaryMetaContainer.axis = .horizontal
-        authorPrimaryMetaContainer.spacing = 10
+        authorPrimaryMetaContainer.alignment = .center
+        authorPrimaryMetaContainer.spacing = 8
         authorMetaContainer.addArrangedSubview(authorPrimaryMetaContainer)
 
         // authorNameLabel
         authorPrimaryMetaContainer.addArrangedSubview(authorNameLabel)
-        authorNameLabel.setContentHuggingPriority(.required - 10, for: .horizontal)
-        authorNameLabel.setContentCompressionResistancePriority(.required - 10, for: .horizontal)
+        authorNameLabel.setContentHuggingPriority(.required - 1, for: .vertical)
+        authorNameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
         authorPrimaryMetaContainer.addArrangedSubview(UIView())
+
+        authorPrimaryMetaContainer.addArrangedSubview(contentSensitiveeToggleButton)
+        NSLayoutConstraint.activate([
+            contentSensitiveeToggleButton.heightAnchor.constraint(equalToConstant: 18),
+        ])
+
+        authorPrimaryMetaContainer.setCustomSpacing(16, after: contentSensitiveeToggleButton)
+
         // menuButton
         authorPrimaryMetaContainer.addArrangedSubview(menuButton)
-        menuButton.setContentHuggingPriority(.required - 2, for: .horizontal)
-        menuButton.setContentCompressionResistancePriority(.required - 2, for: .horizontal)
+        menuButton.setContentHuggingPriority(.required - 1, for: .horizontal)
+        menuButton.setContentCompressionResistancePriority(.required - 1, for: .horizontal)
 
-        // authorSecondaryMetaContainer: H - [ authorUsername | usernameTrialingDotLabel | dateLabel | (padding) | contentSensitiveeToggleButton ]
+        // authorSecondaryMetaContainer: H - [ visibilityIcon | dateLabel | dot | authorUsername | spacer ]
         let authorSecondaryMetaContainer = UIStackView()
         authorSecondaryMetaContainer.axis = .horizontal
+        authorSecondaryMetaContainer.alignment = .center
         authorSecondaryMetaContainer.spacing = 4
         authorMetaContainer.addArrangedSubview(authorSecondaryMetaContainer)
-
-        authorSecondaryMetaContainer.addArrangedSubview(authorUsernameLabel)
-        authorUsernameLabel.setContentHuggingPriority(.required - 8, for: .horizontal)
-        authorUsernameLabel.setContentCompressionResistancePriority(.required - 8, for: .horizontal)
-        authorSecondaryMetaContainer.addArrangedSubview(usernameTrialingDotLabel)
-        usernameTrialingDotLabel.setContentHuggingPriority(.required - 2, for: .horizontal)
-        usernameTrialingDotLabel.setContentCompressionResistancePriority(.required - 2, for: .horizontal)
+        
+        authorSecondaryMetaContainer.addArrangedSubview(visibilityIcon)
+        visibilityIcon.setContentCompressionResistancePriority(.required, for: .horizontal)
+        
         authorSecondaryMetaContainer.addArrangedSubview(dateLabel)
         dateLabel.setContentHuggingPriority(.required - 1, for: .horizontal)
         dateLabel.setContentCompressionResistancePriority(.required - 1, for: .horizontal)
-        authorSecondaryMetaContainer.addArrangedSubview(UIView())
-        contentSensitiveeToggleButton.translatesAutoresizingMaskIntoConstraints = false
-        authorSecondaryMetaContainer.addArrangedSubview(contentSensitiveeToggleButton)
-        NSLayoutConstraint.activate([
-            contentSensitiveeToggleButton.heightAnchor.constraint(equalTo: authorUsernameLabel.heightAnchor, multiplier: 1.0).priority(.required - 1),
-            contentSensitiveeToggleButton.widthAnchor.constraint(equalTo: contentSensitiveeToggleButton.heightAnchor, multiplier: 1.0).priority(.required - 1),
-        ])
+
+        authorSecondaryMetaContainer.addArrangedSubview(timestampTrialingDotLabel)
+        timestampTrialingDotLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        authorSecondaryMetaContainer.addArrangedSubview(authorUsernameLabel)
         authorUsernameLabel.setContentHuggingPriority(.required - 1, for: .vertical)
-        authorUsernameLabel.setContentCompressionResistancePriority(.required - 1, for: .vertical)
-        contentSensitiveeToggleButton.setContentHuggingPriority(.defaultLow, for: .vertical)
-        contentSensitiveeToggleButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        contentSensitiveeToggleButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        contentSensitiveeToggleButton.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        authorUsernameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        authorSecondaryMetaContainer.addArrangedSubview(UIView())
     }
 
     func layoutReport() {
@@ -313,7 +362,7 @@ extension StatusAuthorView {
 
         avatarButton.isUserInteractionEnabled = false
         menuButton.removeFromSuperview()
-        usernameTrialingDotLabel.removeFromSuperview()
         dateLabel.removeFromSuperview()
+        timestampTrialingDotLabel.removeFromSuperview()
     }
 }

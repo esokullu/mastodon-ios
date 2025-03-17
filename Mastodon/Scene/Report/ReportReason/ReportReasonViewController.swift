@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022-5-10.
 //
 
-import os.log
 import UIKit
 import SwiftUI
 import Combine
@@ -18,19 +17,14 @@ protocol ReportReasonViewControllerDelegate: AnyObject {
     func reportReasonViewController(_ viewController: ReportReasonViewController, nextButtonPressed button: UIButton)
 }
 
-final class ReportReasonViewController: UIViewController, NeedsDependency, ReportViewControllerAppearance {
-    
-    let logger = Logger(subsystem: "ReportReasonViewController", category: "ViewController")
-
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+final class ReportReasonViewController: UIViewController, ReportViewControllerAppearance {
         
     var disposeBag = Set<AnyCancellable>()
     private var observations = Set<NSKeyValueObservation>()
     
-    var viewModel: ReportReasonViewModel!
-    private(set) lazy var reportReasonView = ReportReasonView(viewModel: viewModel)
-    
+    let viewModel: ReportReasonViewModel
+    let reportReasonView: ReportReasonView
+
     let navigationActionView: NavigationActionView = {
         let navigationActionView = NavigationActionView()
         navigationActionView.backgroundColor = Asset.Scene.Onboarding.background.color
@@ -38,13 +32,14 @@ final class ReportReasonViewController: UIViewController, NeedsDependency, Repor
         return navigationActionView
     }()
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
+    init(viewModel: ReportReasonViewModel) {
+        self.viewModel = viewModel
+        reportReasonView = ReportReasonView(viewModel: viewModel)
+        
+        super.init(nibName: nil, bundle: nil)
     }
     
-}
-
-extension ReportReasonViewController {
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -91,8 +86,6 @@ extension ReportReasonViewController {
 extension ReportReasonViewController {
     
     @objc private func nextButtonPressed(_ sender: UIButton) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
-        
         assert(viewModel.delegate != nil)
         viewModel.delegate?.reportReasonViewController(self, nextButtonPressed: sender)
     }

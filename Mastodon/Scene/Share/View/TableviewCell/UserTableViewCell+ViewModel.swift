@@ -7,18 +7,24 @@
 
 import UIKit
 import CoreDataStack
+import MastodonUI
+import Combine
+import MastodonCore
+import MastodonSDK
 
 extension UserTableViewCell {
     final class ViewModel {
-        let value: Value
+        let account: Mastodon.Entity.Account
 
-        init(value: Value) {
-            self.value = value
-        }
+        let followedUsers: AnyPublisher<[String], Never>
+        let blockedUsers: AnyPublisher<[String], Never>
+        let followRequestedUsers: AnyPublisher<[String], Never>
         
-        enum Value {
-            case user(MastodonUser)
-            // case status(Status)
+        init(account: Mastodon.Entity.Account, followedUsers: AnyPublisher<[String], Never>, blockedUsers: AnyPublisher<[String], Never>, followRequestedUsers: AnyPublisher<[String], Never>) {
+            self.account = account
+            self.followedUsers = followedUsers
+            self.followRequestedUsers = followRequestedUsers
+            self.blockedUsers =  blockedUsers
         }
     }
 }
@@ -26,16 +32,44 @@ extension UserTableViewCell {
 extension UserTableViewCell {
 
     func configure(
+        me: Mastodon.Entity.Account,
         tableView: UITableView,
-        viewModel: ViewModel,
+        account: Mastodon.Entity.Account,
+        relationship: Mastodon.Entity.Relationship?,
         delegate: UserTableViewCellDelegate?
     ) {
-        switch viewModel.value {
-        case .user(let user):
-            userView.configure(user: user)
-        }
-        
-         self.delegate = delegate
+        userView.configure(with: account, relationship: relationship, delegate: delegate)
+
+        let isMe = account.id == me.id
+        userView.updateButtonState(with: relationship, isMe: isMe)
+
+        self.delegate = delegate
     }
-    
+}
+
+extension UserTableViewCellDelegate where Self: UIViewController & AuthContextProvider {
+    func userView(_ view: UserView, didTapButtonWith state: UserView.ButtonState, for account: Mastodon.Entity.Account, me: Mastodon.Entity.Account?) {
+        Task {
+            await MainActor.run { view.setButtonState(.loading) }
+
+            guard let relationship = try await DataSourceFacade.responseToUserViewButtonAction(
+                dependency: self,
+                account: account,
+                buttonState: state
+            ) else { return }
+
+            let isMe: Bool
+            if let me {
+                isMe = account.id == me.id
+            } else {
+                isMe = false
+            }
+            
+            await MainActor.run {
+                guard let currentDisplayedAccount = view.viewModel.account, relationship.isRelationshipToAccount(currentDisplayedAccount) else { return }
+                view.viewModel.relationship = relationship
+                view.updateButtonState(with: relationship, isMe: isMe)
+            }
+        }
+    }
 }

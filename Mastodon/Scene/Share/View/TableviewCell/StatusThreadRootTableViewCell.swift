@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022-1-17.
 //
 
-import os.log
 import UIKit
 import Combine
 import MastodonAsset
@@ -16,8 +15,6 @@ final class StatusThreadRootTableViewCell: UITableViewCell {
     
     static let marginForRegularHorizontalSizeClass: CGFloat = 64
     
-    let logger = Logger(subsystem: "StatusThreadRootTableViewCell", category: "View")
-        
     weak var delegate: StatusTableViewCellDelegate?
     var disposeBag = Set<AnyCancellable>()
 
@@ -44,9 +41,6 @@ final class StatusThreadRootTableViewCell: UITableViewCell {
         _init()
     }
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
     
 }
 
@@ -82,8 +76,7 @@ extension StatusThreadRootTableViewCell {
         statusView.contentMetaText.textView.isAccessibilityElement = true
         statusView.contentMetaText.textView.isSelectable = true
         
-        statusView.viewModel
-            .$translatedFromLanguage
+        statusView.viewModel.$translation
             .receive(on: DispatchQueue.main)
             .sink(receiveValue: { [weak self] _ in
                 self?.invalidateIntrinsicContentSize()
@@ -103,21 +96,23 @@ extension StatusThreadRootTableViewCell {
     
     override var accessibilityElements: [Any]? {
         get {
+            let hideAnyText = statusView.viewModel.contentDisplayMode.shouldConcealText
+            
             var elements = [
                 statusView.authorView,
-                statusView.viewModel.isContentReveal
-                ? statusView.contentMetaText.textView
-                : statusView.spoilerOverlayView,
+                hideAnyText ? statusView.contentConcealExplainView :
+                    statusView.contentMetaText.textView,
                 statusView.translatedInfoView,
                 statusView.mediaGridContainerView,
                 statusView.pollTableView,
                 statusView.pollStatusStackView,
-                statusView.actionToolbarContainer
-                // statusMetricView is intentionally excluded
+                statusView.statusCardControl,
+                statusView.actionToolbarContainer,
+                statusView.statusMetricView,
             ]
             
-            if statusView.viewModel.isContentReveal {
-                elements.removeAll(where: { $0 === statusView.spoilerOverlayView })
+            if !hideAnyText {
+                elements.removeAll(where: { $0 === statusView.contentConcealExplainView })
             } else {
                 elements.removeAll(where: { $0 === statusView.contentMetaText.textView })
             }

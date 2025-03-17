@@ -6,7 +6,6 @@
 //  Copyright © 2021 Twidere. All rights reserved.
 //
 
-import os.log
 import Foundation
 import Combine
 import CoreData
@@ -14,24 +13,27 @@ import CoreDataStack
 import MastodonSDK
 import MastodonCore
 import MastodonMeta
+import os.log
 
 final class MastodonStatusThreadViewModel {
-    
+    let logger = Logger(subsystem: "MastodonStatusThreadViewModel", category: "Data")
+    static let entryNotFoundMessage = "Failed to find suitable record. Depending on the context this might result in errors (data not being updated) or can be discarded (e.g. when there are mixed data sources where an entry might or might not exist)."
+
     var disposeBag = Set<AnyCancellable>()
     
     // input
-    let context: AppContext
-    @Published private(set) var deletedObjectIDs: Set<NSManagedObjectID> = Set()
+    let filterContext: Mastodon.Entity.FilterContext?
+    @Published private(set) var deletedObjectIDs: Set<MastodonStatus.ID> = Set()
 
     // output
-    @Published var __ancestors: [StatusItem] = []
-    @Published var ancestors: [StatusItem] = []
+    @Published private var __ancestors: [MastodonItemIdentifier] = []
+    @Published var ancestors: [MastodonItemIdentifier] = []
     
-    @Published var __descendants: [StatusItem] = []
-    @Published var descendants: [StatusItem] = []
+    @Published private var __descendants: [MastodonItemIdentifier] = []
+    @Published var descendants: [MastodonItemIdentifier] = []
     
-    init(context: AppContext) {
-        self.context = context
+    init(filterContext: Mastodon.Entity.FilterContext?) {
+        self.filterContext = filterContext
         
         Publishers.CombineLatest(
             $__ancestors,
@@ -42,7 +44,7 @@ final class MastodonStatusThreadViewModel {
             let newItems = items.filter { item in
                 switch item {
                 case .thread(let thread):
-                    return !deletedObjectIDs.contains(thread.record.objectID)
+                    return !deletedObjectIDs.contains(thread.record.id)
                 default:
                     assertionFailure()
                     return false
@@ -61,7 +63,7 @@ final class MastodonStatusThreadViewModel {
             let newItems = items.filter { item in
                 switch item {
                 case .thread(let thread):
-                    return !deletedObjectIDs.contains(thread.record.objectID)
+                    return !deletedObjectIDs.contains(thread.record.id)
                 default:
                     assertionFailure()
                     return false
@@ -72,93 +74,67 @@ final class MastodonStatusThreadViewModel {
         .store(in: &disposeBag)
     }
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
     
 }
 
 extension MastodonStatusThreadViewModel {
     
     func appendAncestor(
-        domain: String,
         nodes: [Node]
     ) {
-        let ids = nodes.map { $0.statusID }
-        var dictionary: [Status.ID: Status] = [:]
-        do {
-            let request = Status.sortedFetchRequest
-            request.predicate = Status.predicate(domain: domain, ids: ids)
-            let statuses = try self.context.managedObjectContext.fetch(request)
-            for status in statuses {
-                dictionary[status.id] = status
-            }
-        } catch {
-            os_log("%{public}s[%{public}ld], %{public}s: fetch conversation fail: %s", ((#file as NSString).lastPathComponent), #line, #function, error.localizedDescription)
-            return
-        }
-        
-        var newItems: [StatusItem] = []
-        for (i, node) in nodes.enumerated() {
-            guard let status = dictionary[node.statusID] else { continue }
-            let isLast = i == nodes.count - 1
+        var newItems: [MastodonItemIdentifier] = []
+        for node in nodes {
             
-            let record = ManagedObjectRecord<Status>(objectID: status.objectID)
-            let context = StatusItem.Thread.Context(
-                status: record,
-                displayUpperConversationLink: !isLast,
-                displayBottomConversationLink: true
-            )
-            let item = StatusItem.thread(.leaf(context: context))
+            if let filterContext, let filterBox = StatusFilterService.shared.activeFilterBox {
+                let filterResult = filterBox.apply(to: node.status, in: filterContext)
+                switch filterResult {
+                case .hide:
+                    continue
+                default:
+                    break
+                }
+            }
+            
+            let item = MastodonItemIdentifier.thread(.leaf(context: .init(status: node.status)))
             newItems.append(item)
         }
         
         let items = self.__ancestors + newItems
-        self.__ancestors = items
+        self.__ancestors = items.removingDuplicates()
     }
     
     func appendDescendant(
-        domain: String,
         nodes: [Node]
     ) {
-        let childrenIDs = nodes
-            .map { node in [node.statusID, node.children.first?.statusID].compactMap { $0 } }
-            .flatMap { $0 }
-        var dictionary: [Status.ID: Status] = [:]
-        do {
-            let request = Status.sortedFetchRequest
-            request.predicate = Status.predicate(domain: domain, ids: childrenIDs)
-            let statuses = try self.context.managedObjectContext.fetch(request)
-            for status in statuses {
-                dictionary[status.id] = status
-            }
-        } catch {
-            os_log("%{public}s[%{public}ld], %{public}s: fetch conversation fail: %s", ((#file as NSString).lastPathComponent), #line, #function, error.localizedDescription)
-            return
-        }
-        
-        var newItems: [StatusItem] = []
+
+        var newItems: [MastodonItemIdentifier] = []
+
         for node in nodes {
-            guard let status = dictionary[node.statusID] else { continue }
-            // first tier
-            let record = ManagedObjectRecord<Status>(objectID: status.objectID)
-            let context = StatusItem.Thread.Context(
-                status: record
-            )
-            let item = StatusItem.thread(.leaf(context: context))
+            
+            if let filterContext, let filterBox = StatusFilterService.shared.activeFilterBox {
+                let filterResult = filterBox.apply(to: node.status, in: filterContext)
+                switch filterResult {
+                case .hide:
+                    continue
+                default:
+                    break
+                }
+            }
+            
+            let context = MastodonItemIdentifier.Thread.Context(status: node.status)
+            let item = MastodonItemIdentifier.thread(.leaf(context: context))
             newItems.append(item)
             
             // second tier
             if let child = node.children.first {
-                guard let secondaryStatus = dictionary[child.statusID] else { continue }
-                let secondaryRecord = ManagedObjectRecord<Status>(objectID: secondaryStatus.objectID)
-                let secondaryContext = StatusItem.Thread.Context(
-                    status: secondaryRecord,
+                guard let secondaryStatus = node.children.first(where: { $0.status.id == child.status.id}) else { continue }
+                let secondaryContext = MastodonItemIdentifier.Thread.Context(
+                    status: secondaryStatus.status,
                     displayUpperConversationLink: true
                 )
-                let secondaryItem = StatusItem.thread(.leaf(context: secondaryContext))
+                let secondaryItem = MastodonItemIdentifier.thread(.leaf(context: secondaryContext))
                 newItems.append(secondaryItem)
-                
+
                 // update first tier context
                 context.displayBottomConversationLink = true
             }
@@ -169,23 +145,21 @@ extension MastodonStatusThreadViewModel {
             guard !items.contains(item) else { continue }
             items.append(item)
         }
-        self.__descendants = items
+        self.__descendants = items.removingDuplicates()
     }
     
 }
 
 extension MastodonStatusThreadViewModel {
     class Node {
-        typealias ID = String
-        
-        let statusID: ID
+        let status: MastodonStatus
         let children: [Node]
         
         init(
-            statusID: ID,
+            status: MastodonStatus,
             children: [MastodonStatusThreadViewModel.Node]
         ) {
-            self.statusID = statusID
+            self.status = status
             self.children = children
         }
     }
@@ -210,7 +184,7 @@ extension MastodonStatusThreadViewModel.Node {
         while let _nextID = nextID {
             guard let status = dict[_nextID] else { break }
             nodes.append(MastodonStatusThreadViewModel.Node(
-                statusID: _nextID,
+                status: .fromEntity(status),
                 children: []
             ))
             nextID = status.inReplyToID
@@ -222,11 +196,11 @@ extension MastodonStatusThreadViewModel.Node {
 
 extension MastodonStatusThreadViewModel.Node {
     static func children(
-        of statusID: ID,
+        of status: MastodonStatus,
         from statuses: [Mastodon.Entity.Status]
     ) -> [MastodonStatusThreadViewModel.Node] {
-        var dictionary: [ID: Mastodon.Entity.Status] = [:]
-        var mapping: [ID: Set<ID>] = [:]
+        var dictionary: [Mastodon.Entity.Status.ID: Mastodon.Entity.Status] = [:]
+        var mapping: [Mastodon.Entity.Status.ID: Set<Mastodon.Entity.Status.ID>] = [:]
         
         for status in statuses {
             dictionary[status.id] = status
@@ -240,40 +214,31 @@ extension MastodonStatusThreadViewModel.Node {
         }
         
         var children: [MastodonStatusThreadViewModel.Node] = []
-        let replies = Array(mapping[statusID] ?? Set())
+        let replies = Array(mapping[status.id] ?? Set())
             .compactMap { dictionary[$0] }
             .sorted(by: { $0.createdAt > $1.createdAt })
         for reply in replies {
-            let child = child(of: reply.id, dictionary: dictionary, mapping: mapping)
+            let child = child(of: reply, dictionary: dictionary, mapping: mapping)
             children.append(child)
         }
         return children
     }
     
     static func child(
-        of statusID: ID,
-        dictionary: [ID: Mastodon.Entity.Status],
-        mapping: [ID: Set<ID>]
+        of status: Mastodon.Entity.Status,
+        dictionary: [Mastodon.Entity.Status.ID: Mastodon.Entity.Status],
+        mapping: [Mastodon.Entity.Status.ID: Set<Mastodon.Entity.Status.ID>]
     ) -> MastodonStatusThreadViewModel.Node {
-        let childrenIDs = mapping[statusID] ?? []
+        let childrenIDs = mapping[status.id] ?? []
         let children = Array(childrenIDs)
             .compactMap { dictionary[$0] }
             .sorted(by: { $0.createdAt > $1.createdAt })
-            .map { status in child(of: status.id, dictionary: dictionary, mapping: mapping) }
+            .map { status in child(of: status, dictionary: dictionary, mapping: mapping) }
         return MastodonStatusThreadViewModel.Node(
-            statusID: statusID,
+            status: .fromEntity(status),
             children: children
         )
     }
     
 }
 
-extension MastodonStatusThreadViewModel {
-    func delete(objectIDs: [NSManagedObjectID]) {
-        var set = deletedObjectIDs
-        for objectID in objectIDs {
-            set.insert(objectID)
-        }
-        self.deletedObjectIDs = set
-    }
-}

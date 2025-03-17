@@ -8,6 +8,7 @@
 import UIKit
 import MetaTextKit
 import MastodonUI
+import MastodonSDK
 
 // sourcery: protocolName = "StatusViewDelegate"
 // sourcery: replaceOf = "statusView(statusView"
@@ -33,12 +34,14 @@ protocol StatusTableViewCellDelegate: AnyObject, AutoGenerateProtocolDelegate {
     func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, pollVoteButtonPressed button: UIButton)
     func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, actionToolbarContainer: ActionToolbarContainer, buttonDidPressed button: UIButton, action: ActionToolbarContainer.Action)
     func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, menuButton button: UIButton, didSelectAction action: MastodonMenu.Action)
-    func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, spoilerOverlayViewDidPressed overlayView: SpoilerOverlayView)
+    func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, contentConcealExplainViewDidPressed contentConcealExplainView: ContentConcealExplainView)
     func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, mediaGridContainerView: MediaGridContainerView, mediaSensitiveButtonDidPressed button: UIButton)
     func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, statusMetricView: StatusMetricView, reblogButtonDidPressed button: UIButton)
     func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, statusMetricView: StatusMetricView, favoriteButtonDidPressed button: UIButton)
+    func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, statusMetricView: StatusMetricView, showEditHistory button: UIButton)
     func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, cardControl: StatusCardControl, didTapURL url: URL)
-    func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, cardControlMenu: StatusCardControl) -> UIMenu?
+    func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, cardControl: StatusCardControl, didTapProfile account: Mastodon.Entity.Account)
+    func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, cardControlMenu: StatusCardControl) -> [LabeledAction]?
     func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, accessibilityActivate: Void)
     // sourcery:end
 }
@@ -88,8 +91,8 @@ extension StatusViewDelegate where Self: StatusViewContainerTableViewCell {
         delegate?.tableViewCell(self, statusView: statusView, menuButton: button, didSelectAction: action)
     }
 
-    func statusView(_ statusView: StatusView, spoilerOverlayViewDidPressed overlayView: SpoilerOverlayView) {
-        delegate?.tableViewCell(self, statusView: statusView, spoilerOverlayViewDidPressed: overlayView)
+    func statusView(_ statusView: StatusView, contentConcealExplainViewDidPressed contentConcealExplainView: ContentConcealExplainView) {
+        delegate?.tableViewCell(self, statusView: statusView, contentConcealExplainViewDidPressed: contentConcealExplainView)
     }
 
     func statusView(_ statusView: StatusView, mediaGridContainerView: MediaGridContainerView, mediaSensitiveButtonDidPressed button: UIButton) {
@@ -104,11 +107,19 @@ extension StatusViewDelegate where Self: StatusViewContainerTableViewCell {
         delegate?.tableViewCell(self, statusView: statusView, statusMetricView: statusMetricView, favoriteButtonDidPressed: button)
     }
 
+    func statusView(_ statusView: StatusView, statusMetricView: StatusMetricView, showEditHistory button: UIButton) {
+        delegate?.tableViewCell(self, statusView: statusView, statusMetricView: statusMetricView, showEditHistory: button)
+    }
+
     func statusView(_ statusView: StatusView, cardControl: StatusCardControl, didTapURL url: URL) {
         delegate?.tableViewCell(self, statusView: statusView, cardControl: cardControl, didTapURL: url)
     }
 
-    func statusView(_ statusView: StatusView, cardControlMenu: StatusCardControl) -> UIMenu? {
+    func statusView(_ statusView: StatusView, cardControl: StatusCardControl, didTapProfile account: Mastodon.Entity.Account) {
+        delegate?.tableViewCell(self, statusView: statusView, cardControl: cardControl, didTapProfile: account)
+    }
+
+    func statusView(_ statusView: StatusView, cardControlMenu: StatusCardControl) -> [LabeledAction]? {
         return delegate?.tableViewCell(self, statusView: statusView, cardControlMenu: cardControlMenu)
     }
 

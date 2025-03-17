@@ -5,7 +5,6 @@
 //  Created by BradGao on 2021/2/23.
 //
 
-import os.log
 import UIKit
 import Combine
 import GameplayKit
@@ -17,6 +16,7 @@ import MastodonCore
 import MastodonUI
 import MastodonLocalization
 
+@MainActor
 class MastodonPickServerViewModel: NSObject {
 
     enum EmptyStateViewState {
@@ -30,8 +30,7 @@ class MastodonPickServerViewModel: NSObject {
     let serverSectionHeaderView = PickServerServerSectionTableHeaderView()
 
     // input
-    let context: AppContext
-    var categoryPickerItems: [CategoryPickerItem] = {
+    let categoryPickerItems: [CategoryPickerItem] = {
         var items: [CategoryPickerItem] = []
         items.append(.language(language: nil))
         items.append(.signupSpeed(manuallyReviewed: nil))
@@ -47,6 +46,7 @@ class MastodonPickServerViewModel: NSObject {
     let unindexedServers = CurrentValueSubject<[Mastodon.Entity.Server]?, Never>([])    // set nil when loading
     let viewWillAppear = PassthroughSubject<Void, Never>()
     let viewDidAppear = CurrentValueSubject<Void, Never>(Void())
+    let scrollToTop = PassthroughSubject<Void, Never>()
     @Published var additionalTableViewInsets: UIEdgeInsets = .zero
     
     // output
@@ -70,17 +70,17 @@ class MastodonPickServerViewModel: NSObject {
     let isLoadingIndexedServers = CurrentValueSubject<Bool, Never>(false)
     let loadingIndexedServersError = CurrentValueSubject<Error?, Never>(nil)
     let emptyStateViewState = CurrentValueSubject<EmptyStateViewState, Never>(.none)
+    
+    let joinServer: (Mastodon.Entity.Server) async throws ->()
+    let displayError: (Error)->()
         
-    init(context: AppContext) {
-        self.context = context
+    init(joinServer: @escaping (Mastodon.Entity.Server) async throws ->(), displayError: @escaping (Error)->()) {
+        self.joinServer = joinServer
+        self.displayError = displayError
         super.init()
-
         configure()
     }
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
     
 }
 
@@ -88,7 +88,7 @@ extension MastodonPickServerViewModel {
     
     private func configure() {
 
-        context.apiService.languages().sink { completion in
+        APIService.shared.languages().sink { completion in
             
         } receiveValue: { response in
             self.allLanguages.value = response.value
@@ -125,46 +125,21 @@ extension MastodonPickServerViewModel {
                 (selectedLanguage, manualApprovalRequired)
             }
         )
-        .map { indexedServers, selectCategoryItem, searchText, filters -> [Mastodon.Entity.Server] in
-            // ignore approval required servers when sign-up
+        .map { [weak self] indexedServers, selectCategoryItem, searchText, filters -> [Mastodon.Entity.Server] in
             var indexedServers = indexedServers
-            // Note:
-            // sort by calculate last week users count
-            // and make medium size (~800) server to top
-            
-            // group by language user preferred language first
-            var languageToServersMapping = OrderedDictionary<String, [Mastodon.Entity.Server]>()
-            for language in Locale.preferredLanguages {
-                let local = Locale(identifier: language)
-                guard let languageCode = local.languageCode else { continue }
-                // skip if key duplicate
-                guard !languageToServersMapping.keys.contains(languageCode) else { continue }
-                // append to dict
-                languageToServersMapping[languageCode] = indexedServers
-                    .filter { $0.language.lowercased() == languageCode.lowercased() }
-                    .sorted(by: { lh, rh in
-                        let lhValue = abs(log2(800.0) - log2(Double(lh.lastWeekUsers)))
-                        let rhValue = abs(log2(800.0) - log2(Double(rh.lastWeekUsers)))
-                        return lhValue < rhValue
-                    })
-            }
-            // sort remains servers
-            let remainsServers = indexedServers
-                .filter { server in
-                    return !languageToServersMapping.contains { _, servers in servers.contains(server) }
-                }
-                .sorted(by: { lh, rh in
-                    let lhValue = abs(log2(800.0) - log2(Double(lh.lastWeekUsers)))
-                    let rhValue = abs(log2(800.0) - log2(Double(rh.lastWeekUsers)))
-                    return lhValue < rhValue
-                })
-            
+
             var _indexedServers: [Mastodon.Entity.Server] = []
-            for key in languageToServersMapping.keys {
-                _indexedServers.append(contentsOf: languageToServersMapping[key] ?? [])
-            }
-            _indexedServers.append(contentsOf: remainsServers)
-            
+
+            let sortedInstantSignupServers = indexedServers
+                .filter { $0.approvalRequired == false }
+                .sorted { $0.lastWeekUsers >= $1.lastWeekUsers }
+            let sortedApprovalRequiredServers = indexedServers
+                .filter { $0.approvalRequired }
+                .sorted { $0.lastWeekUsers >= $1.lastWeekUsers }
+
+            _indexedServers.append(contentsOf: sortedInstantSignupServers)
+            _indexedServers.append(contentsOf: sortedApprovalRequiredServers)
+
             if _indexedServers.count == indexedServers.count {
                 indexedServers = _indexedServers
             } else {
@@ -176,6 +151,7 @@ extension MastodonPickServerViewModel {
             case .language(_), .signupSpeed(_):
                 return MastodonPickServerViewModel.filterServers(servers: indexedServers, language: filters.selectedLanguage, manualApprovalRequired: filters.manualApprovalRequired, category: nil, searchText: searchText)
             case .category(let category):
+                self?.scrollToTop.send()
                 return MastodonPickServerViewModel.filterServers(servers: indexedServers, language: filters.selectedLanguage, manualApprovalRequired: filters.manualApprovalRequired, category: category.category.rawValue, searchText: searchText)
             }
         }
@@ -192,9 +168,9 @@ extension MastodonPickServerViewModel {
                     return Just(Result.failure(APIService.APIError.implicit(.badRequest))).eraseToAnyPublisher()
                 }
                 self.unindexedServers.value = nil
-                return self.context.apiService.webFinger(domain: domain)
+                return APIService.shared.webFinger(domain: domain)
                     .flatMap { domain -> AnyPublisher<Result<Mastodon.Response.Content<[Mastodon.Entity.Server]>, Error>, Never> in
-                        return self.context.apiService.instance(domain: domain)
+                        return APIService.shared.instance(domain: domain, authenticationBox: nil)
                             .map { response -> Result<Mastodon.Response.Content<[Mastodon.Entity.Server]>, Error>in
                                 let newResponse = response.map { [Mastodon.Entity.Server(domain: domain, instance: $0)] }
                                 return Result.success(newResponse)
@@ -230,7 +206,7 @@ extension MastodonPickServerViewModel {
 
     func chooseRandomServer() -> Mastodon.Entity.Server? {
 
-        let language = Locale.autoupdatingCurrent.languageCode?.lowercased() ?? "en"
+        let language = Locale.autoupdatingCurrent.language.languageCode?.identifier.lowercased() ?? "en"
 
         let servers = indexedServers.value
         guard servers.isNotEmpty else { return nil }
@@ -302,28 +278,9 @@ extension MastodonPickServerViewModel {
     }
 }
 
-// MARK: - SignUp methods & structs
-extension MastodonPickServerViewModel {
-    struct SignUpResponseFirst {
-        let instance: Mastodon.Response.Content<Mastodon.Entity.Instance>
-        let application: Mastodon.Response.Content<Mastodon.Entity.Application>
-    }
-    
-    struct SignUpResponseSecond {
-        let instance: Mastodon.Response.Content<Mastodon.Entity.Instance>
-        let authenticateInfo: AuthenticationViewModel.AuthenticateInfo
-    }
-    
-    struct SignUpResponseThird {
-        let instance: Mastodon.Response.Content<Mastodon.Entity.Instance>
-        let authenticateInfo: AuthenticationViewModel.AuthenticateInfo
-        let applicationToken: Mastodon.Response.Content<Mastodon.Entity.Token>
-    }
-}
-
 // MARK: - TMBarDataSource
 extension MastodonPickServerViewModel: TMBarDataSource {
-    func barItem(for bar: TMBar, at index: Int) -> TMBarItemable {
+    nonisolated func barItem(for bar: TMBar, at index: Int) -> TMBarItemable {
         let item = categoryPickerItems[index]
         let barItem = TMBarItem(title: item.title)
         return barItem

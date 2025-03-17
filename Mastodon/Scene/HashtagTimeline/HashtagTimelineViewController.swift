@@ -5,9 +5,7 @@
 //  Created by BradGao on 2021/3/30.
 //
 
-import os.log
 import UIKit
-import AVKit
 import Combine
 import GameplayKit
 import CoreData
@@ -17,12 +15,7 @@ import MastodonUI
 import MastodonLocalization
 import MastodonSDK
 
-final class HashtagTimelineViewController: UIViewController, NeedsDependency, MediaPreviewableViewController {
-    
-    let logger = Logger(subsystem: "HashtagTimelineViewController", category: "ViewController")
-    
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+final class HashtagTimelineViewController: UIViewController, MediaPreviewableViewController {
     
     let mediaPreviewTransitionController = MediaPreviewTransitionController()
 
@@ -42,7 +35,7 @@ final class HashtagTimelineViewController: UIViewController, NeedsDependency, Me
         
     let composeBarButtonItem: UIBarButtonItem = {
         let barButtonItem = UIBarButtonItem()
-        barButtonItem.image = Asset.ObjectsAndTools.squareAndPencil.image.withRenderingMode(.alwaysTemplate)
+        barButtonItem.image = UIImage(systemName: "square.and.pencil")!.withRenderingMode(.alwaysTemplate)
         return barButtonItem
     }()
     
@@ -61,10 +54,6 @@ final class HashtagTimelineViewController: UIViewController, NeedsDependency, Me
     }()
     
     let refreshControl = RefreshControl()
-    
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s:", ((#file as NSString).lastPathComponent), #line, #function)
-    }
 }
 
 extension HashtagTimelineViewController {
@@ -77,14 +66,7 @@ extension HashtagTimelineViewController {
         titleView.update(title: _title, subtitle: nil)
         navigationItem.titleView = titleView
 
-        view.backgroundColor = ThemeService.shared.currentTheme.value.secondarySystemBackgroundColor
-        ThemeService.shared.currentTheme
-            .receive(on: RunLoop.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.view.backgroundColor = theme.secondarySystemBackgroundColor
-            }
-            .store(in: &disposeBag)
+        view.backgroundColor = .secondarySystemBackground
         
         navigationItem.rightBarButtonItem = composeBarButtonItem
         composeBarButtonItem.target = self
@@ -109,17 +91,7 @@ extension HashtagTimelineViewController {
                 self.refreshControl.endRefreshing()
             }
             .store(in: &disposeBag)
-        
-        // setup batch fetch
-        viewModel.listBatchFetchViewModel.setup(scrollView: tableView)
-        viewModel.listBatchFetchViewModel.shouldFetch
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                self.viewModel.stateMachine.enter(HashtagTimelineViewModel.State.Loading.self)
-            }
-            .store(in: &disposeBag)
-        
+
         viewModel.hashtagEntity
             .receive(on: DispatchQueue.main)
             .sink { [weak self] tag in
@@ -205,23 +177,22 @@ extension HashtagTimelineViewController {
     }
     
     @objc private func composeBarButtonItemPressed(_ sender: UIBarButtonItem) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         let hashtag = "#" + viewModel.hashtag
         UITextChecker.learnWord(hashtag)
         let composeViewModel = ComposeViewModel(
-            context: context,
-            authContext: viewModel.authContext,
+            authenticationBox: viewModel.authenticationBox,
+            composeContext: .composeStatus,
             destination: .topLevel,
             initialContent: hashtag
         )
-        _ = coordinator.present(scene: .compose(viewModel: composeViewModel), from: self, transition: .modal(animated: true, completion: nil))
+        _ = self.sceneCoordinator?.present(scene: .compose(viewModel: composeViewModel), from: self, transition: .modal(animated: true, completion: nil))
     }
 
 }
 
 // MARK: - AuthContextProvider
 extension HashtagTimelineViewController: AuthContextProvider {
-    var authContext: AuthContext { viewModel.authContext }
+    var authenticationBox: MastodonAuthenticationBox { viewModel.authenticationBox }
 }
 
 // MARK: - UITableViewDelegate
@@ -269,5 +240,15 @@ extension HashtagTimelineViewController: StatusTableViewControllerNavigateable {
     
     @objc func statusKeyCommandHandlerRelay(_ sender: UIKeyCommand) {
         statusKeyCommandHandler(sender)
+    }
+}
+
+// MARK: - UIScrollViewDelegate
+
+extension HashtagTimelineViewController: UIScrollViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        Self.scrollViewDidScrollToEnd(scrollView) {
+            viewModel.stateMachine.enter(HashtagTimelineViewModel.State.Loading.self)
+        }
     }
 }

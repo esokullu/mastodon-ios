@@ -17,14 +17,12 @@ extension ComposeContentToolbarView {
         weak var delegate: ComposeContentToolbarViewDelegate?
         
         // input
-        @Published var backgroundColor = ThemeService.shared.currentTheme.value.composeToolbarBackgroundColor
+        @Published var backgroundColor = SystemTheme.composeToolbarBackgroundColor
         @Published var suggestedLanguages: [String] = []
         @Published var highConfidenceSuggestedLanguage: String?
         @Published var visibility: Mastodon.Entity.Status.Visibility = .public
-        var allVisibilities: [Mastodon.Entity.Status.Visibility] {
-            return [.public, .private, .direct]
-        }
-        
+        let allVisibilities = [Mastodon.Entity.Status.Visibility.public, .unlisted, .private, .direct]
+        @Published var isVisibilityButtonEnabled = false
         @Published var isPollActive = false
         @Published var isEmojiActive = false
         @Published var isContentWarningActive = false
@@ -32,7 +30,7 @@ extension ComposeContentToolbarView {
         @Published var isAttachmentButtonEnabled = false
         @Published var isPollButtonEnabled = false
         
-        @Published var language = Locale.current.languageCode ?? "en"
+        @Published var language = UserDefaults.shared.defaultPostLanguage
         @Published var recentLanguages: [String] = []
 
         @Published public var maxTextInputLimit = 500
@@ -43,13 +41,7 @@ extension ComposeContentToolbarView {
         
         init(delegate: ComposeContentToolbarViewDelegate) {
             self.delegate = delegate
-            // end init
-            
-            ThemeService.shared.currentTheme
-                .map { $0.composeToolbarBackgroundColor }
-                .assign(to: &$backgroundColor)
         }
-        
     }
 }
 
@@ -73,7 +65,7 @@ extension ComposeContentToolbarView.ViewModel {
             case .contentWarning:
                 return Asset.Scene.Compose.chatWarningFill.image.withRenderingMode(.alwaysTemplate)
             case .visibility:
-                return Asset.Scene.Compose.earth.image.withRenderingMode(.alwaysTemplate)
+                return Mastodon.Entity.Status.Visibility.public.image.withRenderingMode(.alwaysTemplate)
             case .language:
                 fatalError("Language’s active image is never accessed")
             }
@@ -90,7 +82,7 @@ extension ComposeContentToolbarView.ViewModel {
             case .contentWarning:
                 return Asset.Scene.Compose.chatWarning.image.withRenderingMode(.alwaysTemplate)
             case .visibility:
-                return Asset.Scene.Compose.earth.image.withRenderingMode(.alwaysTemplate)
+                return Mastodon.Entity.Status.Visibility.public.image
             case .language:
                 fatalError("Language’s inactive image is never accessed")
             }

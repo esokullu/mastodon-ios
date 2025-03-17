@@ -5,23 +5,16 @@
 //  Created by MainasuK on 2021-12-1.
 //
 
-import os.log
 import Foundation
+import Combine
 import CoreData
 import CoreDataStack
 import MastodonCore
 import MastodonSDK
 
 public final class MastodonStatusPublisher: NSObject, ProgressReporting {
-    
-    let logger = Logger(subsystem: "MastodonStatusPublisher", category: "Publisher")
-    
-    // Input
-    
-    // author
-    public let author: ManagedObjectRecord<MastodonUser>
     // refer
-    public let replyTo: ManagedObjectRecord<Status>?
+    public let replyTo: MastodonStatus?
     // content warning
     public let isContentWarningComposing: Bool
     public let contentWarning: String
@@ -49,8 +42,7 @@ public final class MastodonStatusPublisher: NSObject, ProgressReporting {
     public var reactor: StatusPublisherReactor?
 
     public init(
-        author: ManagedObjectRecord<MastodonUser>,
-        replyTo: ManagedObjectRecord<Status>?,
+        replyTo: MastodonStatus?,
         isContentWarningComposing: Bool,
         contentWarning: String,
         content: String,
@@ -63,7 +55,6 @@ public final class MastodonStatusPublisher: NSObject, ProgressReporting {
         visibility: Mastodon.Entity.Status.Visibility,
         language: String
     ) {
-        self.author = author
         self.replyTo = replyTo
         self.isContentWarningComposing = isContentWarningComposing
         self.contentWarning = contentWarning
@@ -85,7 +76,7 @@ extension MastodonStatusPublisher: StatusPublisher {
 
     public func publish(
         api: APIService,
-        authContext: AuthContext
+        authenticationBox: MastodonAuthenticationBox
     ) async throws -> StatusPublishResult {
         let idempotencyKey = UUID().uuidString
         
@@ -107,7 +98,7 @@ extension MastodonStatusPublisher: StatusPublisher {
         progress.completedUnitCount = 0
         
         // start delay
-        try? await Task.sleep(nanoseconds: 1 * .second)
+        try? await Task.sleep(nanoseconds: 1 * .nanosPerUnit)
         progress.completedUnitCount += publishStatusTaskStartDelayWeight
         
         // Task: attachment
@@ -118,33 +109,33 @@ extension MastodonStatusPublisher: StatusPublisher {
             progress.addChild(attachmentViewModel.progress, withPendingUnitCount: publishAttachmentTaskWeight)
             // upload media
             do {
-                guard let attachment = attachmentViewModel.uploadResult else {
+                switch attachmentViewModel.uploadResult {
+                case .none:
                     // precondition: all media uploaded
                     throw AppError.badRequest
+                case .exists:
+                    break
+                case let .uploadedMastodonAttachment(attachment):
+                    attachmentIDs.append(attachment.id)
+
+                    _ = try await api.updateMedia(
+                        domain: authenticationBox.domain,
+                        attachmentID: attachment.id,
+                        query: .init(
+                            file: nil,
+                            thumbnail: nil,
+                            description: attachmentViewModel.caption,
+                            focus: nil
+                        ),
+                        mastodonAuthenticationBox: authenticationBox
+                    ).singleOutput()
+                    
+                    // TODO: allow background upload
+                    // let attachment = try await attachmentViewModel.upload(context: uploadContext)
+                    // let attachmentID = attachment.id
+                    // attachmentIDs.append(attachmentID)
                 }
-                attachmentIDs.append(attachment.id)
-                
-                let caption = attachmentViewModel.caption
-                guard !caption.isEmpty else { continue }
-                
-                _ = try await api.updateMedia(
-                    domain: authContext.mastodonAuthenticationBox.domain,
-                    attachmentID: attachment.id,
-                    query: .init(
-                        file: nil,
-                        thumbnail: nil,
-                        description: caption,
-                        focus: nil
-                    ),
-                    mastodonAuthenticationBox: authContext.mastodonAuthenticationBox
-                ).singleOutput()
-                
-                // TODO: allow background upload
-                // let attachment = try await attachmentViewModel.upload(context: uploadContext)
-                // let attachmentID = attachment.id
-                // attachmentIDs.append(attachmentID)
             } catch {
-                logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): upload attachment fail: \(error.localizedDescription)")
                 _state = .failure(error)
                 throw error
             }
@@ -160,34 +151,37 @@ extension MastodonStatusPublisher: StatusPublisher {
             guard pollOptions != nil else { return nil }
             return self.pollExpireConfigurationOption.seconds
         }()
-        let inReplyToID: Mastodon.Entity.Status.ID? = try await api.backgroundManagedObjectContext.perform {
-            guard let replyTo = self.replyTo?.object(in: api.backgroundManagedObjectContext) else { return nil }
-            return replyTo.id
+        
+        do {
+            let inReplyToID: Mastodon.Entity.Status.ID? = try await PersistenceManager.shared.backgroundManagedObjectContext.perform {
+                guard let replyTo = self.replyTo else { return nil }
+                return replyTo.id
+            }
+            
+            let query = Mastodon.API.Statuses.PublishStatusQuery(
+                status: content,
+                mediaIDs: attachmentIDs.isEmpty ? nil : attachmentIDs,
+                pollOptions: pollOptions,
+                pollExpiresIn: pollExpiresIn,
+                inReplyToID: inReplyToID,
+                sensitive: isMediaSensitive,
+                spoilerText: isContentWarningComposing ? contentWarning : nil,
+                visibility: visibility,
+                language: language
+            )
+            
+            let publishResponse = try await api.publishStatus(
+                domain: authenticationBox.domain,
+                idempotencyKey: idempotencyKey,
+                query: query,
+                authenticationBox: authenticationBox
+            )
+            progress.completedUnitCount += publishStatusTaskCount
+            _state = .success
+            return .post(publishResponse)
+        } catch {
+            _state = .failure(error)
+            throw error
         }
-        
-        let query = Mastodon.API.Statuses.PublishStatusQuery(
-            status: content,
-            mediaIDs: attachmentIDs.isEmpty ? nil : attachmentIDs,
-            pollOptions: pollOptions,
-            pollExpiresIn: pollExpiresIn,
-            inReplyToID: inReplyToID,
-            sensitive: isMediaSensitive,
-            spoilerText: isContentWarningComposing ? contentWarning : nil,
-            visibility: visibility,
-            language: language
-        )
-        
-        let publishResponse = try await api.publishStatus(
-            domain: authContext.mastodonAuthenticationBox.domain,
-            idempotencyKey: idempotencyKey,
-            query: query,
-            authenticationBox: authContext.mastodonAuthenticationBox
-        )
-        progress.completedUnitCount += publishStatusTaskCount
-        _state = .success
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): status published: \(publishResponse.value.id)")
-        
-        return .mastodon(publishResponse)
     }
-    
 }

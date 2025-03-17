@@ -6,9 +6,11 @@
 //
 
 import Foundation
+import Combine
 
+@MainActor
 public protocol StatusPublisher: ProgressReporting {
     var state: Published<StatusPublisherState>.Publisher { get }
     var reactor: StatusPublisherReactor? { get set }
-    func publish(api: APIService, authContext: AuthContext) async throws -> StatusPublishResult
+    func publish(api: APIService, authenticationBox: MastodonAuthenticationBox) async throws -> StatusPublishResult
 }

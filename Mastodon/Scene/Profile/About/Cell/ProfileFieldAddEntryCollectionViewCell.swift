@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-5-26.
 //
 
-import os.log
 import UIKit
 import Combine
 import MastodonAsset
@@ -22,7 +21,7 @@ final class ProfileFieldAddEntryCollectionViewCell: UICollectionViewCell {
     let containerStackView = UIStackView()
 
     let editButton: UIButton = {
-        let button = HitTestExpandedButton(type: .custom)
+        let button = MinimumHitTargetButton(type: .custom)
         button.setImage(ProfileFieldAddEntryCollectionViewCell.insertButtonImage, for: .normal)
         button.contentMode = .center
         button.tintColor = .systemGreen

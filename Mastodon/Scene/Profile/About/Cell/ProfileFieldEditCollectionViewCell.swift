@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022-1-22.
 //
 
-import os.log
 import UIKit
 import Combine
 import MetaTextKit
@@ -30,7 +29,7 @@ final class ProfileFieldEditCollectionViewCell: UICollectionViewCell {
     let containerStackView = UIStackView()
 
     let editButton: UIButton = {
-        let button = HitTestExpandedButton(type: .custom)
+        let button = MinimumHitTargetButton(type: .custom)
         button.setImage(ProfileFieldEditCollectionViewCell.removeButtonImage, for: .normal)
         button.contentMode = .center
         button.tintColor = .systemRed
@@ -91,19 +90,19 @@ extension ProfileFieldEditCollectionViewCell {
 
         contentView.preservesSuperviewLayoutMargins = true
         containerStackView.preservesSuperviewLayoutMargins = true
-        containerStackView.isLayoutMarginsRelativeArrangement = true
-
         containerStackView.translatesAutoresizingMaskIntoConstraints = false
+
         contentView.addSubview(containerStackView)
         NSLayoutConstraint.activate([
-            containerStackView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            containerStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 11),
             containerStackView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
             containerStackView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
-            containerStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            contentView.bottomAnchor.constraint(equalTo: containerStackView.bottomAnchor, constant: 11),
         ])
         
         let fieldContainer = UIStackView()
         fieldContainer.axis = .vertical
+        fieldContainer.spacing = 2
         containerStackView.addArrangedSubview(fieldContainer)
         
         fieldContainer.addArrangedSubview(keyTextField)
@@ -127,7 +126,6 @@ extension ProfileFieldEditCollectionViewCell {
 
 extension ProfileFieldEditCollectionViewCell {
     @objc private func editButtonDidPressed(_ sender: UIButton) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         delegate?.profileFieldEditCollectionViewCell(self, editButtonDidPressed: sender)
     }
 }

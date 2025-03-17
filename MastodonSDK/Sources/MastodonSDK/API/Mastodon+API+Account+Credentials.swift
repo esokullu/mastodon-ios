@@ -30,24 +30,21 @@ extension Mastodon.API.Account {
     ///   - domain: Mastodon instance domain. e.g. "example.com"
     ///   - query: `RegisterQuery` with account registration information
     ///   - authorization: App token
-    /// - Returns: `AnyPublisher` contains `Token` nested in the response
+    /// - Returns: `Token`
     public static func register(
         session: URLSession,
         domain: String,
         query: RegisterQuery,
         authorization: Mastodon.API.OAuth.Authorization
-    ) -> AnyPublisher<Mastodon.Response.Content<Mastodon.Entity.Token>, Error> {
+    ) async throws -> Mastodon.Entity.Token {
         let request = Mastodon.API.post(
             url: accountsEndpointURL(domain: domain),
             query: query,
             authorization: authorization
         )
-        return session.dataTaskPublisher(for: request)
-            .tryMap { data, response in
-                let value = try Mastodon.API.decode(type: Mastodon.Entity.Token.self, from: data, response: response)
-                return Mastodon.Response.Content(value: value, response: response)
-            }
-            .eraseToAnyPublisher()
+        let (data, response) = try await session.data(for: request)
+        let token = try Mastodon.API.decode(type: Mastodon.Entity.Token.self, from: data, response: response)
+        return token
     }
     
     public struct RegisterQuery: Codable, PostQuery {
@@ -109,6 +106,21 @@ extension Mastodon.API.Account {
             .eraseToAnyPublisher()
     }
     
+    public static func verifyCredentials(
+        session: URLSession,
+        domain: String,
+        authorization: Mastodon.API.OAuth.Authorization
+    ) async throws -> Mastodon.Entity.Account {
+        let request = Mastodon.API.get(
+            url: verifyCredentialsEndpointURL(domain: domain),
+            query: nil,
+            authorization: authorization
+        )
+        let (data, response) = try await session.data(for: request)
+        let value = try Mastodon.API.decode(type: Mastodon.Entity.Account.self, from: data, response: response)
+        return value
+    }
+    
     static func updateCredentialsEndpointURL(domain: String) -> URL {
         return Mastodon.API.endpointURL(domain: domain).appendingPathComponent("accounts/update_credentials")
     }
@@ -158,7 +170,9 @@ extension Mastodon.API.Account {
         public let locked: Bool?
         public let source: Mastodon.Entity.Source?
         public let fieldsAttributes: [Mastodon.Entity.Field]?
-
+        public let indexable: Bool?
+        public let hideCollections: Bool?
+        
         enum CodingKeys: String, CodingKey {
             case discoverable
             case bot
@@ -170,6 +184,8 @@ extension Mastodon.API.Account {
             case locked
             case source
             case fieldsAttributes = "fields_attributes"
+            case indexable
+            case hideCollections = "hide_collections"
         }
 
         public init(
@@ -181,7 +197,9 @@ extension Mastodon.API.Account {
             header: Mastodon.Query.MediaAttachment? = nil,
             locked: Bool? = nil,
             source: Mastodon.Entity.Source? = nil,
-            fieldsAttributes: [Mastodon.Entity.Field]? = nil
+            fieldsAttributes: [Mastodon.Entity.Field]? = nil,
+            indexable: Bool? = nil,
+            hideCollections: Bool? = nil
         ) {
             self.discoverable = discoverable
             self.bot = bot
@@ -192,6 +210,8 @@ extension Mastodon.API.Account {
             self.locked = locked
             self.source = source
             self.fieldsAttributes = fieldsAttributes
+            self.indexable = indexable
+            self.hideCollections = hideCollections
         }
         
         var contentType: String? {
@@ -205,6 +225,7 @@ extension Mastodon.API.Account {
         var body: Data? {
             var data = Data()
 
+            hideCollections.flatMap { data.append(Data.multipart(key: "hide_collections", value: $0)) }
             discoverable.flatMap { data.append(Data.multipart(key: "discoverable", value: $0)) }
             bot.flatMap { data.append(Data.multipart(key: "bot", value: $0)) }
             displayName.flatMap { data.append(Data.multipart(key: "display_name", value: $0)) }
@@ -212,6 +233,7 @@ extension Mastodon.API.Account {
             avatar.flatMap { data.append(Data.multipart(key: "avatar", value: $0)) }
             header.flatMap { data.append(Data.multipart(key: "header", value: $0)) }
             locked.flatMap { data.append(Data.multipart(key: "locked", value: $0)) }
+            indexable.flatMap { data.append(Data.multipart(key: "indexable", value: $0)) }
             if let source = source {
                 source.privacy.flatMap { data.append(Data.multipart(key: "source[privacy]", value: $0.rawValue)) }
                 source.sensitive.flatMap { data.append(Data.multipart(key: "source[privacy]", value: $0)) }

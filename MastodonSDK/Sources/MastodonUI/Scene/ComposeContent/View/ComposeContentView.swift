@@ -5,17 +5,14 @@
 //  Created by MainasuK on 22/9/30.
 //
 
-import os.log
 import SwiftUI
 import MastodonAsset
+import MastodonSDK
 import MastodonCore
 import MastodonLocalization
 import Stripes
 
 public struct ComposeContentView: View {
-    
-    static let logger = Logger(subsystem: "ComposeContentView", category: "View")
-    var logger: Logger { ComposeContentView.logger }
     
     static let contentViewCoordinateSpace = "ComposeContentView.Content"
     static var margin: CGFloat = 16
@@ -26,6 +23,13 @@ public struct ComposeContentView: View {
     public var body: some View {
         VStack(spacing: .zero) {
             Group {
+                // visibility
+                HStack {
+                    Spacer().frame(maxWidth: .infinity)
+                    visibilityPicker()
+                        .fixedSize(horizontal: true, vertical: false)
+                }
+                
                 // content warning
                 if viewModel.isContentWarningActive {
                     MetaTextViewRepresentable(
@@ -97,7 +101,6 @@ public struct ComposeContentView: View {
                                 attributes: attributes
                             )
                         }()
-                        metaText.textView.keyboardType = .twitter
                         metaText.textView.tag = ComposeContentViewModel.MetaTextViewKind.content.rawValue
                         metaText.textView.delegate = viewModel
                         metaText.delegate = viewModel
@@ -112,7 +115,6 @@ public struct ComposeContentView: View {
                         Color.clear.preference(key: ViewFramePreferenceKey.self, value: proxy.frame(in: .named(ComposeContentView.contentViewCoordinateSpace)))
                     }
                     .onPreferenceChange(ViewFramePreferenceKey.self) { frame in
-                        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): content textView frame: \(frame.debugDescription)")
                         let rect = frame.standardized
                         viewModel.contentTextViewFrame = CGRect(
                             origin: frame.origin,
@@ -132,7 +134,6 @@ public struct ComposeContentView: View {
                     Color.clear.preference(key: ViewFramePreferenceKey.self, value: proxy.frame(in: .local))
                 }
                 .onPreferenceChange(ViewFramePreferenceKey.self) { frame in
-                    logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): content frame: \(frame.debugDescription)")
                     let rect = frame.standardized
                     viewModel.contentCellFrame = CGRect(
                         origin: frame.origin,
@@ -144,6 +145,21 @@ public struct ComposeContentView: View {
         }   // end VStack
         .coordinateSpace(name: ComposeContentView.contentViewCoordinateSpace)
     }   // end body
+    
+    @ViewBuilder
+    func visibilityPicker() -> some View {
+        Picker(selection: $viewModel.visibility) {
+            ForEach([Mastodon.Entity.Status.Visibility.public, .unlisted, .private, .direct], id: \.self) { visibility in
+                Label {
+                    Text(visibility.title)
+                } icon: {
+                    Image(uiImage: visibility.image)
+                }
+            }
+        } label: {
+            Text(viewModel.visibility.title)
+        }.disabled(!viewModel.isVisibilityButtonEnabled)
+    }
 }
 
 extension ComposeContentView {

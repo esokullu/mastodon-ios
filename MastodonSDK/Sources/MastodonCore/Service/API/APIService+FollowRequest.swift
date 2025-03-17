@@ -9,14 +9,13 @@ import UIKit
 import Combine
 import CoreData
 import CoreDataStack
-import CommonOSLog
 import MastodonSDK
 
 extension APIService {
     
     public func followRequest(
         userID: Mastodon.Entity.Account.ID,
-        query: Mastodon.API.Account.FollowReqeustQuery,
+        query: Mastodon.API.Account.FollowRequestQuery,
         authenticationBox: MastodonAuthenticationBox
     ) async throws -> Mastodon.Response.Content<Mastodon.Entity.Relationship> {
         let response = try await Mastodon.API.Account.followRequest(
@@ -27,28 +26,20 @@ extension APIService {
             authorization: authenticationBox.userAuthorization
         ).singleOutput()
         
-        let managedObjectContext = self.backgroundManagedObjectContext
-        try await managedObjectContext.performChanges {
-            let request = MastodonUser.sortedFetchRequest
-            request.predicate = MastodonUser.predicate(
-                domain: authenticationBox.domain,
-                id: authenticationBox.userID
-            )
-            request.fetchLimit = 1
-            guard let user = managedObjectContext.safeFetch(request).first else { return }
-            guard let me = authenticationBox.authenticationRecord.object(in: managedObjectContext)?.user else { return }
-            
-            Persistence.MastodonUser.update(
-                mastodonUser: user,
-                context: Persistence.MastodonUser.RelationshipContext(
-                    entity: response.value,
-                    me: me,
-                    networkDate: response.networkDate
-                )
-            )
-        }
-        
         return response
     }
 
+    public func pendingFollowRequest(
+        userID: Mastodon.Entity.Account.ID,
+        authenticationBox: MastodonAuthenticationBox
+    ) async throws -> Mastodon.Response.Content<[Mastodon.Entity.Account]> {
+        let response = try await Mastodon.API.Account.pendingFollowRequest(
+            session: session,
+            domain: authenticationBox.domain,
+            userID: userID,
+            authorization: authenticationBox.userAuthorization
+        ).singleOutput()
+
+        return response
+    }
 }

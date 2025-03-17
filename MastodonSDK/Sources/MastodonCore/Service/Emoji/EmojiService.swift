@@ -5,23 +5,15 @@
 //  Created by MainasuK Cirno on 2021-3-15.
 //
 
-import os.log
 import Foundation
 import Combine
 import MastodonSDK
 
+@MainActor
 public final class EmojiService {
-    
-    
-    weak var apiService: APIService?
-    
+    public static let shared = { EmojiService() }()
     let workingQueue = DispatchQueue(label: "org.joinmastodon.app.EmojiService.working-queue")
     private(set) var customEmojiViewModelDict: [String: CustomEmojiViewModel] = [:]
-    
-    init(apiService: APIService) {
-        self.apiService = apiService
-    }
-    
 }
 
 extension EmojiService {

@@ -1,9 +1,4 @@
-//
-//  AccountListTableViewCell.swift
-//  Mastodon
-//
-//  Created by Cirno MainasuK on 2021-9-13.
-//
+// Copyright © 2023 Mastodon gGmbH. All rights reserved.
 
 import UIKit
 import Combine
@@ -17,7 +12,7 @@ final class AccountListTableViewCell: UITableViewCell {
     private var _disposeBag = Set<AnyCancellable>()
     var disposeBag = Set<AnyCancellable>()
 
-    let avatarButton = CircleAvatarButton(frame: .zero)
+    let avatarButton = CircleAvatarButton()
     let nameLabel = MetaLabel(style: .accountListName)
     let usernameLabel = MetaLabel(style: .accountListUsername)
     let badgeButton = BadgeButton()
@@ -26,8 +21,7 @@ final class AccountListTableViewCell: UITableViewCell {
         let imageView = UIImageView(image: image)
         return imageView
     }()
-    let separatorLine = UIView.separatorLine
-    
+
     override func prepareForReuse() {
         super.prepareForReuse()
         
@@ -50,14 +44,7 @@ final class AccountListTableViewCell: UITableViewCell {
 extension AccountListTableViewCell {
 
     private func _init() {
-        backgroundColor = ThemeService.shared.currentTheme.value.secondarySystemGroupedBackgroundColor
-        ThemeService.shared.currentTheme
-            .receive(on: RunLoop.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.backgroundColor = ThemeService.shared.currentTheme.value.secondarySystemGroupedBackgroundColor
-            }
-            .store(in: &_disposeBag)
+        backgroundColor = .secondarySystemGroupedBackground
         
         avatarButton.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(avatarButton)
@@ -114,15 +101,6 @@ extension AccountListTableViewCell {
         usernameLabel.isUserInteractionEnabled = false
         badgeButton.isUserInteractionEnabled = false
 
-        separatorLine.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(separatorLine)
-        NSLayoutConstraint.activate([
-            separatorLine.leadingAnchor.constraint(equalTo: contentView.readableContentGuide.leadingAnchor),
-            separatorLine.trailingAnchor.constraint(equalTo: trailingAnchor),   // needs align to edge
-            separatorLine.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            separatorLine.heightAnchor.constraint(equalToConstant: UIView.separatorLineHeight(of: contentView)),
-        ])
-        
         badgeButton.setBadge(number: 0)
         checkmarkImageView.isHidden = true
 

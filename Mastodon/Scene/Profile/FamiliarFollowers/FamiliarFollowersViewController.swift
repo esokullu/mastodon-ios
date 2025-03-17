@@ -5,56 +5,36 @@
 //  Created by MainasuK on 2022-5-17.
 //
 
-import os.log
 import UIKit
 import Combine
 import MastodonCore
 import MastodonLocalization
+import MastodonUI
+import MastodonSDK
 
-final class FamiliarFollowersViewController: UIViewController, NeedsDependency {
+final class FamiliarFollowersViewController: UIViewController {
 
-    let logger = Logger(subsystem: "FamiliarFollowersViewController", category: "ViewController")
-    
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
-    
-    var disposeBag = Set<AnyCancellable>()
-    var viewModel: FamiliarFollowersViewModel!
-    
-    lazy var tableView: UITableView = {
-        let tableView = UITableView()
+    let viewModel: FamiliarFollowersViewModel
+
+    let tableView: UITableView
+
+    init(viewModel: FamiliarFollowersViewModel) {
+        self.viewModel = viewModel
+        tableView = UITableView()
         tableView.rowHeight = UITableView.automaticDimension
         tableView.separatorStyle = .none
         tableView.backgroundColor = .clear
-        return tableView
-    }()
-    
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
-    
-}
 
-extension FamiliarFollowersViewController {
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
+        super.init(nibName: nil, bundle: nil)
+
         title = L10n.Scene.Familiarfollowers.title
-        
-        view.backgroundColor = ThemeService.shared.currentTheme.value.secondarySystemBackgroundColor
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.view.backgroundColor = theme.secondarySystemBackgroundColor
-            }
-            .store(in: &disposeBag)
-        
+
+        view.backgroundColor = .secondarySystemBackground
+
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
         tableView.pinToParent()
-        
+
         tableView.delegate = self
         viewModel.setupDiffableDataSource(
             tableView: tableView,
@@ -62,18 +42,21 @@ extension FamiliarFollowersViewController {
         )
     }
     
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
         tableView.deselectRow(with: transitionCoordinator, animated: animated)
+        viewModel.viewWillAppear()
     }
     
 }
 
 // MARK: - AuthContextProvider
 extension FamiliarFollowersViewController: AuthContextProvider {
-    var authContext: AuthContext {
-        viewModel.authContext
+    var authenticationBox: MastodonAuthenticationBox {
+        viewModel.authenticationBox
     }
 }
 
@@ -91,4 +74,45 @@ extension FamiliarFollowersViewController: UITableViewDelegate, AutoGenerateTabl
 }
 
 // MARK: - UserTableViewCellDelegate
-extension FamiliarFollowersViewController: UserTableViewCellDelegate { }
+extension FamiliarFollowersViewController: UserTableViewCellDelegate {}
+
+//MARK: - DataSourceProvider
+extension FamiliarFollowersViewController: DataSourceProvider {
+    var filterContext: MastodonSDK.Mastodon.Entity.FilterContext? {
+        return .none
+    }
+    
+    func didToggleContentWarningDisplayStatus(status: MastodonSDK.MastodonStatus) {
+        tableView.reloadData()
+    }
+    
+    func item(from source: DataSourceItem.Source) async -> DataSourceItem? {
+        var _indexPath = source.indexPath
+        if _indexPath == nil, let cell = source.tableViewCell {
+            _indexPath = await self.indexPath(for: cell)
+        }
+        guard let indexPath = _indexPath else { return nil }
+
+        guard let item = viewModel.diffableDataSource?.itemIdentifier(for: indexPath) else {
+            return nil
+        }
+
+        switch item {
+            case .account(let account, relationship: let relationship):
+                return .account(account: account, relationship: relationship)
+
+            default:
+                return nil
+        }
+    }
+    
+    func update(status: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
+        assertionFailure("Not required")
+    }
+
+    @MainActor
+    private func indexPath(for cell: UITableViewCell) async -> IndexPath? {
+        return tableView.indexPath(for: cell)
+    }
+}
+

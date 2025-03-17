@@ -5,7 +5,6 @@
 //  Created by sxiaojian on 2021/1/27.
 //
 
-import os.log
 import UIKit
 import Combine
 import MastodonAsset
@@ -13,10 +12,10 @@ import MastodonLocalization
 import MastodonUI
 
 final class StatusTableViewCell: UITableViewCell {
+
+    static let reuseIdentifier = "StatusTableViewCell"
     
     static let marginForRegularHorizontalSizeClass: CGFloat = 64
-    
-    let logger = Logger(subsystem: "StatusTableViewCell", category: "View")
         
     weak var delegate: StatusTableViewCellDelegate?
     var disposeBag = Set<AnyCancellable>()
@@ -44,11 +43,6 @@ final class StatusTableViewCell: UITableViewCell {
         super.init(coder: coder)
         _init()
     }
-    
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
-    
 }
 
 extension StatusTableViewCell {
@@ -86,9 +80,17 @@ extension StatusTableViewCell {
                 self.accessibilityLabel = accessibilityLabel
             }
             .store(in: &_disposeBag)
-        
-        statusView.viewModel
-            .$translatedFromLanguage
+
+        statusView.viewModel.$contentAccessibilityLabel
+            .combineLatest(statusView.viewModel.$groupedAccessibilityLabel)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] contentLabel, accessibilityLabel in
+                guard let self = self else { return }
+                self.accessibilityUserInputLabels = [contentLabel, accessibilityLabel]
+            }
+            .store(in: &_disposeBag)
+
+        statusView.viewModel.$translation
             .receive(on: DispatchQueue.main)
             .sink(receiveValue: { [weak self] _ in
                 self?.invalidateIntrinsicContentSize()

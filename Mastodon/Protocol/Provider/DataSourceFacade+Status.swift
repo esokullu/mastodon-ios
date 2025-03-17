@@ -14,18 +14,21 @@ import MastodonUI
 import MastodonLocalization
 import LinkPresentation
 import UniformTypeIdentifiers
+import MastodonSDK
 
 // Delete
 extension DataSourceFacade {
     
     static func responseToDeleteStatus(
-        dependency: NeedsDependency & AuthContextProvider,
-        status: ManagedObjectRecord<Status>
+        dependency: AuthContextProvider & DataSourceProvider,
+        status: MastodonStatus
     ) async throws {
-        _ = try await dependency.context.apiService.deleteStatus(
+        let deletedStatus = try await APIService.shared.deleteStatus(
             status: status,
-            authenticationBox: dependency.authContext.mastodonAuthenticationBox
-        )
+            authenticationBox: dependency.authenticationBox
+        ).value.asMastodonStatus
+        
+        dependency.update(status: deletedStatus, intent: .delete)
     }
     
 }
@@ -36,14 +39,15 @@ extension DataSourceFacade {
     @MainActor
     public static func responseToStatusShareAction(
         provider: DataSourceProvider,
-        status: ManagedObjectRecord<Status>,
+        status: MastodonStatus,
         button: UIButton
     ) async throws {
         let activityViewController = try await createActivityViewController(
             dependency: provider,
             status: status
         )
-        _ = provider.coordinator.present(
+        guard let coordinator = provider.sceneCoordinator else { /* TODO: throw? */ return }
+        _ = coordinator.present(
             scene: .activityViewController(
                 activityViewController: activityViewController,
                 sourceView: button,
@@ -55,25 +59,18 @@ extension DataSourceFacade {
     }
     
     private static func createActivityViewController(
-        dependency: NeedsDependency,
-        status: ManagedObjectRecord<Status>
+        dependency: UIViewController,
+        status: MastodonStatus
     ) async throws -> UIActivityViewController {
-        var activityItems: [Any] = try await dependency.context.managedObjectContext.perform {
-            guard let status = status.object(in: dependency.context.managedObjectContext),
-                  let url = URL(string: status.url ?? status.uri)
-            else { return [] }
+        var activityItems: [Any] = {
+            guard let url = URL(string: status.entity.url ?? status.entity.uri) else { return [] }
             return [
-                URLActivityItemWithMetadata(url: url) { metadata in
-                    metadata.title = "\(status.author.displayName) (@\(status.author.acctWithDomain))"
-                    metadata.iconProvider = ImageProvider(
-                        url: status.author.avatarImageURLWithFallback(domain: status.author.domain),
-                        filter: ScaledToSizeFilter(size: CGSize.authorAvatarButtonSize)
-                    ).itemProvider
-                }
-            ] as [Any]
-        }
-        var applicationActivities: [UIActivity] = [
-            SafariActivity(sceneCoordinator: dependency.coordinator),     // open URL
+                URLActivityItem(url: url)
+            ]
+        }()
+
+        var applicationActivities: [UIActivity] = await [
+            SafariActivity(sceneCoordinator: dependency.sceneCoordinator),     // open URL
         ]
         
         if let provider = dependency as? ShareActivityProvider {
@@ -94,32 +91,24 @@ extension DataSourceFacade {
     @MainActor
     static func responseToActionToolbar(
         provider: DataSourceProvider & AuthContextProvider,
-        status: ManagedObjectRecord<Status>,
+        status: MastodonStatus,
         action: ActionToolbarContainer.Action,
         sender: UIButton
     ) async throws {
-        let managedObjectContext = provider.context.managedObjectContext
-        let _status: ManagedObjectRecord<Status>? = try? await managedObjectContext.perform {
-            guard let object = status.object(in: managedObjectContext) else { return nil }
-            let objectID = (object.reblog ?? object).objectID
-            return .init(objectID: objectID)
-        }
-        guard let status = _status else {
-            assertionFailure()
-            return
-        }
+        let _status = status.reblog ?? status
+        
+        guard let coordinator = provider.sceneCoordinator else { return }
 
         switch action {
         case .reply:
-            let selectionFeedbackGenerator = UISelectionFeedbackGenerator()
-            selectionFeedbackGenerator.selectionChanged()
-            
+            FeedbackGenerator.shared.generate(.selectionChanged)
+
             let composeViewModel = ComposeViewModel(
-                context: provider.context,
-                authContext: provider.authContext,
-                destination: .reply(parent: status)
+                authenticationBox: provider.authenticationBox,
+                composeContext: .composeStatus,
+                destination: .reply(parent: _status)
             )
-            _ = provider.coordinator.present(
+            _ = coordinator.present(
                 scene: .compose(viewModel: composeViewModel),
                 from: provider,
                 transition: .modal(animated: true, completion: nil)
@@ -127,22 +116,17 @@ extension DataSourceFacade {
         case .reblog:
             try await DataSourceFacade.responseToStatusReblogAction(
                 provider: provider,
-                status: status
+                status: _status
             )
         case .like:
             try await DataSourceFacade.responseToStatusFavoriteAction(
                 provider: provider,
-                status: status
-            )
-        case .bookmark:
-            try await DataSourceFacade.responseToStatusBookmarkAction(
-                provider: provider,
-                status: status
+                status: _status
             )
         case .share:
             try await DataSourceFacade.responseToStatusShareAction(
                 provider: provider,
-                status: status,
+                status: _status,
                 button: sender
             )
         }   // end switch
@@ -154,17 +138,18 @@ extension DataSourceFacade {
 extension DataSourceFacade {
     
     struct MenuContext {
-        let author: ManagedObjectRecord<MastodonUser>?
-        let status: ManagedObjectRecord<Status>?
+        let author: Mastodon.Entity.Account
+        let statusViewModel: StatusView.ViewModel?
         let button: UIButton?
         let barButtonItem: UIBarButtonItem?
     }
     
     @MainActor
-    static func responseToMenuAction(
-        dependency: UIViewController & NeedsDependency & AuthContextProvider,
+    static func responseToMenuAction<T>(
+        dependency: AuthContextProvider & DataSourceProvider,
         action: MastodonMenu.Action,
-        menuContext: MenuContext
+        menuContext: MenuContext,
+        completion: ((T) -> Void)? = { (param: Void) in }
     ) async throws {
         switch action {
             case .hideReblogs(let actionContext):
@@ -185,17 +170,9 @@ extension DataSourceFacade {
                     guard let dependency else { return }
 
                     Task {
-                        let managedObjectContext = dependency.context.managedObjectContext
-                        let _user: ManagedObjectRecord<MastodonUser>? = try? await managedObjectContext.perform {
-                            guard let user = menuContext.author?.object(in: managedObjectContext) else { return nil }
-                            return ManagedObjectRecord<MastodonUser>(objectID: user.objectID)
-                        }
-
-                        guard let user = _user else { return }
-
                         try await DataSourceFacade.responseToShowHideReblogAction(
                             dependency: dependency,
-                            user: user
+                            account: menuContext.author
                         )
                     }
                 }
@@ -216,19 +193,17 @@ extension DataSourceFacade {
                 title: actionContext.isMuting ? L10n.Common.Controls.Friendship.unmute : L10n.Common.Controls.Friendship.mute,
                 style: .destructive
             ) { [weak dependency] _ in
-                guard let dependency = dependency else { return }
+                guard let dependency else { return }
                 Task {
-                    let managedObjectContext = dependency.context.managedObjectContext
-                    let _user: ManagedObjectRecord<MastodonUser>? = try? await managedObjectContext.perform {
-                        guard let user = menuContext.author?.object(in: managedObjectContext) else { return nil }
-                        return ManagedObjectRecord<MastodonUser>(objectID: user.objectID)
-                    }
-                    guard let user = _user else { return }
-                    try await DataSourceFacade.responseToUserMuteAction(
+                    let newRelationship = try await DataSourceFacade.responseToUserMuteAction(
                         dependency: dependency,
-                        user: user
+                        account: menuContext.author
                     )
-                }   // end Task
+
+                    if let completion, let relationship = newRelationship as? T {
+                        completion(relationship)
+                    }
+                }
             }
             alertController.addAction(confirmAction)
             let cancelAction = UIAlertAction(title: L10n.Common.Controls.Actions.cancel, style: .cancel)
@@ -244,53 +219,48 @@ extension DataSourceFacade {
                 title: actionContext.isBlocking ? L10n.Common.Controls.Friendship.unblock : L10n.Common.Controls.Friendship.block,
                 style: .destructive
             ) { [weak dependency] _ in
-                guard let dependency = dependency else { return }
+                guard let dependency else { return }
                 Task {
-                    let managedObjectContext = dependency.context.managedObjectContext
-                    let _user: ManagedObjectRecord<MastodonUser>? = try? await managedObjectContext.perform {
-                        guard let user = menuContext.author?.object(in: managedObjectContext) else { return nil }
-                        return ManagedObjectRecord<MastodonUser>(objectID: user.objectID)
-                    }
-                    guard let user = _user else { return }
-                    try await DataSourceFacade.responseToUserBlockAction(
+                    let newRelationship = try await DataSourceFacade.responseToUserBlockAction(
                         dependency: dependency,
-                        user: user
+                        account: menuContext.author
                     )
-                }   // end Task
+
+                    if let completion, let relationship = newRelationship as? T {
+                        completion(relationship)
+                    }
+                }
             }
             alertController.addAction(confirmAction)
             let cancelAction = UIAlertAction(title: L10n.Common.Controls.Actions.cancel, style: .cancel)
             alertController.addAction(cancelAction)
             dependency.present(alertController, animated: true)
         case .reportUser:
-            Task {
-                guard let user = menuContext.author else { return }
-                
-                let reportViewModel = ReportViewModel(
-                    context: dependency.context,
-                    authContext: dependency.authContext,
-                    user: user,
-                    status: menuContext.status
-                )
-                
-                _ = dependency.coordinator.present(
-                    scene: .report(viewModel: reportViewModel),
-                    from: dependency,
-                    transition: .modal(animated: true, completion: nil)
-                )
-            }   // end Task
-                
-        case .shareUser:
-            guard let user = menuContext.author else {
-                assertionFailure()
-                return
-            }
-            let _activityViewController = try await DataSourceFacade.createActivityViewController(
-                dependency: dependency,
-                user: user
+            guard let relationship = try? await APIService.shared.relationship(forAccounts: [menuContext.author], authenticationBox: dependency.authenticationBox).value.first else { return }
+
+            let reportViewModel = ReportViewModel(
+                context: AppContext.shared,
+                authenticationBox: dependency.authenticationBox,
+                account: menuContext.author,
+                relationship: relationship,
+                status: menuContext.statusViewModel?._originalStatus,
+                contentDisplayMode: .neverConceal
             )
-            guard let activityViewController = _activityViewController else { return }
-            _ = dependency.coordinator.present(
+
+            guard let coordinator = dependency.sceneCoordinator else { return }
+            _ = coordinator.present(
+                scene: .report(viewModel: reportViewModel),
+                from: dependency,
+                transition: .modal(animated: true, completion: nil)
+            )
+        case .shareUser:
+            let activityViewController = DataSourceFacade.createActivityViewController(
+                dependency: dependency,
+                account: menuContext.author
+            )
+
+            guard let coordinator = dependency.sceneCoordinator else { return }
+            _ = coordinator.present(
                 scene: .activityViewController(
                     activityViewController: activityViewController,
                     sourceView: menuContext.button,
@@ -300,8 +270,7 @@ extension DataSourceFacade {
                 transition: .activityViewControllerPresent(animated: true, completion: nil)
             )
         case .bookmarkStatus:
-            Task {
-                guard let status = menuContext.status else {
+                guard let status = menuContext.statusViewModel?._originalStatus else {
                     assertionFailure()
                     return
                 }
@@ -309,86 +278,180 @@ extension DataSourceFacade {
                     provider: dependency,
                     status: status
                 )
-            }   // end Task
         case .shareStatus:
-            Task {
-                let managedObjectContext = dependency.context.managedObjectContext
-                guard let status: ManagedObjectRecord<Status> = try? await managedObjectContext.perform(block: {
-                    guard let object = menuContext.status?.object(in: managedObjectContext) else { return nil }
-                    let objectID = (object.reblog ?? object).objectID
-                    return .init(objectID: objectID)
-                }) else {
-                    assertionFailure()
-                    return
-                }
+            guard let status: MastodonStatus = menuContext.statusViewModel?._originalStatus?.reblog ?? menuContext.statusViewModel?._originalStatus else {
+                assertionFailure()
+                return
+            }
 
-                let activityViewController = try await DataSourceFacade.createActivityViewController(
-                    dependency: dependency,
-                    status: status
-                )
-                
-                _ = dependency.coordinator.present(
-                    scene: .activityViewController(
-                        activityViewController: activityViewController,
-                        sourceView: menuContext.button,
-                        barButtonItem: menuContext.barButtonItem
-                    ),
-                    from: dependency,
-                    transition: .activityViewControllerPresent(animated: true, completion: nil)
-                )
-            }   // end Task
+            let activityViewController = try await DataSourceFacade.createActivityViewController(
+                dependency: dependency,
+                status: status
+            )
+            guard let coordinator = dependency.sceneCoordinator else { return }
+            _ = coordinator.present(
+                scene: .activityViewController(
+                    activityViewController: activityViewController,
+                    sourceView: menuContext.button,
+                    barButtonItem: menuContext.barButtonItem
+                ),
+                from: dependency,
+                transition: .activityViewControllerPresent(animated: true, completion: nil)
+            )
         case .deleteStatus:
+            if UserDefaults.shared.askBeforeDeletingAPost {
+                let alertController = UIAlertController(
+                    title: L10n.Common.Alerts.DeletePost.title,
+                    message: L10n.Common.Alerts.DeletePost.message,
+                    preferredStyle: .alert
+                )
+                let confirmAction = UIAlertAction(
+                    title: L10n.Common.Controls.Actions.delete,
+                    style: .destructive
+                ) { [weak dependency] _ in
+                    guard let dependency else { return }
+                    guard let status = menuContext.statusViewModel?._originalStatus else { return }
+                    performDeletion(of: status, with: dependency)
+                }
+                alertController.addAction(confirmAction)
+                let cancelAction = UIAlertAction(title: L10n.Common.Controls.Actions.cancel, style: .cancel)
+                alertController.addAction(cancelAction)
+                dependency.present(alertController, animated: true)
+            } else {
+                guard let status = menuContext.statusViewModel?._originalStatus else { return }
+                performDeletion(of: status, with: dependency)
+            }
+        case .translateStatus:
+            guard let status = menuContext.statusViewModel?._originalStatus?.reblog ?? menuContext.statusViewModel?._originalStatus else { return }
+
+            do {
+                let translation = try await DataSourceFacade.translateStatus(provider: dependency, status: status)
+
+                menuContext.statusViewModel?.translation = translation
+            } catch TranslationFailure.emptyOrInvalidResponse {
+                menuContext.statusViewModel?.isCurrentlyTranslating = false
+                let alertController = UIAlertController(title: L10n.Common.Alerts.TranslationFailed.title, message: L10n.Common.Alerts.TranslationFailed.message, preferredStyle: .alert)
+                alertController.addAction(UIAlertAction(title: L10n.Common.Alerts.TranslationFailed.button, style: .default))
+                dependency.present(alertController, animated: true)
+            }
+        case .editStatus:
+
+            guard let status = menuContext.statusViewModel?._originalStatus else { return }
+
+            let statusSource = try await APIService.shared.getStatusSource(
+                forStatusID: status.id,
+                authenticationBox: dependency.authenticationBox
+            ).value
+
+            let editStatusViewModel = ComposeViewModel(
+                authenticationBox: dependency.authenticationBox,
+                composeContext: .editStatus(status: status, statusSource: statusSource),
+                destination: .topLevel)
+            guard let coordinator = dependency.sceneCoordinator else { return }
+            _ = coordinator.present(scene: .editStatus(viewModel: editStatusViewModel), transition: .modal(animated: true))
+
+        case .showOriginal:
+            // do nothing, as the translation is reverted in `StatusTableViewCellDelegate` in `DataSourceProvider+StatusTableViewCellDelegate.swift`.
+            break
+        case .followUser(_):
+            _ = try await DataSourceFacade.responseToUserFollowAction(dependency: dependency,
+                                                                  account: menuContext.author)
+        case .blockDomain(let context):
+            let title: String
+            let message: String
+            let actionTitle: String
+
+            if context.isBlocking {
+                title = L10n.Scene.Profile.RelationshipActionAlert.ConfirmUnblockDomain.title
+                message = L10n.Scene.Profile.RelationshipActionAlert.ConfirmUnblockDomain.message(context.domain)
+                actionTitle = L10n.Common.Controls.Actions.unblockDomain(context.domain)
+            } else {
+                title = L10n.Scene.Profile.RelationshipActionAlert.ConfirmBlockDomain.title
+                message = L10n.Common.Alerts.BlockDomain.title(context.domain)
+                actionTitle = L10n.Common.Alerts.BlockDomain.blockEntireDomain
+            }
+
             let alertController = UIAlertController(
-                title: L10n.Common.Alerts.DeletePost.title,
-                message: L10n.Common.Alerts.DeletePost.message,
+                title: title,
+                message: message,
                 preferredStyle: .alert
             )
-            let confirmAction = UIAlertAction(
-                title: L10n.Common.Controls.Actions.delete,
-                style: .destructive
-            ) { [weak dependency] _ in
-                guard let dependency = dependency else { return }
-                guard let status = menuContext.status else { return }
+
+            let confirmAction = UIAlertAction(title: actionTitle, style: .destructive ) { [weak dependency] _ in
+                guard let dependency else { return }
                 Task {
-                    try await DataSourceFacade.responseToDeleteStatus(
+                    try await DataSourceFacade.responseToDomainBlockAction(
                         dependency: dependency,
-                        status: status
+                        account: menuContext.author
                     )
-                }   // end Task
+                }
             }
             alertController.addAction(confirmAction)
             let cancelAction = UIAlertAction(title: L10n.Common.Controls.Actions.cancel, style: .cancel)
             alertController.addAction(cancelAction)
             dependency.present(alertController, animated: true)
-            
-        case .translateStatus:
-            guard let status = menuContext.status else { return }
-            do {
-                try await DataSourceFacade.translateStatus(
-                    provider: dependency,
-                    status: status
-                )
-            } catch TranslationFailure.emptyOrInvalidResponse {
-                let alertController = UIAlertController(title: L10n.Common.Alerts.TranslationFailed.title, message: L10n.Common.Alerts.TranslationFailed.message, preferredStyle: .alert)
-                alertController.addAction(UIAlertAction(title: L10n.Common.Alerts.TranslationFailed.button, style: .default))
-                dependency.present(alertController, animated: true)
+        case .boostStatus(_):
+            guard let status: MastodonStatus = menuContext.statusViewModel?._originalStatus?.reblog ?? menuContext.statusViewModel?._originalStatus else {
+                assertionFailure()
+                return
             }
+
+            try await responseToStatusReblogAction(provider: dependency, status: status)
+        case .favoriteStatus(_):
+            guard let status: MastodonStatus = menuContext.statusViewModel?._originalStatus?.reblog ?? menuContext.statusViewModel?._originalStatus else {
+                assertionFailure()
+                return
+            }
+
+            try await responseToStatusFavoriteAction(provider: dependency, status: status)
+        case .copyStatusLink:
+            guard let status: MastodonStatus = menuContext.statusViewModel?._originalStatus?.reblog ?? menuContext.statusViewModel?._originalStatus else {
+                assertionFailure()
+                return
+            }
+
+            UIPasteboard.general.string = status.entity.url
+        case .openStatusInBrowser:
+            guard
+                let status: MastodonStatus = menuContext.statusViewModel?._originalStatus?.reblog ?? menuContext.statusViewModel?._originalStatus,
+                let urlString = status.entity.url,
+                let url = URL(string: urlString)
+            else {
+                assertionFailure()
+                return
+            }
+            guard let coordinator = dependency.sceneCoordinator else { return }
+            coordinator.present(scene: .safari(url: url), transition: .safariPresent(animated: true))
+        case .copyProfileLink(let url):
+            UIPasteboard.general.string = url?.absoluteString
+        case .openUserInBrowser(let url):
+            guard let url, let coordinator = dependency.sceneCoordinator else { return }
+            coordinator.present(scene: .safari(url: url), transition: .safariPresent(animated: true))
         }
-    }   // end func
+    }
 }
 
 extension DataSourceFacade {
-    
+    @MainActor
     static func responseToToggleSensitiveAction(
-        dependency: NeedsDependency,
-        status: ManagedObjectRecord<Status>
+        dependency: DataSourceProvider,
+        status: MastodonStatus
     ) async throws {
-        try await dependency.context.managedObjectContext.perform {
-            guard let _status = status.object(in: dependency.context.managedObjectContext) else { return }
-            let status = _status.reblog ?? _status
-            status.update(isSensitiveToggled: !status.isSensitiveToggled)
-        }
+        let _status = status.reblog ?? status
+        let model = StatusView.ContentConcealViewModel(status: _status, filterBox: StatusFilterService.shared.activeFilterBox, filterContext: .home)
+        model.toggleConcealed(for: _status)
+        dependency.didToggleContentWarningDisplayStatus(status: _status)
     }
     
 }
 
+private extension DataSourceFacade {
+    static func performDeletion(of status: MastodonStatus, with dependency: AuthContextProvider & DataSourceProvider) {
+        Task {
+            try await DataSourceFacade.responseToDeleteStatus(
+                dependency: dependency,
+                status: status
+            )
+        }
+    }
+}

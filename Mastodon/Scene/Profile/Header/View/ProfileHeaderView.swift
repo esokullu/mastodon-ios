@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-3-29.
 //
 
-import os.log
 import UIKit
 import Combine
 import FLAnimatedImage
@@ -14,6 +13,7 @@ import MastodonAsset
 import MastodonCore
 import MastodonLocalization
 import MastodonUI
+import MastodonSDK
 
 protocol ProfileHeaderViewDelegate: AnyObject {
     func profileHeaderView(_ profileHeaderView: ProfileHeaderView, avatarButtonDidPressed button: AvatarButton)
@@ -32,8 +32,8 @@ final class ProfileHeaderView: UIView {
     static let friendshipActionButtonSize = CGSize(width: 108, height: 34)
     static let bannerImageViewPlaceholderColor = UIColor.systemGray
     
-    static let bannerImageViewOverlayViewBackgroundNormalColor = UIColor.black.withAlphaComponent(0.5)
-    static let bannerImageViewOverlayViewBackgroundEditingColor = UIColor.black.withAlphaComponent(0.8)
+    static let bannerImageViewOverlayViewBackgroundNormalColor = UIColor.black.withAlphaComponent(0.1)
+    static let bannerImageViewOverlayViewBackgroundEditingColor = UIColor.black.withAlphaComponent(0.2)
     
     weak var delegate: ProfileHeaderViewDelegate?
     var disposeBag = Set<AnyCancellable>()
@@ -43,12 +43,8 @@ final class ProfileHeaderView: UIView {
         disposeBag.removeAll()
     }
     
-    private(set) lazy var viewModel: ViewModel = {
-        let viewModel = ViewModel()
-        viewModel.bind(view: self)
-        return viewModel
-    }()
-        
+    private(set) var viewModel: ViewModel
+
     let bannerImageViewSingleTapGestureRecognizer = UITapGestureRecognizer.singleTapGestureRecognizer
     let bannerContainerView = UIView()
     let bannerImageView: UIImageView = {
@@ -103,7 +99,7 @@ final class ProfileHeaderView: UIView {
     func setupImageOverlayViews() {
         editBannerButton.tintColor = .white
 
-        editAvatarBackgroundView.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        editAvatarBackgroundView.backgroundColor = UIColor.black.withAlphaComponent(0.2)
         editAvatarButtonOverlayIndicatorView.tintColor = .white
     }
 
@@ -198,7 +194,6 @@ final class ProfileHeaderView: UIView {
     
     let statusDashboardView = ProfileStatusDashboardView()
     
-    let relationshipActionButtonShadowContainer = ShadowBackgroundContainer()
     let relationshipActionButton: ProfileRelationshipActionButton = {
         let button = ProfileRelationshipActionButton()
         button.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
@@ -234,34 +229,20 @@ final class ProfileHeaderView: UIView {
         ]
         metaText.linkAttributes = [
             .font: UIFont.preferredFont(forTextStyle: .body),
-            .foregroundColor: Asset.Colors.brand.color,
+            .foregroundColor: Asset.Colors.Brand.blurple.color,
         ]
         return metaText
     }()
     
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        _init()
-    }
-    
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        _init()
-    }
-    
-}
+    init(account: Mastodon.Entity.Account, me: Mastodon.Entity.Account, relationship: Mastodon.Entity.Relationship?) {
 
-extension ProfileHeaderView {
-    private func _init() {
-        let currentTheme = ThemeService.shared.currentTheme
-        setColors(from: currentTheme.value)
-        
-        currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                self?.setColors(from: theme)
-            }
-            .store(in: &_disposeBag)
+        viewModel = ViewModel(account: account, me: me, relationship: relationship)
+
+        super.init(frame: .zero)
+
+        viewModel.bind(view: self)
+
+        setColors()
         
         // banner
         bannerContainerView.translatesAutoresizingMaskIntoConstraints = false
@@ -387,7 +368,7 @@ extension ProfileHeaderView {
             avatarImageViewBackgroundView.bottomAnchor.constraint(equalTo: dashboardContainer.bottomAnchor),
         ])
         
-        // authorContainer: H - [ nameContainer | padding | relationshipActionButtonShadowContainer ]
+        // authorContainer: H - [ nameContainer | padding | relationshipActionButton ]
         let authorContainer = UIStackView()
         authorContainer.axis = .horizontal
         authorContainer.alignment = .top
@@ -427,7 +408,6 @@ extension ProfileHeaderView {
             nameTextFieldBackgroundView.trailingAnchor.constraint(equalTo: nameMetaText.textView.trailingAnchor, constant: 5),
             nameMetaText.textView.bottomAnchor.constraint(equalTo: nameTextFieldBackgroundView.bottomAnchor),
         ])
-        // nameMetaText.textView.setContentHuggingPriority(, for: <#T##NSLayoutConstraint.Axis#>)
         
         nameContainerStackView.addArrangedSubview(displayNameStackView)
         nameContainerStackView.addArrangedSubview(usernameButton)
@@ -438,11 +418,9 @@ extension ProfileHeaderView {
         
         authorContainer.addArrangedSubview(nameContainerStackView)
         authorContainer.addArrangedSubview(UIView())
-        authorContainer.addArrangedSubview(relationshipActionButtonShadowContainer)
-        
+        authorContainer.addArrangedSubview(relationshipActionButton)
+
         relationshipActionButton.translatesAutoresizingMaskIntoConstraints = false
-        relationshipActionButtonShadowContainer.addSubview(relationshipActionButton)
-        relationshipActionButton.pinToParent()
         NSLayoutConstraint.activate([
             relationshipActionButton.widthAnchor.constraint(greaterThanOrEqualToConstant: ProfileHeaderView.friendshipActionButtonSize.width).priority(.required - 1),
             relationshipActionButton.heightAnchor.constraint(equalToConstant: ProfileHeaderView.friendshipActionButtonSize.height).priority(.defaultHigh),
@@ -469,11 +447,13 @@ extension ProfileHeaderView {
         
         updateLayoutMargins()
     }
+    
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    private func setColors(from theme: Theme) {
-        backgroundColor = theme.systemBackgroundColor
-        avatarButton.backgroundColor = theme.secondarySystemBackgroundColor
-        avatarImageViewBackgroundView.layer.borderColor = theme.systemBackgroundColor.cgColor
+    private func setColors() {
+        backgroundColor = .systemBackground
+        avatarButton.backgroundColor = .secondarySystemBackground
+        avatarImageViewBackgroundView.layer.borderColor = UIColor.systemBackground.cgColor
     }
     
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -495,11 +475,9 @@ extension ProfileHeaderView {
         let margin: CGFloat = {
             switch traitCollection.userInterfaceIdiom {
             case .phone:
-                return ProfileViewController.containerViewMarginForCompactHorizontalSizeClass
+                return ProfileViewController.containerViewMargin(forHorizontalSizeClass: .compact)
             default:
-                return traitCollection.horizontalSizeClass == .regular ?
-                    ProfileViewController.containerViewMarginForRegularHorizontalSizeClass :
-                    ProfileViewController.containerViewMarginForCompactHorizontalSizeClass
+                return ProfileViewController.containerViewMargin(forHorizontalSizeClass: traitCollection.horizontalSizeClass)
             }
         }()
         
@@ -511,19 +489,16 @@ extension ProfileHeaderView {
 
 extension ProfileHeaderView {
     @objc private func relationshipActionButtonDidPressed(_ sender: UIButton) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         assert(sender === relationshipActionButton)
         delegate?.profileHeaderView(self, relationshipButtonDidPressed: relationshipActionButton)
     }
     
     @objc private func avatarButtonDidPressed(_ sender: UIButton) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         assert(sender === avatarButton)
         delegate?.profileHeaderView(self, avatarButtonDidPressed: avatarButton)
     }
     
     @objc private func bannerImageViewDidPressed(_ sender: UITapGestureRecognizer) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         delegate?.profileHeaderView(self, bannerImageViewDidPressed: bannerImageView)
     }
 }
@@ -544,7 +519,6 @@ extension ProfileHeaderView: UITextViewDelegate {
 // MARK: - MetaTextViewDelegate
 extension ProfileHeaderView: MetaTextViewDelegate {
     func metaTextView(_ metaTextView: MetaTextView, didSelectMeta meta: Meta) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: select entity", ((#file as NSString).lastPathComponent), #line, #function)
         delegate?.profileHeaderView(self, metaTextView: metaTextView, metaDidPressed: meta)
     }
 }
@@ -555,27 +529,3 @@ extension ProfileHeaderView: ProfileStatusDashboardViewDelegate {
         delegate?.profileHeaderView(self, profileStatusDashboardView: dashboardView, dashboardMeterViewDidPressed: dashboardMeterView, meter: meter)
     }
 }
-
-#if DEBUG
-import SwiftUI
-
-struct ProfileHeaderView_Previews: PreviewProvider {
-    static var previews: some View {
-        Group {
-            UIViewPreview(width: 375) {
-                let banner = ProfileHeaderView()
-                banner.bannerImageView.image = UIImage(named: "lucas-ludwig")
-                return banner
-            }
-            .previewLayout(.fixed(width: 375, height: 800))
-            UIViewPreview(width: 375) {
-                let banner = ProfileHeaderView()
-                //banner.bannerImageView.image = UIImage(named: "peter-luo")
-                return banner
-            }
-            .preferredColorScheme(.dark)
-            .previewLayout(.fixed(width: 375, height: 800))
-        }
-    }
-}
-#endif

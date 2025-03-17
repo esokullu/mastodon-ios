@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021/1/22.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreDataStack
@@ -14,11 +13,20 @@ import MastodonExtension
 import MastodonUI
 import MastodonSDK
 
-#if PROFILE
-import FPSIndicator
-#endif
-
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+    
+    static private var delegates = [ ObjectIdentifier : SceneDelegate ]()
+    
+    static func assign(delegate: SceneDelegate, to windowScene: UIWindowScene) {
+        delegates[ObjectIdentifier(windowScene)] = delegate
+    }
+    
+    static func delegate(for view: UIView) -> SceneDelegate? {
+        guard let windowScene = view.window?.windowScene else {
+            return nil
+        }
+        return delegates[ObjectIdentifier(windowScene)]
+    }
 
     var disposeBag = Set<AnyCancellable>()
     var observations = Set<NSKeyValueObservation>()
@@ -26,16 +34,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     var coordinator: SceneCoordinator?
 
-    #if PROFILE
-    var fpsIndicator: FPSIndicator?
-    #endif
-
     var savedShortCutItem: UIApplicationShortcutItem?
-
-    let logger = Logger(subsystem: "SceneDelegate", category: "logic")
+    
+    let feedbackGenerator = FeedbackGenerator.shared
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = scene as? UIWindowScene else { return }
+        
+        feedbackGenerator.isEnabled = false // Disable Haptic Feedback for now
         
         #if DEBUG
         let window = TouchesVisibleWindow(windowScene: windowScene)
@@ -48,28 +54,22 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // set tint color
         window.tintColor = UIColor.label
 
-        ThemeService.shared.currentTheme
-            .receive(on: RunLoop.main)
-            .dropFirst()
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                guard let window = self.window else { return }
-                window.subviews.forEach { view in
-                    view.removeFromSuperview()
-                    window.addSubview(view)
-                }
-            }
-            .store(in: &disposeBag)
-        
         let appContext = AppContext.shared
         let sceneCoordinator = SceneCoordinator(scene: scene, sceneDelegate: self, appContext: appContext)
         self.coordinator = sceneCoordinator
         
         sceneCoordinator.setup()
+        
+        SceneDelegate.assign(delegate: self, to: windowScene)
+        
         window.makeKeyAndVisible()
         
         if let urlContext = connectionOptions.urlContexts.first {
             handleUrl(context: urlContext)
+        }
+
+        if let userActivity = connectionOptions.userActivities.first {
+            handleUniversalLink(userActivity: userActivity)
         }
         
         #if SNAPSHOT
@@ -98,17 +98,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             #endif
         }
         .store(in: &observations)
-
-        #if PROFILE
-        fpsIndicator = FPSIndicator(windowScene: windowScene)
-        #endif
-    }
-
-    func sceneDidDisconnect(_ scene: UIScene) {
-        // Called as the scene is being released by the system.
-        // This occurs shortly after the scene enters the background, or when its session is discarded.
-        // Release any resources associated with this scene that can be re-created the next time the scene connects.
-        // The scene may re-connect later, as its session was not necessarily discarded (see `application:didDiscardSceneSessions` instead).
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
@@ -116,16 +105,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
 
         // update application badge
-        AppContext.shared.notificationService.applicationIconBadgeNeedsUpdate.send()
+        NotificationService.shared.applicationIconBadgeNeedsUpdate.send()
 
         // trigger status filter update
-        AppContext.shared.statusFilterService.filterUpdatePublisher.send()
+        StatusFilterService.shared.filterUpdatePublisher.send()
         
         // trigger authenticated user account update
-        AppContext.shared.authenticationService.updateActiveUserAccountPublisher.send()
-        
-        // update mutes and blocks and remove related data
-        AppContext.shared.instanceService.updateMutesAndBlocks()
+        AuthenticationServiceProvider.shared.updateActiveUserAccountPublisher.send()
 
         if let shortcutItem = savedShortCutItem {
             Task {
@@ -135,22 +121,81 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
     }
 
-    func sceneWillResignActive(_ scene: UIScene) {
-        // Called when the scene will move from an active state to an inactive state.
-        // This may occur due to temporary interruptions (ex. an incoming phone call).
+    func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+        handleUniversalLink(userActivity: userActivity)
     }
 
-    func sceneWillEnterForeground(_ scene: UIScene) {
-        // Called as the scene transitions from the background to the foreground.
-        // Use this method to undo the changes made on entering the background.
+    private func handleUniversalLink(userActivity: NSUserActivity) {
+        guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+              let incomingURL = userActivity.webpageURL else { return }
+        openUniversalLink(incomingURL)
     }
+    
+    private func openUniversalLink(_ incomingURL: URL) {
+        guard let components = NSURLComponents(url: incomingURL, resolvingAgainstBaseURL: true) else {
+            return
+        }
 
-    func sceneDidEnterBackground(_ scene: UIScene) {
-        // Called as the scene transitions from the foreground to the background.
-        // Use this method to save data, release shared resources, and store enough scene-specific state information
-        // to restore the scene back to its current state.
+        guard let path = components.path, let authenticationBox = coordinator?.authenticationBox else {
+            return
+        }
+
+        let pathElements = path.split(separator: "/")
+
+        let profile: String?
+        if let profileInPath = pathElements[safe: 0] {
+            profile = String(profileInPath)
+        } else {
+            profile = nil
+        }
+
+        let statusID: String?
+        if let statusIDInPath = pathElements[safe: 1] {
+            statusID = String(statusIDInPath)
+        } else {
+            statusID = nil
+        }
+
+        switch (profile, statusID) {
+            case (profile, nil):
+                Task {
+                    guard let me = authenticationBox.cachedAccount else { return }
+
+                    guard let account = try await APIService.shared.search(
+                        query: .init(q: incomingURL.absoluteString, type: .accounts, resolve: true),
+                        authenticationBox: authenticationBox
+                    ).value.accounts.first else { return }
+
+                    guard let relationship = try await APIService.shared.relationship(
+                        forAccounts: [account],
+                        authenticationBox: authenticationBox
+                    ).value.first else { return }
+
+                    let profileType: ProfileViewController.ProfileType = me == account ? .me(me) : .notMe(me: me, displayAccount: account, relationship: relationship)
+                    _ = self.coordinator?.present(
+                        scene: .profile(profileType),
+                        from: nil,
+                        transition: .show
+                    )
+                }
+
+            case (profile, statusID):
+                Task {
+                    guard let statusOnMyInstance = try await APIService.shared.search(query: .init(q: incomingURL.absoluteString, resolve: true), authenticationBox: authenticationBox).value.statuses.first else { return }
+
+                    let threadViewModel = RemoteThreadViewModel(
+                        authenticationBox: authenticationBox,
+                        statusID: statusOnMyInstance.id
+                    )
+                    coordinator?.present(scene: .thread(viewModel: threadViewModel), from: nil, transition: .show)
+                }
+
+            case (_, _):
+                break
+                // do nothing
+        }
+
     }
-
 }
 
 extension SceneDelegate {
@@ -161,7 +206,6 @@ extension SceneDelegate {
 
     @MainActor
     private func handler(shortcutItem: UIApplicationShortcutItem) async -> Bool {
-        logger.debug("\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): \(shortcutItem.type)")
 
         switch shortcutItem.type {
         case NotificationService.unreadShortcutItemIdentifier:
@@ -171,18 +215,14 @@ extension SceneDelegate {
                 assertionFailure()
                 return false
             }
-            let request = MastodonAuthentication.sortedFetchRequest
-            request.predicate = MastodonAuthentication.predicate(userAccessToken: accessToken)
-            request.fetchLimit = 1
-
-            guard let authentication = try? coordinator.appContext.managedObjectContext.fetch(request).first else {
+            
+            guard let authentication = AuthenticationServiceProvider.shared.getAuthentication(matching: accessToken) else {
                 assertionFailure()
                 return false
             }
 
-            let _isActive = try? await coordinator.appContext.authenticationService.activeMastodonUser(
-                domain: authentication.domain,
-                userID: authentication.userID
+            let _isActive = AuthenticationServiceProvider.shared.activateExistingUser(authentication.userID,
+                inDomain: authentication.domain
             )
             
             guard _isActive == true else {
@@ -196,11 +236,9 @@ extension SceneDelegate {
 
         case "org.joinmastodon.app.search":
             coordinator?.switchToTabBar(tab: .search)
-            logger.debug("\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): select search tab")
 
             if let searchViewController = coordinator?.tabBarController.topMost as? SearchViewController {
                 searchViewController.searchBarTapPublisher.send("")
-                logger.debug("\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): trigger search")
             }
 
         default:
@@ -220,18 +258,14 @@ extension SceneDelegate {
     
     private func showComposeViewController() {
         if coordinator?.tabBarController.topMost is ComposeViewController {
-            logger.debug("\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): composing…")
         } else {
-            if let authContext = coordinator?.authContext {
+            if let authenticationBox = coordinator?.authenticationBox {
                 let composeViewModel = ComposeViewModel(
-                    context: AppContext.shared,
-                    authContext: authContext,
+                    authenticationBox: authenticationBox,
+                    composeContext: .composeStatus,
                     destination: .topLevel
                 )
                 _ = coordinator?.present(scene: .compose(viewModel: composeViewModel), from: nil, transition: .modal(animated: true, completion: nil))
-                logger.debug("\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): present compose scene")
-            } else {
-                logger.debug("\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): not authenticated")
             }
         }
     }
@@ -242,10 +276,10 @@ extension SceneDelegate {
 
         if !UIApplication.shared.canOpenURL(url) { return }
 
-        #if DEBUG
+#if DEBUG
         print("source application = \(sendingAppID ?? "Unknown")")
         print("url = \(url)")
-        #endif
+#endif
         
         switch url.host {
         case "post":
@@ -255,45 +289,68 @@ extension SceneDelegate {
             guard
                 components.count == 2,
                 components[0] == "/",
-                let authContext = coordinator?.authContext
+                let authenticationBox = coordinator?.authenticationBox
             else { return }
             
-            let profileViewModel = RemoteProfileViewModel(
-                context: AppContext.shared,
-                authContext: authContext,
-                acct: components[1]
-            )
-            self.coordinator?.present(
-                scene: .profile(viewModel: profileViewModel),
-                from: nil,
-                transition: .show
-            )
+            Task {
+                do {
+                    guard let me = authenticationBox.cachedAccount else { return }
+                    
+                    guard let account = try await APIService.shared.search(
+                        query: .init(q: components[1], type: .accounts, resolve: true),
+                        authenticationBox: authenticationBox
+                    ).value.accounts.first else { return }
+                    
+                    guard let relationship = try await APIService.shared.relationship(
+                        forAccounts: [account],
+                        authenticationBox: authenticationBox
+                    ).value.first else { return }
+                    
+                    let profileType: ProfileViewController.ProfileType = me == account ? .me(me) : .notMe(me: me, displayAccount: account, relationship: relationship)
+                    self.coordinator?.present(
+                        scene: .profile(profileType),
+                        from: nil,
+                        transition: .show
+                    )
+                } catch {
+                    // fail silently
+                }
+            }
         case "status":
             let components = url.pathComponents
             guard
                 components.count == 2,
                 components[0] == "/",
-                let authContext = coordinator?.authContext
+                let authenticationBox = coordinator?.authenticationBox
             else { return }
             let statusId = components[1]
             // View post from user
             let threadViewModel = RemoteThreadViewModel(
-                context: AppContext.shared,
-                authContext: authContext,
+                authenticationBox: authenticationBox,
                 statusID: statusId
             )
             coordinator?.present(scene: .thread(viewModel: threadViewModel), from: nil, transition: .show)
         case "search":
             let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems
             guard
-                let authContext = coordinator?.authContext,
+                let authenticationBox = coordinator?.authenticationBox,
                 let searchQuery = queryItems?.first(where: { $0.name == "query" })?.value
             else { return }
             
-            let viewModel = SearchDetailViewModel(authContext: authContext, initialSearchText: searchQuery)
+            let viewModel = SearchDetailViewModel(authenticationBox: authenticationBox, initialSearchText: searchQuery)
             coordinator?.present(scene: .searchDetail(viewModel: viewModel), from: nil, transition: .show)
         default:
+            var openableUrl: URL?
+            if let host = url.host(percentEncoded: false) {
+                openableUrl = URL(string: "https://" + host)
+            } else {
+                openableUrl = URL(string: "https://")
+            }
+            openableUrl?.append(path: url.path())
+            guard let openableUrl else { return }
+            openUniversalLink(openableUrl)
             return
         }
     }
 }
+

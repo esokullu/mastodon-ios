@@ -13,6 +13,7 @@ import MastodonUI
 import MastodonLocalization
 import MastodonAsset
 import LinkPresentation
+import MastodonSDK
 
 // MARK: - header
 extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthContextProvider {
@@ -22,6 +23,7 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
         statusView: StatusView,
         headerDidPressed header: UIView
     ) {
+        let domain = statusView.domain ?? ""
         Task {
             let source = DataSourceItem.Source(tableViewCell: cell, indexPath: nil)
             guard let item = await item(from: source) else {
@@ -34,37 +36,23 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
             }
             
             switch await statusView.viewModel.header {
-            case .none:
-                break
-            case .reply:
-                let _replyToAuthor: ManagedObjectRecord<MastodonUser>? = try? await context.managedObjectContext.perform {
-                    guard let status = status.object(in: self.context.managedObjectContext) else { return nil }
-                    guard let inReplyToAccountID = status.inReplyToAccountID else { return nil }
-                    let request = MastodonUser.sortedFetchRequest
-                    request.predicate = MastodonUser.predicate(domain: status.author.domain, id: inReplyToAccountID)
-                    request.fetchLimit = 1
-                    guard let author = self.context.managedObjectContext.safeFetch(request).first else { return nil }
-                    return .init(objectID: author.objectID)
-                }
-                guard let replyToAuthor = _replyToAuthor else {
-                    return
-                }
-                
-                await DataSourceFacade.coordinateToProfileScene(
-                    provider: self,
-                    user: replyToAuthor
-                )
+                case .none, .directMention:
+                    break
+                case .reply:
+                    guard let replyToAccountID = status.entity.inReplyToAccountID else { return }
+                    await DataSourceFacade.coordinateToProfileScene(provider: self,
+                                                                    domain: domain,
+                                                                    accountID: replyToAccountID)
 
-            case .repost:
-                await DataSourceFacade.coordinateToProfileScene(
-                    provider: self,
-                    target: .reblog,      // keep the wrapper for header author
-                    status: status
-                )
+                case .repost:
+                    await DataSourceFacade.coordinateToProfileScene(
+                        provider: self,
+                        target: .reblog,      // keep the wrapper for header author
+                        status: status
+                    )
             }
         }
     }
-
 }
 
 // MARK: - avatar button
@@ -135,19 +123,8 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
         didTapCardWithURL url: URL
     ) {
         Task {
-            let source = DataSourceItem.Source(tableViewCell: cell, indexPath: nil)
-            guard let item = await item(from: source) else {
-                assertionFailure()
-                return
-            }
-            guard case let .status(status) = item else {
-                assertionFailure("only works for status data provider")
-                return
-            }
-
             await DataSourceFacade.responseToURLAction(
                 provider: self,
-                status: status,
                 url: url
             )
         }
@@ -160,19 +137,8 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
         didTapURL url: URL
     ) {
         Task {
-            let source = DataSourceItem.Source(tableViewCell: cell, indexPath: nil)
-            guard let item = await item(from: source) else {
-                assertionFailure()
-                return
-            }
-            guard case let .status(status) = item else {
-                assertionFailure("only works for status data provider")
-                return
-            }
-
             await DataSourceFacade.responseToURLAction(
                 provider: self,
-                status: status,
                 url: url
             )
         }
@@ -181,39 +147,44 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
     func tableViewCell(
         _ cell: UITableViewCell,
         statusView: StatusView,
+        cardControl: StatusCardControl,
+        didTapProfile account: Mastodon.Entity.Account
+    ) {
+        Task {
+            await DataSourceFacade.coordinateToProfileScene(provider:self, account: account)
+        }
+    }
+
+    func tableViewCell(
+        _ cell: UITableViewCell,
+        statusView: StatusView,
         cardControlMenu statusCardControl: StatusCardControl
-    ) -> UIMenu? {
+    ) -> [LabeledAction]? {
         guard let card = statusView.viewModel.card,
-              let url = card.url else {
+              let url = URL(string: card.url) else {
             return nil
         }
 
-        return UIMenu(children: [
-            UIAction(
+        return [
+            LabeledAction(
                 title: L10n.Common.Controls.Actions.copy,
                 image: UIImage(systemName: "doc.on.doc")
-            ) { _ in
+            ) {
                 UIPasteboard.general.url = url
             },
 
-            UIAction(
+            LabeledAction(
                 title: L10n.Common.Controls.Actions.share,
-                image: Asset.Arrow.squareAndArrowUp.image.withRenderingMode(.alwaysTemplate)
-            ) { _ in
+                asset: Asset.Arrow.squareAndArrowUp
+            ) {
                 DispatchQueue.main.async {
                     let activityViewController = UIActivityViewController(
                         activityItems: [
-                            URLActivityItemWithMetadata(url: url) { metadata in
-                                metadata.title = card.title
-
-                                if let image = card.imageURL {
-                                    metadata.iconProvider = ImageProvider(url: image, filter: nil).itemProvider
-                                }
-                            }
+                            URLActivityItem(url: url)
                         ],
                         applicationActivities: []
                     )
-                    self.coordinator.present(
+                    self.sceneCoordinator?.present(
                         scene: .activityViewController(
                             activityViewController: activityViewController,
                             sourceView: statusCardControl, barButtonItem: nil
@@ -224,15 +195,15 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
                 }
             },
 
-            UIAction(
+            LabeledAction(
                 title: L10n.Common.Controls.Status.Actions.shareLinkInPost,
-                image: Asset.ObjectsAndTools.squareAndPencil.image.withRenderingMode(.alwaysTemplate)
-            ) { _ in
+                image: UIImage(systemName: "square.and.pencil")
+            ) {
                 DispatchQueue.main.async {
-                    self.coordinator.present(
+                    self.sceneCoordinator?.present(
                         scene: .compose(viewModel: ComposeViewModel(
-                            context: self.context,
-                            authContext: self.authContext,
+                            authenticationBox: self.authenticationBox,
+                            composeContext: .composeStatus,
                             destination: .topLevel,
                             initialContent: L10n.Common.Controls.Status.linkViaUser(url.absoluteString, "@" + (statusView.viewModel.authorUsername ?? ""))
                         )),
@@ -241,7 +212,7 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
                     )
                 }
             }
-        ])
+        ]
     }
 
 }
@@ -267,9 +238,9 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & MediaPrev
                 return
             }
             
-            let needsToggleMediaSensitive = await !statusView.viewModel.isMediaReveal
+            let hasConcealedContent = await statusView.contentDisplayMode.shouldConcealSomething
             
-            guard !needsToggleMediaSensitive else {
+            guard !hasConcealedContent else {
                 try await DataSourceFacade.responseToToggleSensitiveAction(
                     dependency: self,
                     status: status
@@ -303,67 +274,20 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
     ) {
         guard let pollTableViewDiffableDataSource = statusView.pollTableViewDiffableDataSource else { return }
         guard let pollItem = pollTableViewDiffableDataSource.itemIdentifier(for: indexPath) else { return }
-                
-        let managedObjectContext = context.managedObjectContext
-        
-        Task {
-            guard case let .option(pollOption) = pollItem else {
-                assertionFailure("only works for status data provider")
-                return
-            }
-                     
-            var _poll: ManagedObjectRecord<Poll>?
-            var _isMultiple: Bool?
-            var _choice: Int?
-            
-            try await managedObjectContext.performChanges {
-                guard let pollOption = pollOption.object(in: managedObjectContext) else { return }
-                let poll = pollOption.poll
-                _poll = .init(objectID: poll.objectID)
 
-                _isMultiple = poll.multiple
-                guard !poll.isVoting else { return }
-                
-                if !poll.multiple {
-                    for option in poll.options where option != pollOption {
-                        option.update(isSelected: false)
-                    }
-                    
-                    // mark voting
-                    poll.update(isVoting: true)
-                    // set choice
-                    _choice = Int(pollOption.index)
-                }
-                
-                pollOption.update(isSelected: !pollOption.isSelected)
-                poll.update(updatedAt: Date())
-            }
-            
-            // Trigger vote API request for
-            guard let poll = _poll,
-                  _isMultiple == false,
-                  let choice = _choice
-            else { return }
-            
-            do {
-                _ = try await context.apiService.vote(
-                    poll: poll,
-                    choices: [choice],
-                    authenticationBox: authContext.mastodonAuthenticationBox
-                )
-                logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): vote poll for \(choice) success")
-            } catch {
-                logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): vote poll fail: \(error.localizedDescription)")
-                
-                // restore voting state
-                try await managedObjectContext.performChanges {
-                    guard let pollOption = pollOption.object(in: managedObjectContext) else { return }
-                    let poll = pollOption.poll
-                    poll.update(isVoting: false)
-                }
-            }
-            
-        }   // end Task
+        guard case let .option(pollOption) = pollItem else {
+            assertionFailure("only works for status data provider")
+            return
+        }
+
+        let poll = pollOption.poll
+        
+        if !poll.multiple {
+            poll.options.forEach { $0.isSelected = false }
+            pollOption.isSelected = true
+        } else {
+            pollOption.isSelected.toggle()
+        }
     }
     
     func tableViewCell(
@@ -374,49 +298,34 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
         guard let pollTableViewDiffableDataSource = statusView.pollTableViewDiffableDataSource else { return }
         guard let firstPollItem = pollTableViewDiffableDataSource.snapshot().itemIdentifiers.first else { return }
         guard case let .option(firstPollOption) = firstPollItem else { return }
-        
-        let managedObjectContext = context.managedObjectContext
-        
-        Task {
-            var _poll: ManagedObjectRecord<Poll>?
-            var _choices: [Int]?
-            
-            try await managedObjectContext.performChanges {
-                guard let poll = firstPollOption.object(in: managedObjectContext)?.poll else { return }
-                _poll = .init(objectID: poll.objectID)
-                
-                guard poll.multiple else { return }
-                
-                // mark voting
-                poll.update(isVoting: true)
-                // set choice
-                _choices = poll.options
-                    .filter { $0.isSelected }
-                    .map { Int($0.index) }
-                
-                poll.update(updatedAt: Date())
-            }
-            
-            // Trigger vote API request for
-            guard let poll = _poll,
-                  let choices = _choices
-            else { return }
-            
+
+        statusView.viewModel.isVoting = true
+
+        Task { @MainActor in
+            let poll = firstPollOption.poll
+
+            let choices = poll.options
+                .filter { $0.isSelected == true }
+                .compactMap { poll.options.firstIndex(of: $0) }
+
             do {
-                _ = try await context.apiService.vote(
-                    poll: poll,
+                let newPoll = try await APIService.shared.vote(
+                    poll: poll.entity,
                     choices: choices,
-                    authenticationBox: authContext.mastodonAuthenticationBox
-                )
-                logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): vote poll for \(choices) success")
-            } catch {
-                logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): vote poll fail: \(error.localizedDescription)")
+                    authenticationBox: authenticationBox
+                ).value
                 
-                // restore voting state
-                try await managedObjectContext.performChanges {
-                    guard let poll = poll.object(in: managedObjectContext) else { return }
-                    poll.update(isVoting: false)
-                }
+                guard let entity = poll.status?.entity else { throw AppError.unexpected("Poll vote recorded but could not be updated in view") }
+                
+                let newStatus: MastodonStatus = .fromEntity(entity)
+                newStatus.poll = MastodonPoll(poll: newPoll, status: newStatus)
+                
+                self.update(status: newStatus, intent: .pollVote)
+            } catch {
+                let alert = UIAlertController(title: "Poll Error", message: "Something went wrong while processing your response: \(error)", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "OK", style: .cancel))
+                self.sceneCoordinator?.tabBarController.showAlert(alert)
+                statusView.viewModel.isVoting = false
             }
             
         }   // end Task
@@ -443,7 +352,7 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
                 assertionFailure("only works for status data provider")
                 return
             }
-            
+
             try await DataSourceFacade.responseToActionToolbar(
                 provider: self,
                 status: status,
@@ -469,32 +378,48 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
                 assertionFailure()
                 return
             }
-            guard case let .status(status) = item else {
+            guard case let .status(_status) = item else {
                 assertionFailure("only works for status data provider")
                 return
             }
-            let _author: ManagedObjectRecord<MastodonUser>? = try await self.context.managedObjectContext.perform {
-                guard let _status = status.object(in: self.context.managedObjectContext) else { return nil }
-                let author = (_status.reblog ?? _status).author
-                return .init(objectID: author.objectID)
-            }
-            guard let author = _author else {
-                assertionFailure()
-                return
-            }
-            
-            if let cell = cell as? StatusTableViewCell {
+
+            let status = _status.reblog ?? _status
+
+            if case .translateStatus = action {
                 DispatchQueue.main.async {
-                    cell.statusView.viewModel.isCurrentlyTranslating = true
+                    if let cell = cell as? StatusTableViewCell {
+                        cell.statusView.viewModel.isCurrentlyTranslating = true
+                    } else if let cell = cell as? StatusThreadRootTableViewCell {
+                        cell.statusView.viewModel.isCurrentlyTranslating = true
+                    }
+                    cell.invalidateIntrinsicContentSize()
                 }
             }
-                        
+
+            if case .showOriginal = action {
+                DispatchQueue.main.async {
+                    if let cell = cell as? StatusTableViewCell {
+                        cell.statusView.revertTranslation()
+                    }
+                }
+            }
+
+            let statusViewModel: StatusView.ViewModel?
+
+            if let cell = cell as? StatusTableViewCell {
+                statusViewModel = await cell.statusView.viewModel
+            } else if let cell = cell as? StatusThreadRootTableViewCell {
+                statusViewModel = await cell.statusView.viewModel
+            } else {
+                statusViewModel = nil
+            }
+
             try await DataSourceFacade.responseToMenuAction(
                 dependency: self,
                 action: action,
                 menuContext: .init(
-                    author: author,
-                    status: status,
+                    author: status.entity.account,
+                    statusViewModel: statusViewModel,
                     button: button,
                     barButtonItem: nil
                 )
@@ -532,7 +457,7 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider {
     func tableViewCell(
         _ cell: UITableViewCell,
         statusView: StatusView,
-        spoilerOverlayViewDidPressed overlayView: SpoilerOverlayView
+        contentConcealExplainViewDidPressed contentConcealExplainView: ContentConcealExplainView
     ) {
         Task {
             let source = DataSourceItem.Source(tableViewCell: cell, indexPath: nil)
@@ -611,12 +536,12 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
                 assertionFailure("only works for status data provider")
                 return
             }
-            let userListViewModel = UserListViewModel(
-                context: context,
-                authContext: authContext,
+            let userListViewModel = await UserListViewModel(
+                context: AppContext.shared,
+                authenticationBox: authenticationBox,
                 kind: .rebloggedBy(status: status)
             )
-            _ = await coordinator.present(
+            _ = await self.sceneCoordinator?.present(
                 scene: .rebloggedBy(viewModel: userListViewModel),
                 from: self,
                 transition: .show
@@ -635,17 +560,42 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
                 assertionFailure("only works for status data provider")
                 return
             }
-            let userListViewModel = UserListViewModel(
-                context: context,
-                authContext: authContext,
+            let userListViewModel = await UserListViewModel(
+                context: AppContext.shared,
+                authenticationBox: authenticationBox,
                 kind: .favoritedBy(status: status)
             )
-            _ = await coordinator.present(
+            _ = await self.sceneCoordinator?.present(
                 scene: .favoritedBy(viewModel: userListViewModel),
                 from: self,
                 transition: .show
             )
         }   // end Task
+    }
+
+    func tableViewCell(_ cell: UITableViewCell, statusView: StatusView, statusMetricView: StatusMetricView, showEditHistory button: UIButton) {
+        Task {
+            
+            await self.sceneCoordinator?.showLoading()
+            
+            let source = DataSourceItem.Source(tableViewCell: cell, indexPath: nil)
+            guard let item = await self.item(from: source),
+                  case let .status(status) = item else {
+                assertionFailure("only works for status data provider")
+                return
+            }
+                        
+            do {
+                let edits = try await APIService.shared.getHistory(forStatusID: status.id, authenticationBox: authenticationBox).value
+
+                await self.sceneCoordinator?.hideLoading()
+
+                let viewModel = await StatusEditHistoryViewModel(status: status, edits: edits, appContext: AppContext.shared, authenticationBox: authenticationBox)
+                _ = await self.sceneCoordinator?.present(scene: .editHistory(viewModel: viewModel), from: self, transition: .show)
+            } catch {
+                await self.sceneCoordinator?.hideLoading()
+            }
+        }
     }
 }
 
@@ -655,6 +605,7 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
         Task {
             let source = DataSourceItem.Source(tableViewCell: cell, indexPath: nil)
             guard let item = await item(from: source) else {
+                assertionFailure()
                 return
             }
             switch item {
@@ -664,15 +615,14 @@ extension StatusTableViewCellDelegate where Self: DataSourceProvider & AuthConte
                     target: .status,    // remove reblog wrapper
                     status: status
                 )
-            case .user(let user):
+            case .account(let account, _):
                 await DataSourceFacade.coordinateToProfileScene(
                     provider: self,
-                    user: user
+                    account: account
                 )
-            case .notification:
-                assertionFailure("TODO")
-            default:
-                assertionFailure("TODO")
+            case .notification, .hashtag(_), .notificationBanner(_):
+                // not supposed to happen
+                break
             }
         }
     }

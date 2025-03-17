@@ -5,10 +5,10 @@
 //  Created by Cirno MainasuK on 2021/3/5.
 //
 
-import os.log
 import Foundation
 import GameplayKit
 import MastodonSDK
+import MastodonCore
 
 extension MastodonPickServerViewModel {
     class LoadIndexedServerState: GKState {
@@ -16,10 +16,6 @@ extension MastodonPickServerViewModel {
         
         init(viewModel: MastodonPickServerViewModel) {
             self.viewModel = viewModel
-        }
-        
-        override func didEnter(from previousState: GKState?) {
-            os_log("%{public}s[%{public}ld], %{public}s: enter %s, previous: %s", ((#file as NSString).lastPathComponent), #line, #function, self.debugDescription, previousState.debugDescription)
         }
     }
 }
@@ -32,6 +28,7 @@ extension MastodonPickServerViewModel.LoadIndexedServerState {
         }
     }
     
+    @MainActor
     class Loading: MastodonPickServerViewModel.LoadIndexedServerState {
         override func isValidNextState(_ stateClass: AnyClass) -> Bool {
             return stateClass == Fail.self || stateClass == Idle.self
@@ -42,7 +39,7 @@ extension MastodonPickServerViewModel.LoadIndexedServerState {
             
             guard let viewModel = self.viewModel, let stateMachine = self.stateMachine else { return }
             viewModel.isLoadingIndexedServers.value = true
-            viewModel.context.apiService.servers(language: nil, category: nil)
+            APIService.shared.servers(language: nil, category: nil)
                 .sink { completion in
                     switch completion {
                     case .failure(let error):

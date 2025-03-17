@@ -5,18 +5,12 @@
 //  Created by MainasuK on 2022-4-12.
 //
 
-import os.log
 import UIKit
 import Combine
 import MastodonCore
 import MastodonUI
 
-final class DiscoveryPostsViewController: UIViewController, NeedsDependency, MediaPreviewableViewController {
-    
-    let logger = Logger(subsystem: "TrendPostsViewController", category: "ViewController")
-    
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+final class DiscoveryPostsViewController: UIViewController, MediaPreviewableViewController {
     
     var disposeBag = Set<AnyCancellable>()
     var viewModel: DiscoveryPostsViewModel!
@@ -35,11 +29,6 @@ final class DiscoveryPostsViewController: UIViewController, NeedsDependency, Med
     let refreshControl = RefreshControl()
     
     let discoveryIntroBannerView = DiscoveryIntroBannerView()
-
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
-    
 }
 
 extension DiscoveryPostsViewController {
@@ -47,14 +36,7 @@ extension DiscoveryPostsViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        view.backgroundColor = ThemeService.shared.currentTheme.value.secondarySystemBackgroundColor
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.view.backgroundColor = theme.secondarySystemBackgroundColor
-            }
-            .store(in: &disposeBag)
+        view.backgroundColor = .secondarySystemBackground
         
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
@@ -90,17 +72,6 @@ extension DiscoveryPostsViewController {
                 self.refreshControl.endRefreshing()
             }
             .store(in: &disposeBag)
-        
-        // setup batch fetch
-        viewModel.listBatchFetchViewModel.setup(scrollView: tableView)
-        viewModel.listBatchFetchViewModel.shouldFetch
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                guard self.view.window != nil else { return }
-                self.viewModel.stateMachine.enter(DiscoveryPostsViewModel.State.Loading.self)
-            }
-            .store(in: &disposeBag)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -125,7 +96,7 @@ extension DiscoveryPostsViewController {
 
 // MARK: - AuthContextProvider
 extension DiscoveryPostsViewController: AuthContextProvider {
-    var authContext: AuthContext { viewModel.authContext }
+    var authenticationBox: MastodonAuthenticationBox { viewModel.authenticationBox }
 }
 
 // MARK: - UITableViewDelegate
@@ -185,5 +156,15 @@ extension DiscoveryPostsViewController: StatusTableViewControllerNavigateable {
 
     @objc func statusKeyCommandHandlerRelay(_ sender: UIKeyCommand) {
         statusKeyCommandHandler(sender)
+    }
+}
+
+//MARK: - UIScrollViewDelegate
+
+extension DiscoveryPostsViewController: UIScrollViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        Self.scrollViewDidScrollToEnd(scrollView) {
+            viewModel.stateMachine.enter(DiscoveryPostsViewModel.State.Loading.self)
+        }
     }
 }

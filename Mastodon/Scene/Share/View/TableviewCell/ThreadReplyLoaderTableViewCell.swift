@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-4-13.
 //
 
-import os.log
 import UIKit
 import Combine
 import MastodonAsset
@@ -27,7 +26,7 @@ final class ThreadReplyLoaderTableViewCell: UITableViewCell {
     let loadMoreButton: UIButton = {
         let button = HighlightDimmableButton()
         button.titleLabel?.font = TimelineLoaderTableViewCell.labelFont
-        button.setTitleColor(ThemeService.tintColor, for: .normal)
+        button.setTitleColor(SystemTheme.tintColor, for: .normal)
         button.setTitle(L10n.Common.Controls.Timeline.Loader.showMoreReplies, for: .normal)
         return button
     }()
@@ -87,14 +86,7 @@ extension ThreadReplyLoaderTableViewCell {
         
         loadMoreButton.addTarget(self, action: #selector(ThreadReplyLoaderTableViewCell.loadMoreButtonDidPressed(_:)), for: .touchUpInside)
 
-        setupBackgroundColor(theme: ThemeService.shared.currentTheme.value)
-        ThemeService.shared.currentTheme
-            .receive(on: RunLoop.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.setupBackgroundColor(theme: theme)
-            }
-            .store(in: &_disposeBag)
+        backgroundColor = .systemGroupedBackground
     }
     
     private func resetSeparatorLineLayout() {
@@ -125,16 +117,10 @@ extension ThreadReplyLoaderTableViewCell {
             }
         }
     }
-
-    private func setupBackgroundColor(theme: Theme) {
-        backgroundColor = theme.systemGroupedBackgroundColor
-    }
-    
 }
 
 extension ThreadReplyLoaderTableViewCell {
     @objc private func loadMoreButtonDidPressed(_ sender: UIButton) {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         delegate?.threadReplyLoaderTableViewCell(self, loadMoreButtonDidPressed: sender)
     }
 }

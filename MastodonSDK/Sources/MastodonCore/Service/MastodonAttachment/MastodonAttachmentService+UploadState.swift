@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-3-18.
 //
 
-import os.log
 import Foundation
 import Combine
 import GameplayKit
@@ -19,8 +18,8 @@ extension MastodonAttachmentService {
             self.service = service
         }
         
+        @MainActor
         public override func didEnter(from previousState: GKState?) {
-            os_log("%{public}s[%{public}ld], %{public}s: enter %s, previous: %s", ((#file as NSString).lastPathComponent), #line, #function, self.debugDescription, previousState.debugDescription)
             service?.uploadStateMachineSubject.send(self)
         }
     }
@@ -53,6 +52,7 @@ extension MastodonAttachmentService.UploadState {
                 || stateClass == Processing.self
         }
         
+        @MainActor
         public override func didEnter(from previousState: GKState?) {
             super.didEnter(from: previousState)
             
@@ -69,7 +69,7 @@ extension MastodonAttachmentService.UploadState {
             )
 
             // and needs clone the `query` if needs retry
-            service.context.apiService.uploadMedia(
+            APIService.shared.uploadMedia(
                 domain: authenticationBox.domain,
                 query: query,
                 mastodonAuthenticationBox: authenticationBox,
@@ -86,18 +86,14 @@ extension MastodonAttachmentService.UploadState {
                     {
                         self.needsFallback = true
                         stateMachine.enter(Uploading.self)
-                        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: upload attachment fallback to V1", ((#file as NSString).lastPathComponent), #line, #function)
                     } else {
-                        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: upload attachment fail: %s", ((#file as NSString).lastPathComponent), #line, #function, error.localizedDescription)
                         service.error.send(error)
                         stateMachine.enter(Fail.self)
                     }
                 case .finished:
-                    os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: upload attachment success", ((#file as NSString).lastPathComponent), #line, #function)
                     break
                 }
             } receiveValue: { response in
-                os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: upload attachment %s success: %s", ((#file as NSString).lastPathComponent), #line, #function, response.value.id, response.value.url ?? "<nil>")
                 service.attachment.value = response.value
                 if response.statusCode == 202 {
                     // check if still processing
@@ -132,7 +128,7 @@ extension MastodonAttachmentService.UploadState {
                 return
             }
          
-            service.context.apiService.getMedia(
+            APIService.shared.getMedia(
                 attachmentID: attachment.id,
                 mastodonAuthenticationBox: authenticationBox
             )
@@ -142,18 +138,15 @@ extension MastodonAttachmentService.UploadState {
                 guard let _ = self else { return }
                 switch completion {
                 case .failure(let error):
-                    os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: get attachment fail: %s", ((#file as NSString).lastPathComponent), #line, #function, error.localizedDescription)
                     service.error.send(error)
                     stateMachine.enter(Fail.self)
                 case .finished:
-                    os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: get attachment success", ((#file as NSString).lastPathComponent), #line, #function)
                     break
                 }
             } receiveValue: { [weak self] response in
                 guard let self = self else { return }
                 guard let _ = response.value.url else {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
-                        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: processing, retry in 2s", ((#file as NSString).lastPathComponent), #line, #function)
                         self?.stateMachine?.enter(Processing.self)
                     }
                     return

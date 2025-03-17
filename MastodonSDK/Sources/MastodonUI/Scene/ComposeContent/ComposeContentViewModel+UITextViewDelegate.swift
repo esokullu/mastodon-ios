@@ -5,10 +5,10 @@
 //  Created by MainasuK on 2022/11/13.
 //
 
-import os.log
 import UIKit
 
 // MARK: - UITextViewDelegate
+@MainActor
 extension ComposeContentViewModel: UITextViewDelegate {
     
     public func textViewDidBeginEditing(_ textView: UITextView) {
@@ -32,13 +32,10 @@ extension ComposeContentViewModel: UITextViewDelegate {
         switch textView {
         case contentMetaText?.textView:
             // update model
-            guard let metaText = self.contentMetaText else {
+            guard self.contentMetaText != nil else {
                 assertionFailure()
                 return
             }
-            let backedString = metaText.backedString
-            logger.debug("\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): \(backedString)")
-            
             // configure auto completion
             setupAutoComplete(for: textView)
             
@@ -121,7 +118,6 @@ extension ComposeContentViewModel {
             self.autoCompleteInfo = nil
             return
         }
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: auto complete %s (%s)", ((#file as NSString).lastPathComponent), #line, #function, String(autoCompletion.toHighlightEndString), String(autoCompletion.toCursorString))
         
         // get layout text bounding rect
         var glyphRange = NSRange()

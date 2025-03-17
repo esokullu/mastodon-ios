@@ -34,20 +34,19 @@ struct FollowersCountWidgetView: View {
                 .multilineTextAlignment(.center)
                 .font(.caption)
                 .padding(.all, 20)
+                .emptyWidgetBackground()
         }
     }
     
     private func viewForSmallWidgetNoChart(_ account: FollowersEntryAccountable) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 0) {
-                if let avatarImage = account.avatarImage {
-                    Image(uiImage: avatarImage)
-                        .resizable()
-                        .frame(width: 50, height: 50)
-                        .cornerRadius(12)
-                        .padding(.bottom, 8)
-                }
-                
+                Image(uiImage: account.avatarImage)
+                    .resizable()
+                    .frame(width: 50, height: 50)
+                    .cornerRadius(12)
+                    .padding(.bottom, 8)
+
                 Text(account.followersCount.asAbbreviatedCountString())
                     .font(.largeTitle)
                     .lineLimit(1)
@@ -68,17 +67,16 @@ struct FollowersCountWidgetView: View {
             .padding(.vertical, 16)
             Spacer()
         }
+        .emptyWidgetBackground()
     }
     
     private func viewForSmallWidgetYesChart(_ account: FollowersEntryAccountable) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                if let avatarImage = account.avatarImage {
-                    Image(uiImage: avatarImage)
-                        .resizable()
-                        .frame(width: 23, height: 23)
-                        .cornerRadius(5)
-                }
+                Image(uiImage: account.avatarImage)
+                    .resizable()
+                    .frame(width: 23, height: 23)
+                    .cornerRadius(5)
                 VStack(alignment: .leading) {
                     Text(account.displayNameWithFallback)
                         .font(.caption)
@@ -129,9 +127,10 @@ struct FollowersCountWidgetView: View {
             }
         }
         .padding(.top, 16)
+        .emptyWidgetBackground()
     }
     
-    private func viewForAccessoryRectangular(_ account :FollowersEntryAccountable) -> some View {
+    private func viewForAccessoryRectangular(_ account: FollowersEntryAccountable) -> some View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .center) {
@@ -148,13 +147,11 @@ struct FollowersCountWidgetView: View {
             }
             Spacer()
         }
+        .emptyWidgetBackground()
     }
     
     private func viewForAccessoryCircular(_ account :FollowersEntryAccountable) -> some View {
         ZStack {
-            if #available(iOS 16, *) {
-                AccessoryWidgetBackground()
-            }
             VStack {
                 Image("BrandIcon")
 
@@ -164,5 +161,6 @@ struct FollowersCountWidgetView: View {
                     .truncationMode(.tail)
             }
         }
+        .widgetBackground(AccessoryWidgetBackground())
     }
 }

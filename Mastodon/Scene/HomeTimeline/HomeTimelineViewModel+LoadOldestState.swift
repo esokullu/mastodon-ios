@@ -5,16 +5,14 @@
 //  Created by sxiaojian on 2021/2/5.
 //
 
-import os.log
 import Foundation
 import GameplayKit
 import MastodonSDK
+import MastodonCore
 
 extension HomeTimelineViewModel {
     class LoadOldestState: GKState {
-        
-        let logger = Logger(subsystem: "HomeTimelineViewModel.LoadOldestState", category: "StateMachine")
-        
+
         let id = UUID()
         
         weak var viewModel: HomeTimelineViewModel?
@@ -23,34 +21,24 @@ extension HomeTimelineViewModel {
             self.viewModel = viewModel
         }
         
-        override func didEnter(from previousState: GKState?) {
-            super.didEnter(from: previousState)
-            
-            let from = previousState.flatMap { String(describing: $0) } ?? "nil"
-            let to = String(describing: self)
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): \(from) -> \(to)")
-        }
-        
         @MainActor
         func enter(state: LoadOldestState.Type) {
             stateMachine?.enter(state)
-        }
-        
-        deinit {
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): [\(self.id.uuidString)] \(String(describing: self))")
         }
     }
 }
 
 extension HomeTimelineViewModel.LoadOldestState {
+    @MainActor
     class Initial: HomeTimelineViewModel.LoadOldestState {
         override func isValidNextState(_ stateClass: AnyClass) -> Bool {
             guard let viewModel = viewModel else { return false }
-            guard !viewModel.fetchedResultsController.records.isEmpty else { return false }
+            guard !viewModel.dataController.records.isEmpty else { return false }
             return stateClass == Loading.self
         }
     }
     
+    @MainActor
     class Loading: HomeTimelineViewModel.LoadOldestState {
         override func isValidNextState(_ stateClass: AnyClass) -> Bool {
             return stateClass == Fail.self || stateClass == Idle.self || stateClass == NoMore.self
@@ -61,31 +49,46 @@ extension HomeTimelineViewModel.LoadOldestState {
             
             guard let viewModel = viewModel, let stateMachine = stateMachine else { return }
             
-            guard let lastFeedRecord = viewModel.fetchedResultsController.records.last else {
+            guard let lastFeedRecord = viewModel.dataController.records.last else {
                 stateMachine.enter(Idle.self)
                 return
             }
             
             Task {
-                let managedObjectContext = viewModel.fetchedResultsController.managedObjectContext
-                let _maxID: Mastodon.Entity.Status.ID? = try await managedObjectContext.perform {
-                    guard let feed = lastFeedRecord.object(in: managedObjectContext),
-                          let status = feed.status
-                    else { return nil }
-                    return status.id
-                }
-                
-                guard let maxID = _maxID else {
+                guard let maxID = lastFeedRecord.status?.id else {
                     await self.enter(state: Fail.self)
                     return
                 }
 
                 do {
-                    let response = try await viewModel.context.apiService.homeTimeline(
-                        maxID: maxID,
-                        authenticationBox: viewModel.authContext.mastodonAuthenticationBox
-                    )
-                    
+                    await AuthenticationServiceProvider.shared.fetchAccounts(onlyIfItHasBeenAwhile: true)
+
+                    let response: Mastodon.Response.Content<[Mastodon.Entity.Status]>
+
+                    switch viewModel.timelineContext {
+                    case .home:
+                        response = try await APIService.shared.homeTimeline(
+                            maxID: maxID,
+                            authenticationBox: viewModel.authenticationBox
+                        )
+                    case .public:
+                        response = try await APIService.shared.publicTimeline(
+                            query: .init(local: true, maxID: maxID),
+                            authenticationBox: viewModel.authenticationBox
+                        )
+                    case let .list(id):
+                        response = try await APIService.shared.listTimeline(
+                            id: id,
+                            query: .init(local: true, maxID: maxID),
+                            authenticationBox: viewModel.authenticationBox
+                        )
+                    case let .hashtag(tag):
+                        response = try await APIService.shared.hashtagTimeline(
+                            hashtag: tag,
+                            authenticationBox: viewModel.authenticationBox
+                        )
+                    }
+
                     let statuses = response.value
                     // enter no more state when no new statuses
                     if statuses.isEmpty || (statuses.count == 1 && statuses[0].id == maxID) {
@@ -93,13 +96,12 @@ extension HomeTimelineViewModel.LoadOldestState {
                     } else {
                         await self.enter(state: Idle.self)
                     }
-                    
-                    viewModel.homeTimelineNavigationBarTitleViewModel.receiveLoadingStateCompletion(.finished)
-                    
+
+                    viewModel.receiveLoadingStateCompletion(.finished)
+
                 } catch {
-                    logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): fetch statues failed: \(error.localizedDescription)")
                     await self.enter(state: Fail.self)
-                    viewModel.homeTimelineNavigationBarTitleViewModel.receiveLoadingStateCompletion(.failure(error))
+                    viewModel.receiveLoadingStateCompletion(.failure(error))
                 }
             }   // end Task
         }
@@ -125,11 +127,11 @@ extension HomeTimelineViewModel.LoadOldestState {
         
         override func didEnter(from previousState: GKState?) {
             guard let viewModel = viewModel else { return }
-            guard let diffableDataSource = viewModel.diffableDataSource else {
-                assertionFailure()
-                return
-            }
             DispatchQueue.main.async {
+                guard let diffableDataSource = viewModel.diffableDataSource else {
+                    assertionFailure()
+                    return
+                }
                 var snapshot = diffableDataSource.snapshot()
                 snapshot.deleteItems([.bottomLoader])
                 diffableDataSource.apply(snapshot)

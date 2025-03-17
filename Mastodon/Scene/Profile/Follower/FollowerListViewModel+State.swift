@@ -5,7 +5,6 @@
 //  Created by Cirno MainasuK on 2021-11-1.
 //
 
-import os.log
 import Foundation
 import GameplayKit
 import MastodonSDK
@@ -14,8 +13,6 @@ import MastodonCore
 extension FollowerListViewModel {
     class State: GKState {
         
-        let logger = Logger(subsystem: "FollowerListViewModel.State", category: "StateMachine")
-
         let id = UUID()
 
         var name: String {
@@ -28,21 +25,9 @@ extension FollowerListViewModel {
             self.viewModel = viewModel
         }
         
-        override func didEnter(from previousState: GKState?) {
-            super.didEnter(from: previousState)
-            
-            let from = previousState.flatMap { String(describing: $0) } ?? "nil"
-            let to = String(describing: self)
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): \(from) -> \(to)")
-        }
-        
         @MainActor
         func enter(state: State.Type) {
             stateMachine?.enter(state)
-        }
-        
-        deinit {
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): [\(self.id.uuidString)] \(String(describing: self))")
         }
     }
 }
@@ -75,8 +60,9 @@ extension FollowerListViewModel.State {
             guard let viewModel = viewModel, let stateMachine = stateMachine else { return }
             
             // reset
-            viewModel.userFetchedResultsController.userIDs = []
-            
+            viewModel.accounts = []
+            viewModel.relationships = []
+
             stateMachine.enter(Loading.self)
         }
     }
@@ -96,9 +82,7 @@ extension FollowerListViewModel.State {
             super.didEnter(from: previousState)
             guard let _ = viewModel, let stateMachine = stateMachine else { return }
             
-            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: retry loading 3s later…", ((#file as NSString).lastPathComponent), #line, #function)
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: retry loading", ((#file as NSString).lastPathComponent), #line, #function)
                 stateMachine.enter(Loading.self)
             }
         }
@@ -112,6 +96,12 @@ extension FollowerListViewModel.State {
             default:
                 return false
             }
+        }
+
+        override func didEnter(from previousState: GKState?) {
+            super.didEnter(from: previousState)
+
+            viewModel?.tableView?.refreshControl?.endRefreshing()
         }
     }
     
@@ -139,49 +129,66 @@ extension FollowerListViewModel.State {
                 maxID = nil
             }
             
-            guard let viewModel = viewModel, let stateMachine = stateMachine else { return }
+            guard let viewModel, let stateMachine else { return }
 
-            guard let userID = viewModel.userID, !userID.isEmpty else {
+            guard let userID = viewModel.userID, userID.isEmpty == false else {
                 stateMachine.enter(Fail.self)
                 return
             }
-            
+
             Task {
                 do {
-                    let response = try await viewModel.context.apiService.followers(
+                    let accountResponse = try await APIService.shared.followers(
                         userID: userID,
                         maxID: maxID,
-                        authenticationBox: viewModel.authContext.mastodonAuthenticationBox
+                        authenticationBox: viewModel.authenticationBox
                     )
-                    logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): fetch \(response.value.count) followers")
-                    
+
+                    if accountResponse.value.isEmpty {
+                        await enter(state: NoMore.self)
+
+                        viewModel.accounts = []
+                        viewModel.relationships = []
+                        return
+                    }
+
                     var hasNewAppend = false
-                    var userIDs = viewModel.userFetchedResultsController.userIDs
-                    for user in response.value {
-                        guard !userIDs.contains(user.id) else { continue }
-                        userIDs.append(user.id)
+
+                    let newRelationships = try await APIService.shared.relationship(forAccounts: accountResponse.value, authenticationBox: viewModel.authenticationBox)
+
+                    var accounts = viewModel.accounts
+
+                    for user in accountResponse.value {
+                        guard accounts.contains(user) == false else { continue }
+                        accounts.append(user)
                         hasNewAppend = true
                     }
-                    
-                    let maxID = response.link?.maxID
-                    
-                    if hasNewAppend && maxID != nil {
+
+                    var relationships = viewModel.relationships
+
+                    for relationship in newRelationships.value {
+                        guard relationships.contains(relationship) == false else { continue }
+                        relationships.append(relationship)
+                    }
+
+                    let maxID = accountResponse.link?.maxID
+
+                    if hasNewAppend, maxID != nil {
                         await enter(state: Idle.self)
                     } else {
                         await enter(state: NoMore.self)
                     }
-                    
+
+                    viewModel.accounts = accounts
+                    viewModel.relationships = relationships
                     self.maxID = maxID
-                    viewModel.userFetchedResultsController.userIDs = userIDs
-                    
                 } catch {
-                    logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): fetch follower fail: \(error.localizedDescription)")
                     await enter(state: Fail.self)
                 }
-            }   // end Task
-        }   // end func didEnter
+            }
+        }
     }
-    
+
     class NoMore: FollowerListViewModel.State {
         override func isValidNextState(_ stateClass: AnyClass) -> Bool {
             switch stateClass {
@@ -194,6 +201,8 @@ extension FollowerListViewModel.State {
         
         override func didEnter(from previousState: GKState?) {
             super.didEnter(from: previousState)
+
+            viewModel?.tableView?.refreshControl?.endRefreshing()
         }
     }
 }

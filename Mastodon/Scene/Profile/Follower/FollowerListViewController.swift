@@ -5,39 +5,55 @@
 //  Created by Cirno MainasuK on 2021-11-1.
 //
 
-import os.log
 import UIKit
 import GameplayKit
 import Combine
 import MastodonCore
 import MastodonUI
 import MastodonLocalization
+import MastodonSDK
 
-final class FollowerListViewController: UIViewController, NeedsDependency {
-    
-    let logger = Logger(subsystem: "FollowerListViewController", category: "ViewController")
-    
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+final class FollowerListViewController: UIViewController {
     
     var disposeBag = Set<AnyCancellable>()
-    var viewModel: FollowerListViewModel!
+    var viewModel: FollowerListViewModel
         
-    lazy var tableView: UITableView = {
-        let tableView = UITableView()
+    let tableView: UITableView
+    let refreshControl: UIRefreshControl
+
+    init(viewModel: FollowerListViewModel) {
+
+        self.viewModel = viewModel
+
+        tableView = UITableView()
+        tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.register(UserTableViewCell.self, forCellReuseIdentifier: String(describing: UserTableViewCell.self))
         tableView.register(TimelineBottomLoaderTableViewCell.self, forCellReuseIdentifier: String(describing: TimelineBottomLoaderTableViewCell.self))
         tableView.register(TimelineFooterTableViewCell.self, forCellReuseIdentifier: String(describing: TimelineFooterTableViewCell.self))
         tableView.rowHeight = UITableView.automaticDimension
         tableView.separatorStyle = .none
         tableView.backgroundColor = .clear
-        return tableView
-    }()
- 
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
+
+        refreshControl = UIRefreshControl()
+        tableView.refreshControl = refreshControl
+
+        super.init(nibName: nil, bundle: nil)
+
+        title = L10n.Scene.Follower.title
+
+        view.backgroundColor = .secondarySystemBackground
+
+        view.addSubview(tableView)
+        tableView.pinToParent()
+        tableView.delegate = self
+        tableView.refreshControl?.addTarget(self, action: #selector(FollowerListViewController.refresh(_:)), for: .valueChanged)
+
+        viewModel.tableView = tableView
+
+        refreshControl.addTarget(self, action: #selector(FollowerListViewController.refresh(_:)), for: .valueChanged)
     }
-    
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
 extension FollowerListViewController {
@@ -45,36 +61,10 @@ extension FollowerListViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        title = L10n.Scene.Follower.title
-        
-        view.backgroundColor = ThemeService.shared.currentTheme.value.secondarySystemBackgroundColor
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.view.backgroundColor = theme.secondarySystemBackgroundColor
-            }
-            .store(in: &disposeBag)
-        
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(tableView)
-        tableView.pinToParent()
-        
-        tableView.delegate = self
         viewModel.setupDiffableDataSource(
             tableView: tableView,
             userTableViewCellDelegate: self
         )
-        
-        // setup batch fetch
-        viewModel.listBatchFetchViewModel.setup(scrollView: tableView)
-        viewModel.listBatchFetchViewModel.shouldFetch
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                self.viewModel.stateMachine.enter(FollowerListViewModel.State.Loading.self)
-            }
-            .store(in: &disposeBag)
         
         // trigger user timeline loading
         Publishers.CombineLatest(
@@ -87,6 +77,8 @@ extension FollowerListViewController {
             self.viewModel.stateMachine.enter(FollowerListViewModel.State.Reloading.self)
         }
         .store(in: &disposeBag)
+
+        tableView.refreshControl = UIRefreshControl()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -94,12 +86,18 @@ extension FollowerListViewController {
         
         tableView.deselectRow(with: transitionCoordinator, animated: animated)
     }
-    
+
+    //MARK: - Actions
+
+    @objc
+    func refresh(_ sender: UIRefreshControl) {
+        viewModel.stateMachine.enter(FollowerListViewModel.State.Reloading.self)
+    }
 }
 
 // MARK: - AuthContextProvider
 extension FollowerListViewController: AuthContextProvider {
-    var authContext: AuthContext { viewModel.authContext }
+    var authenticationBox: MastodonAuthenticationBox { viewModel.authenticationBox }
 }
 
 
@@ -118,4 +116,54 @@ extension FollowerListViewController: UITableViewDelegate, AutoGenerateTableView
 }
 
 // MARK: - UserTableViewCellDelegate
-extension FollowerListViewController: UserTableViewCellDelegate { }
+extension FollowerListViewController: UserTableViewCellDelegate {}
+
+
+// MARK: - DataSourceProvider
+extension FollowerListViewController: DataSourceProvider {
+    var filterContext: MastodonSDK.Mastodon.Entity.FilterContext? {
+        .none
+    }
+    
+    func didToggleContentWarningDisplayStatus(status: MastodonSDK.MastodonStatus) {
+        tableView.reloadData()
+    }
+    
+    func item(from source: DataSourceItem.Source) async -> DataSourceItem? {
+        var _indexPath = source.indexPath
+        if _indexPath == nil, let cell = source.tableViewCell {
+            _indexPath = await self.indexPath(for: cell)
+        }
+        guard let indexPath = _indexPath else { return nil }
+
+        guard let item = viewModel.diffableDataSource?.itemIdentifier(for: indexPath) else {
+            return nil
+        }
+
+        switch item {
+            case .account(let account, let relationship):
+                return .account(account: account, relationship: relationship)
+            default:
+                return nil
+        }
+    }
+
+    func update(status: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
+        assertionFailure("Not required")
+    }
+
+    @MainActor
+    private func indexPath(for cell: UITableViewCell) async -> IndexPath? {
+        return tableView.indexPath(for: cell)
+    }
+}
+
+//MARK: - UIScrollViewDelegate
+
+extension FollowerListViewController: UIScrollViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        Self.scrollViewDidScrollToEnd(scrollView) {
+            viewModel.stateMachine.enter(FollowerListViewModel.State.Loading.self)
+        }
+    }
+}

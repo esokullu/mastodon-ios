@@ -16,7 +16,7 @@ extension Mastodon.Entity {
     ///   2021/2/3
     /// # Reference
     ///  [Document](https://docs.joinmastodon.org/entities/source/)
-    public struct Source: Codable {
+    public struct Source: Codable, Sendable, Hashable {
         
         // Base
         public let note: String
@@ -26,7 +26,10 @@ extension Mastodon.Entity {
         public let sensitive: Bool?
         public let language: String?        // (ISO 639-1 language two-letter code)
         public let followRequestsCount: Int?
-        
+        public let hideCollections: Bool?
+        public let indexable: Bool?
+        public let discoverable: Bool?
+
         enum CodingKeys: String, CodingKey {
             case note
             case fields
@@ -35,12 +38,19 @@ extension Mastodon.Entity {
             case sensitive
             case language
             case followRequestsCount = "follow_requests_count"
+            case hideCollections = "hide_collections"
+            case indexable
+            case discoverable
+        }
+        
+        public static func withPrivacy(_ privacy: Privacy) -> Self {
+            Source(note: "", fields: nil, privacy: privacy, sensitive: nil, language: nil, followRequestsCount: nil, hideCollections: nil, indexable: nil, discoverable: nil)
         }
     }
 }
 
 extension Mastodon.Entity.Source {
-    public enum Privacy: RawRepresentable, Codable {
+    public enum Privacy: RawRepresentable, Codable, Sendable, Hashable {
         case `public`
         case unlisted
         case `private`

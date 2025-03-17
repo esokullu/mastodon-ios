@@ -5,31 +5,29 @@
 //  Created by MainasuK on 2022-1-21.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreDataStack
 import GameplayKit
 import MastodonSDK
 import MastodonCore
+import MastodonLocalization
 
+@MainActor
 final class NotificationTimelineViewModel {
-    
-    let logger = Logger(subsystem: "NotificationTimelineViewModel", category: "ViewModel")
     
     var disposeBag = Set<AnyCancellable>()
     
     // input
-    let context: AppContext
-    let authContext: AuthContext
+    let authenticationBox: MastodonAuthenticationBox
     let scope: Scope
-    let feedFetchedResultsController: FeedFetchedResultsController
-    let listBatchFetchViewModel = ListBatchFetchViewModel()
+    var notificationPolicy: Mastodon.Entity.NotificationPolicy?
+    let feedLoader: MastodonFeedLoader
     @Published var isLoadingLatest = false
     @Published var lastAutomaticFetchTimestamp: Date?
     
     // output
-    var diffableDataSource: UITableViewDiffableDataSource<NotificationSection, NotificationItem>?
+    var diffableDataSource: UITableViewDiffableDataSource<NotificationSection, NotificationListItem>?
     var didLoadLatest = PassthroughSubject<Void, Never>()
 
     // bottom loader
@@ -46,117 +44,112 @@ final class NotificationTimelineViewModel {
         return stateMachine
     }()
     
+    @MainActor
     init(
-        context: AppContext,
-        authContext: AuthContext,
-        scope: Scope
-    ) {
-        self.context = context
-        self.authContext = authContext
-        self.scope = scope
-        self.feedFetchedResultsController = FeedFetchedResultsController(managedObjectContext: context.managedObjectContext)
-        // end init
-        
-        feedFetchedResultsController.predicate = NotificationTimelineViewModel.feedPredicate(
-            authenticationBox: authContext.mastodonAuthenticationBox,
-            scope: scope
-        )
-    }
-    
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
-    
-}
-
-extension NotificationTimelineViewModel {
-
-    typealias Scope = APIService.MastodonNotificationScope
-    
-    static func feedPredicate(
         authenticationBox: MastodonAuthenticationBox,
-        scope: Scope
-    ) -> NSPredicate {
-        let domain = authenticationBox.domain
-        let userID = authenticationBox.userID
-        let acct = Feed.Acct.mastodon(
-            domain: domain,
-            userID: userID
-        )
-        
-        let predicate: NSPredicate = {
-            switch scope {
-            case .everything:
-                return NSCompoundPredicate(andPredicateWithSubpredicates: [
-                    Feed.hasNotificationPredicate(),
-                    Feed.predicate(
-                        kind: .notificationAll,
-                        acct: acct
-                    )
-                ])
-            case .mentions:
-                return NSCompoundPredicate(andPredicateWithSubpredicates: [
-                    Feed.hasNotificationPredicate(),
-                    Feed.predicate(
-                        kind: .notificationMentions,
-                        acct: acct
-                    ),
-                    Feed.notificationTypePredicate(types: scope.includeTypes ?? [])
-                ])
-            }
-        }()
-        return predicate
+        scope: Scope,
+        notificationPolicy: Mastodon.Entity.NotificationPolicy? = nil
+    ) {
+        self.authenticationBox = authenticationBox
+        self.scope = scope
+        self.feedLoader = MastodonFeedLoader(kind: scope.feedKind)
+        self.notificationPolicy = notificationPolicy
+
+        NotificationCenter.default.addObserver(self, selector: #selector(Self.notificationFilteringChanged(_:)), name: .notificationFilteringChanged, object: nil)
     }
 
+    //MARK: - Notifications
+
+    @objc func notificationFilteringChanged(_ notification: Notification) {
+        Task { [weak self] in
+            guard let self else { return }
+
+            let policy = try await APIService.shared.notificationPolicy(authenticationBox: self.authenticationBox)
+            self.notificationPolicy = policy.value
+
+            await self.loadLatest()
+        }
+    }
+    
+    func didActOnFollowRequest(_ notification: MastodonNotification, approved: Bool) {
+        defer {
+            Task {
+                await loadLatest()
+            }
+        }
+        guard var currentSnapshot = diffableDataSource?.snapshot() else { return }
+        let identifier = NotificationListItem.notification(.notification(id: notification.id))
+        if currentSnapshot.itemIdentifiers.contains(identifier) {
+            if !approved {
+                currentSnapshot.deleteItems([identifier])
+            }
+        }
+    }
 }
 
 extension NotificationTimelineViewModel {
+    enum Scope: Hashable {
+        case everything
+        case mentions
+        case fromAccount(Mastodon.Entity.Account)
+
+        var title: String {
+            switch self {
+            case .everything:
+                return L10n.Scene.Notification.Title.everything
+            case .mentions:
+                return L10n.Scene.Notification.Title.mentions
+            case .fromAccount(let account):
+                return "Notifications from \(account.displayName)"
+            }
+        }
+        
+        var feedKind: MastodonFeedKind {
+            switch self {
+            case .everything:
+                return .notificationsAll
+            case .mentions:
+                return .notificationsMentionsOnly
+            case .fromAccount(let account):
+                return .notificationsWithAccount(account.id)
+            }
+        }
+    }
+}
+
+extension NotificationTimelineViewModel {
+    
+    func reloadData() {
+        guard let diffableDataSource else { return }
+        diffableDataSource.applySnapshotUsingReloadData(diffableDataSource.snapshot())
+    }
     
     // load lastest
     func loadLatest() async {
         isLoadingLatest = true
         defer { isLoadingLatest = false }
-        
-        do {
-            _ = try await context.apiService.notifications(
-                maxID: nil,
-                scope: scope,
-                authenticationBox: authContext.mastodonAuthenticationBox
-            )
-        } catch {
-            didLoadLatest.send()
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): \(error.localizedDescription)")
-        }
+        let currentFirst = diffableDataSource?.snapshot().itemIdentifiers.first
+        await loadMore(olderThan: nil, newerThan: currentFirst)
+        didLoadLatest.send()
     }
     
-    // load timeline gap
-    func loadMore(item: NotificationItem) async {
-        guard case let .feedLoader(record) = item else { return }
+    func loadMore(olderThan: NotificationListItem?, newerThan: NotificationListItem?) async {
         
-        let managedObjectContext = context.managedObjectContext
-        let key = "LoadMore@\(record.objectID)"
-        
-        // return when already loading state
-        guard managedObjectContext.cache(froKey: key) == nil else { return }
-
-        guard let feed = record.object(in: managedObjectContext) else { return }
-        guard let maxID = feed.notification?.id else { return }
-        // keep transient property live
-        managedObjectContext.cache(feed, key: key)
-        defer {
-            managedObjectContext.cache(nil, key: key)
+        func fetchAnchor(for item: NotificationListItem?) -> MastodonFeedItemIdentifier? {
+            switch item {
+            case .notification:
+                return item?.fetchAnchor
+            case .bottomLoader:
+                return diffableDataSource?.snapshot().itemIdentifiers.last(where: { $0.fetchAnchor != nil })?.fetchAnchor
+            case .filteredNotificationsInfo:
+                return  diffableDataSource?.snapshot().itemIdentifiers.first(where: { $0.fetchAnchor != nil })?.fetchAnchor
+            case .groupedNotification(let viewModel):
+                return viewModel.identifier
+            case .none:
+                return nil
+            }
         }
         
-        // fetch data
-        do {
-            _ = try await context.apiService.notifications(
-                maxID: maxID,
-                scope: scope,
-                authenticationBox: authContext.mastodonAuthenticationBox
-            )
-        } catch {
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): fetch more failure: \(error.localizedDescription)")
-        }
+        feedLoader.loadMore(olderThan: fetchAnchor(for: olderThan), newerThan: fetchAnchor(for: newerThan))
     }
-    
 }

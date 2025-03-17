@@ -6,20 +6,27 @@
 //
 
 import UIKit
-import CoreDataStack
+import MastodonSDK
 import MastodonCore
 
 extension DataSourceFacade {
     static func responseToUserMuteAction(
-        dependency: NeedsDependency & AuthContextProvider,
-        user: ManagedObjectRecord<MastodonUser>
-    ) async throws {
-        let selectionFeedbackGenerator = await UISelectionFeedbackGenerator()
-        await selectionFeedbackGenerator.selectionChanged()
-    
-        _ = try await dependency.context.apiService.toggleMute(
-            user: user,
-            authenticationBox: dependency.authContext.mastodonAuthenticationBox
+        dependency: AuthContextProvider,
+        account: Mastodon.Entity.Account
+    ) async throws -> Mastodon.Entity.Relationship {
+        FeedbackGenerator.shared.generate(.selectionChanged)
+
+        let response = try await APIService.shared.toggleMute(
+            authenticationBox: dependency.authenticationBox,
+            account: account
         )
-    }   // end func
+
+        let userInfo = [
+            UserInfoKey.relationship: response.value,
+        ]
+
+        NotificationCenter.default.post(name: .relationshipChanged, object: self, userInfo: userInfo)
+
+        return response.value
+    }
 }

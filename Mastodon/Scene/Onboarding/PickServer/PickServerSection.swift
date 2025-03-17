@@ -18,7 +18,7 @@ enum PickServerSection: Equatable, Hashable {
 extension PickServerSection {
     static func tableViewDiffableDataSource(
         for tableView: UITableView,
-        dependency: NeedsDependency
+        dependency: UIViewController
     ) -> UITableViewDiffableDataSource<PickServerSection, PickServerItem> {
         tableView.register(PickServerCell.self, forCellReuseIdentifier: String(describing: PickServerCell.self))
         tableView.register(PickServerLoaderTableViewCell.self, forCellReuseIdentifier: String(describing: PickServerLoaderTableViewCell.self))
@@ -65,7 +65,7 @@ extension PickServerSection {
         }()
         if let proxiedThumbnail = server.proxiedThumbnail, let thumbnailUrl = URL(string: proxiedThumbnail) {
             cell.thumbnailImageView.af.setImage(withURL: thumbnailUrl, completion: { _ in
-                OperationQueue.main.addOperation {
+                DispatchQueue.main.async {
                     cell.thumbnailImageView.isHidden = false
                 }
             })

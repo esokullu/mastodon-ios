@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022-1-22.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreDataStack
@@ -19,8 +18,7 @@ final class ProfileAboutViewModel {
     var disposeBag = Set<AnyCancellable>()
 
     // input
-    let context: AppContext
-    @Published var user: MastodonUser?
+    @Published var account: Mastodon.Entity.Account
     @Published var isEditing = false
     @Published var accountForEdit: Mastodon.Entity.Account?
     
@@ -33,25 +31,12 @@ final class ProfileAboutViewModel {
     @Published var emojiMeta: MastodonContent.Emojis = [:]
     @Published var createdAt: Date = Date()
 
-    init(context: AppContext) {
-        self.context = context
-        // end init
-        
-        $user
-            .compactMap { $0 }
-            .flatMap { $0.publisher(for: \.emojis) }
-            .map { $0.asDictionary }
-            .assign(to: &$emojiMeta)
-        
-        $user
-            .compactMap { $0 }
-            .flatMap { $0.publisher(for: \.fields) }
-            .assign(to: &$fields)
+    init(account: Mastodon.Entity.Account) {
+        self.account = account
 
-        $user
-            .compactMap { $0 }
-            .flatMap { $0.publisher(for: \.createdAt) }
-            .assign(to: &$createdAt)
+        emojiMeta = account.emojiMeta
+        fields = account.mastodonFields
+        createdAt = account.createdAt
         
         Publishers.CombineLatest(
             $fields,
@@ -92,6 +77,12 @@ final class ProfileAboutViewModel {
 extension ProfileAboutViewModel {
     class ProfileInfo {
         @Published var fields: [ProfileFieldItem.FieldValue] = []
+        
+        var editedFields: [ (String, String) ] {
+            let edited = fields.map { return ($0.name.value, $0.value.value)
+            }
+            return edited
+        }
     }
 }
 
@@ -113,7 +104,7 @@ extension ProfileAboutViewModel {
 }
 
 // MARK: - ProfileViewModelEditable
-extension ProfileAboutViewModel: ProfileViewModelEditable {
+extension ProfileAboutViewModel {
     var isEdited: Bool {
         guard isEditing else { return false }
         

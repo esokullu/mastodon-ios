@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022/11/8.
 //
 
-import os.log
 import UIKit
 import Combine
 import UniformTypeIdentifiers
@@ -44,7 +43,7 @@ extension AttachmentViewModel: NSItemProviderWriting {
         switch input {
         case .image:
             typeIdentifiers.append(UTType.png.identifier)
-        case .url(let url):
+        case .url(let url), .mastodonAssetUrl(let url, _):
             let _uti = UTType(filenameExtension: url.pathExtension)
             if let uti = _uti {
                 if uti.conforms(to: .image) {

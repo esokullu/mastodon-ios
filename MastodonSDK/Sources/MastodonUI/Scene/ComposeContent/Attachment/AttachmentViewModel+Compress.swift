@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022/11/11.
 //
 
-import os.log
 import UIKit
 import AVKit
 import MastodonCore
@@ -15,17 +14,18 @@ import Nuke
 extension AttachmentViewModel {
     func compressVideo(url: URL) async throws -> URL {
         let urlAsset = AVURLAsset(url: url)
+        
+        guard let track = try await urlAsset.loadTracks(withMediaType: .video).first else {
+            throw AttachmentError.invalidAttachmentType
+        }
+        
         let exporter = NextLevelSessionExporter(withAsset: urlAsset)
         exporter.outputFileType = .mp4
-        
-        let isLandscape: Bool = {
-            guard let track = urlAsset.tracks(withMediaType: .video).first else {
-                return true
-            }
-            
-            let size = track.naturalSize.applying(track.preferredTransform)
-            return abs(size.width) >= abs(size.height)
-        }()
+
+        let preferredSize = try await preferredSizeFor(
+            track: track,
+            maxLongestSide: 1280
+        )
         
         let outputURL = try FileManager.default.createTemporaryFileURL(
             filename: UUID().uuidString,
@@ -40,8 +40,8 @@ extension AttachmentViewModel {
         ]
         exporter.videoOutputConfiguration = [
             AVVideoCodecKey: AVVideoCodecType.h264,
-            AVVideoWidthKey: NSNumber(integerLiteral: isLandscape ? 1280 : 720),
-            AVVideoHeightKey: NSNumber(integerLiteral: isLandscape ? 720 : 1280),
+            AVVideoWidthKey: NSNumber(floatLiteral: preferredSize.width),
+            AVVideoHeightKey: NSNumber(floatLiteral: preferredSize.height),
             AVVideoScalingModeKey: AVVideoScalingModeResizeAspectFill,
             AVVideoCompressionPropertiesKey: compressionDict
         ]
@@ -60,6 +60,27 @@ extension AttachmentViewModel {
         
         return outputURL
     }
+
+    private func preferredSizeFor(track: AVAssetTrack, maxLongestSide: CGFloat) async throws -> CGSize {
+        let trackSize = try await track.load(.naturalSize).applying(track.preferredTransform)
+        let actualSize = CGSize(width: abs(trackSize.width), height: abs(trackSize.height))
+        let isLandscape = actualSize.width >= actualSize.height
+        
+        switch isLandscape {
+        case false: // portrait mode, needs height altered eventually
+            if actualSize.height > maxLongestSide {
+                // reduce height, keep aspect ratio
+                return CGSize(width: (maxLongestSide / (actualSize.height/actualSize.width)), height: maxLongestSide)
+            }
+            return actualSize
+        case true: // landscape mode, needs width altered eventually
+            if actualSize.width > maxLongestSide {
+               // reduce width, keep aspect ratio
+               return CGSize(width: maxLongestSide, height: (maxLongestSide * (actualSize.height/actualSize.width)))
+           }
+            return actualSize
+        }
+    }
     
     private func exportVideo(by exporter: NextLevelSessionExporter) async throws -> URL {
         guard let outputURL = exporter.outputURL else {
@@ -70,7 +91,6 @@ extension AttachmentViewModel {
                 DispatchQueue.main.async { [weak self] in
                     guard let self = self else { return }
                     self.videoCompressProgress = Double(progress)
-                    os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: export progress: %.2f", ((#file as NSString).lastPathComponent), #line, #function, progress)
                 }
             }, completionHandler: { result in
                 switch result {
@@ -82,7 +102,6 @@ extension AttachmentViewModel {
                     default:
                         if Task.isCancelled {
                             exporter.cancelExport()
-                            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: cancel export", ((#file as NSString).lastPathComponent), #line, #function)
                         }
                         print("NextLevelSessionExporter, did not complete")
                     }
@@ -116,10 +135,8 @@ extension AttachmentViewModel {
                     guard let compressedJpegData = image.jpegData(compressionQuality: 0.8) else {
                         throw AttachmentError.invalidAttachmentType
                     }
-                    os_log("%{public}s[%{public}ld], %{public}s: compress png %.2fMiB -> jpeg %.2fMiB", ((#file as NSString).lastPathComponent), #line, #function, Double(imageData.count) / 1024 / 1024, Double(compressedJpegData.count) / 1024 / 1024)
                     imageData = compressedJpegData
                 } else {
-                    os_log("%{public}s[%{public}ld], %{public}s: png %.2fMiB", ((#file as NSString).lastPathComponent), #line, #function, Double(imageData.count) / 1024 / 1024)
                     break
                 }
             } else {
@@ -130,10 +147,8 @@ extension AttachmentViewModel {
                     guard let compressedJpegData = scaledImage.jpegData(compressionQuality: 0.8) else {
                         throw AttachmentError.invalidAttachmentType
                     }
-                    os_log("%{public}s[%{public}ld], %{public}s: compress jpeg %.2fMiB -> jpeg %.2fMiB", ((#file as NSString).lastPathComponent), #line, #function, Double(imageData.count) / 1024 / 1024, Double(compressedJpegData.count) / 1024 / 1024)
                     imageData = compressedJpegData
                 } else {
-                    os_log("%{public}s[%{public}ld], %{public}s: jpeg %.2fMiB", ((#file as NSString).lastPathComponent), #line, #function, Double(imageData.count) / 1024 / 1024)
                     break
                 }
             }

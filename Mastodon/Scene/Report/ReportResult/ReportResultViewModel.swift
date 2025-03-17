@@ -10,7 +10,6 @@ import CoreData
 import CoreDataStack
 import Foundation
 import MastodonSDK
-import os.log
 import UIKit
 import MastodonAsset
 import MastodonCore
@@ -22,9 +21,9 @@ class ReportResultViewModel: ObservableObject {
     var disposeBag = Set<AnyCancellable>()
 
     // input
-    let context: AppContext
-    let authContext: AuthContext
-    let user: ManagedObjectRecord<MastodonUser>
+    let authenticationBox: MastodonAuthenticationBox
+    let account: Mastodon.Entity.Account
+    var relationship: Mastodon.Entity.Relationship
     let isReported: Bool
     
     var headline: String {
@@ -40,33 +39,28 @@ class ReportResultViewModel: ObservableObject {
     // output
     @Published var avatarURL: URL?
     @Published var username: String = ""
-    
-    let relationshipViewModel = RelationshipViewModel()
+
     let muteActionPublisher = PassthroughSubject<Void, Never>()
     let followActionPublisher = PassthroughSubject<Void, Never>()
     let blockActionPublisher = PassthroughSubject<Void, Never>()
     
     init(
-        context: AppContext,
-        authContext: AuthContext,
-        user: ManagedObjectRecord<MastodonUser>,
+        authenticationBox: MastodonAuthenticationBox,
+        account: Mastodon.Entity.Account,
+        relationship: Mastodon.Entity.Relationship,
         isReported: Bool
     ) {
-        self.context = context
-        self.authContext = authContext
-        self.user = user
+        self.authenticationBox = authenticationBox
+        self.account = account
+        self.relationship = relationship
         self.isReported = isReported
         // end init
         
         Task { @MainActor in
-            guard let user = user.object(in: context.managedObjectContext) else { return }
-            guard let me = authContext.mastodonAuthenticationBox.authenticationRecord.object(in: context.managedObjectContext)?.user else { return }
-            self.relationshipViewModel.user = user
-            self.relationshipViewModel.me = me
             
-            self.avatarURL = user.avatarImageURL()
-            self.username = user.acctWithDomain
-            
+            self.avatarURL = account.avatarImageURL()
+            self.username = account.username
+
         }   // end Task
     }
 

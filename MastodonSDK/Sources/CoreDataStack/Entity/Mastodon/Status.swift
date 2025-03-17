@@ -10,17 +10,7 @@ import Foundation
 
 public final class Status: NSManagedObject {
     public typealias ID = String
-    
-    public class TranslatedContent: NSObject {
-        public let content: String
-        public let provider: String?
-        
-        public init(content: String, provider: String?) {
-            self.content = content
-            self.provider = provider
-        }
-    }
-    
+
     // sourcery: autoGenerateProperty
     @NSManaged public private(set) var identifier: ID
     // sourcery: autoGenerateProperty
@@ -32,6 +22,10 @@ public final class Status: NSManagedObject {
     
     // sourcery: autoUpdatableObject, autoGenerateProperty
     @NSManaged public private(set) var createdAt: Date
+
+    // sourcery: autoUpdatableObject, autoGenerateProperty
+    @NSManaged public private(set) var editedAt: Date?
+
     // sourcery: autoUpdatableObject, autoGenerateProperty
     @NSManaged public private(set) var content: String
     
@@ -53,7 +47,8 @@ public final class Status: NSManagedObject {
     
     // sourcery: autoUpdatableObject
     @NSManaged public private(set) var isSensitiveToggled: Bool
-    
+
+    // sourcery: autoGenerateRelationship
     @NSManaged public private(set) var application: Application?
         
     // Informational
@@ -69,7 +64,7 @@ public final class Status: NSManagedObject {
     // sourcery: autoUpdatableObject, autoGenerateProperty
     @NSManaged public private(set) var inReplyToID: Status.ID?
     // sourcery: autoUpdatableObject, autoGenerateProperty
-    @NSManaged public private(set) var inReplyToAccountID: MastodonUser.ID?
+    @NSManaged public private(set) var inReplyToAccountID: String?
     
     // sourcery: autoUpdatableObject, autoGenerateProperty
     @NSManaged public private(set) var language: String? //  (ISO 639 Part 1 two-letter language code)
@@ -78,32 +73,16 @@ public final class Status: NSManagedObject {
     
     // many-to-one relationship
     // sourcery: autoGenerateRelationship
-    @NSManaged public private(set) var author: MastodonUser
-    // sourcery: autoGenerateRelationship
     @NSManaged public private(set) var reblog: Status?
     // sourcery: autoUpdatableObject
     @NSManaged public private(set) var replyTo: Status?
     
-    // many-to-many relationship
-    @NSManaged public private(set) var favouritedBy: Set<MastodonUser>
-    @NSManaged public private(set) var rebloggedBy: Set<MastodonUser>
-    @NSManaged public private(set) var mutedBy: Set<MastodonUser>
-    @NSManaged public private(set) var bookmarkedBy: Set<MastodonUser>
-
-    // one-to-one relationship
-    @NSManaged public private(set) var pinnedBy: MastodonUser?
-    // sourcery: autoGenerateRelationship
-    @NSManaged public private(set) var poll: Poll?
-    // sourcery: autoGenerateRelationship
-    @NSManaged public private(set) var card: Card?
-
     // one-to-many relationship
     @NSManaged public private(set) var feeds: Set<Feed>
     
     @NSManaged public private(set) var reblogFrom: Set<Status>
     @NSManaged public private(set) var replyFrom: Set<Status>
     @NSManaged public private(set) var notifications: Set<Notification>
-    @NSManaged public private(set) var searchHistories: Set<SearchHistory>
     
     // sourcery: autoUpdatableObject, autoGenerateProperty
     @NSManaged public private(set) var updatedAt: Date
@@ -111,9 +90,6 @@ public final class Status: NSManagedObject {
     @NSManaged public private(set) var deletedAt: Date?
     // sourcery: autoUpdatableObject
     @NSManaged public private(set) var revealedAt: Date?
-    
-    // sourcery: autoUpdatableObject
-    @NSManaged public private(set) var translatedContent: TranslatedContent?
 }
 
 extension Status {
@@ -176,8 +152,8 @@ extension Status {
             didAccessValue(forKey: keyPath)
             do {
                 guard let data = _data else { return [] }
-                let emojis = try JSONDecoder().decode([MastodonMention].self, from: data)
-                return emojis
+                let mentions = try JSONDecoder().decode([MastodonMention].self, from: data)
+                return mentions
             } catch {
                 assertionFailure(error.localizedDescription)
                 return []
@@ -269,6 +245,7 @@ extension Status: AutoGenerateProperty {
         public let id: String
         public let uri: String
         public let createdAt: Date
+        public let editedAt: Date?
         public let content: String
         public let visibility: MastodonVisibility
         public let sensitive: Bool
@@ -278,7 +255,7 @@ extension Status: AutoGenerateProperty {
         public let repliesCount: Int64
         public let url: String?
         public let inReplyToID: Status.ID?
-        public let inReplyToAccountID: MastodonUser.ID?
+        public let inReplyToAccountID: String?
         public let language: String?
         public let text: String?
         public let updatedAt: Date
@@ -293,6 +270,7 @@ extension Status: AutoGenerateProperty {
     		id: String,
     		uri: String,
     		createdAt: Date,
+    		editedAt: Date?,
     		content: String,
     		visibility: MastodonVisibility,
     		sensitive: Bool,
@@ -302,7 +280,7 @@ extension Status: AutoGenerateProperty {
     		repliesCount: Int64,
     		url: String?,
     		inReplyToID: Status.ID?,
-    		inReplyToAccountID: MastodonUser.ID?,
+    		inReplyToAccountID: String?,
     		language: String?,
     		text: String?,
     		updatedAt: Date,
@@ -316,6 +294,7 @@ extension Status: AutoGenerateProperty {
     		self.id = id
     		self.uri = uri
     		self.createdAt = createdAt
+    		self.editedAt = editedAt
     		self.content = content
     		self.visibility = visibility
     		self.sensitive = sensitive
@@ -342,6 +321,7 @@ extension Status: AutoGenerateProperty {
     	self.id = property.id
     	self.uri = property.uri
     	self.createdAt = property.createdAt
+    	self.editedAt = property.editedAt
     	self.content = property.content
     	self.visibility = property.visibility
     	self.sensitive = property.sensitive
@@ -363,6 +343,7 @@ extension Status: AutoGenerateProperty {
 
     public func update(property: Property) {
     	update(createdAt: property.createdAt)
+    	update(editedAt: property.editedAt)
     	update(content: property.content)
     	update(visibility: property.visibility)
     	update(sensitive: property.sensitive)
@@ -391,29 +372,21 @@ extension Status: AutoGenerateRelationship {
     // Generated using Sourcery
     // DO NOT EDIT
     public struct Relationship {
-    	public let author: MastodonUser
+    	public let application: Application?
     	public let reblog: Status?
-    	public let poll: Poll?
-    	public let card: Card?
 
     	public init(
-    		author: MastodonUser,
-    		reblog: Status?,
-    		poll: Poll?,
-    		card: Card?
-    	) {
-    		self.author = author
+    		application: Application?,
+    		reblog: Status?
+        ) {
+    		self.application = application
     		self.reblog = reblog
-    		self.poll = poll
-    		self.card = card
     	}
     }
 
     public func configure(relationship: Relationship) {
-    	self.author = relationship.author
+    	self.application = relationship.application
     	self.reblog = relationship.reblog
-    	self.poll = relationship.poll
-    	self.card = relationship.card
     }
     // sourcery:end
 }
@@ -427,6 +400,11 @@ extension Status: AutoUpdatableObject {
     public func update(createdAt: Date) {
     	if self.createdAt != createdAt {
     		self.createdAt = createdAt
+    	}
+    }
+    public func update(editedAt: Date?) {
+    	if self.editedAt != editedAt {
+    		self.editedAt = editedAt
     	}
     }
     public func update(content: String) {
@@ -479,7 +457,7 @@ extension Status: AutoUpdatableObject {
     		self.inReplyToID = inReplyToID
     	}
     }
-    public func update(inReplyToAccountID: MastodonUser.ID?) {
+    public func update(inReplyToAccountID: String?) {
     	if self.inReplyToAccountID != inReplyToAccountID {
     		self.inReplyToAccountID = inReplyToAccountID
     	}
@@ -514,11 +492,6 @@ extension Status: AutoUpdatableObject {
     		self.revealedAt = revealedAt
     	}
     }
-    public func update(translatedContent: TranslatedContent?) {
-    	if self.translatedContent != translatedContent {
-    		self.translatedContent = translatedContent
-    	}
-    }
     public func update(attachments: [MastodonAttachment]) {
     	if self.attachments != attachments {
     		self.attachments = attachments
@@ -535,54 +508,6 @@ extension Status: AutoUpdatableObject {
     	}
     }
     // sourcery:end
-    
-    public func update(liked: Bool, by mastodonUser: MastodonUser) {
-        if liked {
-            if !self.favouritedBy.contains(mastodonUser) {
-                self.mutableSetValue(forKey: #keyPath(Status.favouritedBy)).add(mastodonUser)
-            }
-        } else {
-            if self.favouritedBy.contains(mastodonUser) {
-                self.mutableSetValue(forKey: #keyPath(Status.favouritedBy)).remove(mastodonUser)
-            }
-        }
-    }
-
-    public func update(reblogged: Bool, by mastodonUser: MastodonUser) {
-        if reblogged {
-            if !self.rebloggedBy.contains(mastodonUser) {
-                self.mutableSetValue(forKey: #keyPath(Status.rebloggedBy)).add(mastodonUser)
-            }
-        } else {
-            if self.rebloggedBy.contains(mastodonUser) {
-                self.mutableSetValue(forKey: #keyPath(Status.rebloggedBy)).remove(mastodonUser)
-            }
-        }
-    }
-
-    public func update(muted: Bool, by mastodonUser: MastodonUser) {
-        if muted {
-            if !self.mutedBy.contains(mastodonUser) {
-                self.mutableSetValue(forKey: #keyPath(Status.mutedBy)).add(mastodonUser)
-            }
-        } else {
-            if self.mutedBy.contains(mastodonUser) {
-                self.mutableSetValue(forKey: #keyPath(Status.mutedBy)).remove(mastodonUser)
-            }
-        }
-    }
-
-    public func update(bookmarked: Bool, by mastodonUser: MastodonUser) {
-        if bookmarked {
-            if !self.bookmarkedBy.contains(mastodonUser) {
-                self.mutableSetValue(forKey: #keyPath(Status.bookmarkedBy)).add(mastodonUser)
-            }
-        } else {
-            if self.bookmarkedBy.contains(mastodonUser) {
-                self.mutableSetValue(forKey: #keyPath(Status.bookmarkedBy)).remove(mastodonUser)
-            }
-        }
-    }
     
     public func update(isReveal: Bool) {
         revealedAt = isReveal ? Date() : nil

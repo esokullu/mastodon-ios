@@ -34,6 +34,7 @@ struct LatestFollowersWidgetView: View {
                 .multilineTextAlignment(.center)
                 .font(.caption)
                 .padding(.all, 20)
+                .emptyWidgetBackground()
         }
     }
     
@@ -44,12 +45,10 @@ struct LatestFollowersWidgetView: View {
             
             ForEach(accounts, id: \.acct) { account in
                 HStack {
-                    if let avatarImage = account.avatarImage {
-                        Image(uiImage: avatarImage)
-                            .resizable()
-                            .frame(width: 32, height: 32)
-                            .cornerRadius(5)
-                    }
+                    Image(uiImage: account.avatarImage)
+                        .resizable()
+                        .frame(width: 32, height: 32)
+                        .cornerRadius(5)
                     VStack(alignment: .leading) {
                         
                     Text(account.displayNameWithFallback)
@@ -74,6 +73,7 @@ struct LatestFollowersWidgetView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
+        .emptyWidgetBackground()
     }
     
     private func viewForMediumWidget(_ accounts: [LatestFollowersEntryAccountable], lastUpdate: Date) -> some View {
@@ -87,12 +87,10 @@ struct LatestFollowersWidgetView: View {
             
             ForEach(accounts, id: \.acct) { account in
                 HStack {
-                    if let avatarImage = account.avatarImage {
-                        Image(uiImage: avatarImage)
-                            .resizable()
-                            .frame(width: 32, height: 32)
-                            .cornerRadius(5)
-                    }
+                    Image(uiImage: account.avatarImage)
+                        .resizable()
+                        .frame(width: 32, height: 32)
+                        .cornerRadius(5)
                     VStack(alignment: .leading) {
                         
                         HStack {
@@ -123,6 +121,7 @@ struct LatestFollowersWidgetView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
+        .emptyWidgetBackground()
     }
 }
 

@@ -5,9 +5,7 @@
 //  Created by MainasuK Cirno on 2021-3-29.
 //
 
-import os.log
 import UIKit
-import AVKit
 import Combine
 import CoreDataStack
 import GameplayKit
@@ -15,17 +13,16 @@ import TabBarPager
 import XLPagerTabStrip
 import MastodonCore
 
-final class UserTimelineViewController: UIViewController, NeedsDependency, MediaPreviewableViewController {
-    
-    let logger = Logger(subsystem: "UserTimelineViewController", category: "ViewController")
-        
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
+final class UserTimelineViewController: UIViewController, MediaPreviewableViewController, StatusReloadable {
     
     var disposeBag = Set<AnyCancellable>()
     var viewModel: UserTimelineViewModel!
     
     let mediaPreviewTransitionController = MediaPreviewTransitionController()
+    
+    func reloadData() {
+        tableView.reloadData()
+    }
 
     lazy var tableView: UITableView = {
         let tableView = UITableView()
@@ -38,9 +35,6 @@ final class UserTimelineViewController: UIViewController, NeedsDependency, Media
         
     let cellFrameCache = NSCache<NSNumber, NSValue>()
 
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
     
 }
 
@@ -49,14 +43,7 @@ extension UserTimelineViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        view.backgroundColor = ThemeService.shared.currentTheme.value.secondarySystemBackgroundColor
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.view.backgroundColor = theme.secondarySystemBackgroundColor
-            }
-            .store(in: &disposeBag)
+        view.backgroundColor = .secondarySystemBackground
         
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
@@ -67,17 +54,6 @@ extension UserTimelineViewController {
             tableView: tableView,
             statusTableViewCellDelegate: self
         )
-        
-        // setup batch fetch
-        viewModel.listBatchFetchViewModel.setup(scrollView: tableView)
-        viewModel.listBatchFetchViewModel.shouldFetch
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                guard self.view.window != nil else { return }
-                self.viewModel.stateMachine.enter(UserTimelineViewModel.State.Loading.self)
-            }
-            .store(in: &disposeBag)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -100,7 +76,7 @@ extension UserTimelineViewController: CellFrameCacheContainer {
 
 // MARK: - AuthContextProvider
 extension UserTimelineViewController: AuthContextProvider {
-    var authContext: AuthContext { viewModel.authContext }
+    var authenticationBox: MastodonAuthenticationBox { viewModel.authenticationBox }
 }
 
 // MARK: - UITableViewDelegate
@@ -180,5 +156,19 @@ extension UserTimelineViewController: StatusTableViewControllerNavigateable {
 extension UserTimelineViewController: IndicatorInfoProvider {
     func indicatorInfo(for pagerTabStripController: PagerTabStripViewController) -> IndicatorInfo {
         return IndicatorInfo(title: viewModel.title)
+    }
+}
+
+//MARK: - UIScrollViewDelegate
+extension UserTimelineViewController: UIScrollViewDelegate {
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        Self.scrollViewDidScrollToEnd(scrollView) {
+            viewModel.stateMachine.enter(UserTimelineViewModel.State.Loading.self)
+        }
+    }
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        Self.scrollViewDidScrollToEnd(scrollView) {
+            viewModel.stateMachine.enter(UserTimelineViewModel.State.Loading.self)
+        }
     }
 }

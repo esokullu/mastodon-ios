@@ -5,131 +5,113 @@
 //  Created by sxiaojian on 2021/3/31.
 //
 
-import os.log
 import Combine
-import GameplayKit
 import MastodonSDK
 import UIKit
 import MastodonAsset
 import MastodonCore
 import MastodonLocalization
+import Pageboy
 
-final class HeightFixedSearchBar: UISearchBar {
-    override var intrinsicContentSize: CGSize {
-        return CGSize(width: CGFloat.greatestFiniteMagnitude, height: 36)
-    }
-}
-
-final class SearchViewController: UIViewController, NeedsDependency {
-
-    let logger = Logger(subsystem: "SearchViewController", category: "ViewController")
-
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
-
+final class SearchViewController: UIViewController {
     var searchTransitionController = SearchTransitionController()
 
     var disposeBag = Set<AnyCancellable>()
-    var viewModel: SearchViewModel!
+    var viewModel: SearchViewModel?
 
     // use AutoLayout could set search bar margin automatically to
     // layout alongside with split mode button (on iPad)
-    let titleViewContainer = UIView()
-    let searchBar = HeightFixedSearchBar()
-
-//    let collectionView: UICollectionView = {
-//        var configuration = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
-//        configuration.backgroundColor = .clear
-//        configuration.headerMode = .supplementary
-//        let layout = UICollectionViewCompositionalLayout.list(using: configuration)
-//        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-//        collectionView.backgroundColor = .clear
-//        return collectionView
-//    }()
+    let searchBar = UISearchBar()
 
     // value is the initial search text to set
     let searchBarTapPublisher = PassthroughSubject<String, Never>()
     
     private(set) lazy var discoveryViewController: DiscoveryViewController? = {
-        guard let authContext = viewModel.authContext else { return nil }
-        let viewController = DiscoveryViewController()
-        viewController.context = context
-        viewController.coordinator = coordinator
-        viewController.viewModel = .init(
-            context: context,
-            coordinator: coordinator,
-            authContext: authContext
-        )
-        return viewController
+        if let authenticationBox = viewModel?.authenticationBox {
+            let viewController = DiscoveryViewController()
+            viewController.viewModel = .init(
+                authenticationBox: authenticationBox
+            )
+            viewController.delegate = self
+            return viewController
+        } else {
+            return nil
+        }
     }()
-    
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
+
+    let segmentedControl: UISegmentedControl
+    let segmentedControlBackground: UIView
+
+    init() {
+        segmentedControl = UISegmentedControl(items: [
+            L10n.Scene.Discovery.Tabs.posts,
+            L10n.Scene.Discovery.Tabs.hashtags,
+            L10n.Scene.Discovery.Tabs.news,
+            L10n.Scene.Discovery.Tabs.forYou
+        ])
+        segmentedControl.translatesAutoresizingMaskIntoConstraints = false
+        segmentedControl.selectedSegmentIndex = 0
+
+        segmentedControlBackground = UIView()
+        segmentedControlBackground.translatesAutoresizingMaskIntoConstraints = false
+        segmentedControlBackground.backgroundColor = .systemBackground
+
+        super.init(nibName: nil, bundle: nil)
+
+        segmentedControl.addTarget(self, action: #selector(SearchViewController.segmentedControlValueChanged(_:)), for: .valueChanged)
     }
+    
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-}
-
-extension SearchViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        setupAppearance(theme: ThemeService.shared.currentTheme.value)
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.setupAppearance(theme: theme)
-            }
-            .store(in: &disposeBag)
+        setupAppearance()
 
         title = L10n.Scene.Search.title
 
         setupSearchBar()
+        guard let discoveryViewController else { return }
 
-//        collectionView.translatesAutoresizingMaskIntoConstraints = false
-//        view.addSubview(collectionView)
-//        NSLayoutConstraint.activate([
-//            collectionView.topAnchor.constraint(equalTo: view.topAnchor),
-//            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-//            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-//            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-//        ])
-//
-//        collectionView.delegate = self
-//        viewModel.setupDiffableDataSource(
-//            collectionView: collectionView
-//        )
-        
-        guard let discoveryViewController = self.discoveryViewController else { return }
+        segmentedControlBackground.addSubview(segmentedControl)
+        view.addSubview(segmentedControlBackground)
+
 
         addChild(discoveryViewController)
         discoveryViewController.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(discoveryViewController.view)
-        discoveryViewController.view.pinToParent()
+        discoveryViewController.didMove(toParent: self)
 
-//        discoveryViewController.view.isHidden = true
+        let constraints = [
+            segmentedControl.topAnchor.constraint(equalTo: segmentedControlBackground.topAnchor, constant: 8),
+            segmentedControl.leadingAnchor.constraint(equalTo: segmentedControlBackground.leadingAnchor, constant: 8),
+            segmentedControlBackground.trailingAnchor.constraint(equalTo: segmentedControl.trailingAnchor, constant: 8),
+            segmentedControlBackground.bottomAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 8),
 
+            segmentedControlBackground.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            segmentedControlBackground.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: segmentedControlBackground.trailingAnchor),
+
+            discoveryViewController.view.topAnchor.constraint(equalTo: segmentedControlBackground.bottomAnchor),
+            discoveryViewController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            view.safeAreaLayoutGuide.trailingAnchor.constraint(equalTo: discoveryViewController.view.trailingAnchor),
+            view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: discoveryViewController.view.bottomAnchor),
+        ]
+
+        NSLayoutConstraint.activate(constraints)
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-
-        viewModel.viewDidAppeared.send()
-
-        // note:
-        // need set alpha because (maybe) SDK forget set alpha back
-        titleViewContainer.alpha = 1
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        searchBar.scopeBarBackgroundImage = .placeholder(color: .systemBackground)
     }
-}
 
-extension SearchViewController {
-    private func setupAppearance(theme: Theme) {
-        view.backgroundColor = theme.systemGroupedBackgroundColor
+    private func setupAppearance() {
+        view.backgroundColor = .systemGroupedBackground
 
         // Match the DiscoveryViewController tab color and remove the double separator.
         let navigationBarAppearance = UINavigationBarAppearance()
         navigationBarAppearance.configureWithOpaqueBackground()
-        navigationBarAppearance.backgroundColor = theme.systemBackgroundColor
+        navigationBarAppearance.backgroundColor = .systemBackground
         navigationBarAppearance.shadowColor = nil
 
         navigationItem.standardAppearance = navigationBarAppearance
@@ -141,29 +123,29 @@ extension SearchViewController {
     private func setupSearchBar() {
         searchBar.placeholder = L10n.Scene.Search.SearchBar.placeholder
         searchBar.delegate = self
-        searchBar.translatesAutoresizingMaskIntoConstraints = false
-        titleViewContainer.addSubview(searchBar)
-        searchBar.pinToParent()
-        searchBar.setContentHuggingPriority(.required, for: .horizontal)
-        searchBar.setContentHuggingPriority(.required, for: .vertical)
-        navigationItem.titleView = titleViewContainer
-//        navigationItem.titleView = searchBar
+        searchBar.sizeToFit()
+        navigationItem.titleView = searchBar
 
         searchBarTapPublisher
             .throttle(for: 0.5, scheduler: DispatchQueue.main, latest: false)
             .sink { [weak self] initialText in
                 guard let self = self else { return }
                 // push to search detail
-                guard let authContext = self.viewModel.authContext else { return }
-                let searchDetailViewModel = SearchDetailViewModel(authContext: authContext, initialSearchText: initialText)
+                guard let authenticationBox = self.viewModel?.authenticationBox else { return }
+                let searchDetailViewModel = SearchDetailViewModel(authenticationBox: authenticationBox, initialSearchText: initialText)
                 searchDetailViewModel.needsBecomeFirstResponder = true
                 self.navigationController?.delegate = self.searchTransitionController
                 // FIXME:
                 // use `.customPush(animated: false)` false to disable navigation bar animation for searchBar layout
                 // but that should be a fade transition whe fixed size searchBar
-                _ = self.coordinator.present(scene: .searchDetail(viewModel: searchDetailViewModel), from: self, transition: .customPush(animated: false))
+                _ = self.sceneCoordinator?.present(scene: .searchDetail(viewModel: searchDetailViewModel), from: self, transition: .customPush(animated: false))
             }
             .store(in: &disposeBag)
+    }
+
+    @objc
+    private func segmentedControlValueChanged(_ sender: UISegmentedControl) {
+        discoveryViewController?.scrollToPage(.at(index: sender.selectedSegmentIndex), animated: true)
     }
 
 }
@@ -171,7 +153,6 @@ extension SearchViewController {
 // MARK: - UISearchBarDelegate
 extension SearchViewController: UISearchBarDelegate {
     func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {
-        os_log("%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
         searchBarTapPublisher.send("")
         return false
     }
@@ -184,11 +165,7 @@ extension SearchViewController: UISearchBarDelegate {
 // MARK: - UISearchControllerDelegate
 extension SearchViewController: UISearchControllerDelegate {
     func willDismissSearchController(_ searchController: UISearchController) {
-        logger.debug("\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
         searchController.isActive = true
-    }
-    func didPresentSearchController(_ searchController: UISearchController) {
-        logger.debug("\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
     }
 }
 
@@ -202,22 +179,21 @@ extension SearchViewController: ScrollViewContainer {
     }
 }
 
-// MARK: - UICollectionViewDelegate
-//extension SearchViewController: UICollectionViewDelegate {
-//    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-//        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): select item at: \(indexPath.debugDescription)")
-//
-//        defer {
-//            collectionView.deselectItem(at: indexPath, animated: true)
-//        }
-//
-//        guard let diffableDataSource = viewModel.diffableDataSource else { return }
-//        guard let item = diffableDataSource.itemIdentifier(for: indexPath) else { return }
-//
-//        switch item {
-//        case .trend(let hashtag):
-//            let viewModel = HashtagTimelineViewModel(context: context, hashtag: hashtag.name)
-//            coordinator.present(scene: .hashtagTimeline(viewModel: viewModel), from: self, transition: .show)
-//        }
-//    }
-//}
+//MARK: - PageboyViewControllerDelegate
+extension SearchViewController: PageboyViewControllerDelegate {
+    func pageboyViewController(_ pageboyViewController: Pageboy.PageboyViewController, didReloadWith currentViewController: UIViewController, currentPageIndex: Pageboy.PageboyViewController.PageIndex) {
+        // do nothing
+    }
+    
+    func pageboyViewController(_ pageboyViewController: Pageboy.PageboyViewController, didScrollTo position: CGPoint, direction: Pageboy.PageboyViewController.NavigationDirection, animated: Bool) {
+        // do nothing
+    }
+
+    func pageboyViewController(_ pageboyViewController: PageboyViewController, willScrollToPageAt index: PageboyViewController.PageIndex, direction: PageboyViewController.NavigationDirection, animated: Bool) {
+        // do nothing
+    }
+
+    func pageboyViewController(_ pageboyViewController: PageboyViewController, didScrollToPageAt index: PageboyViewController.PageIndex, direction: PageboyViewController.NavigationDirection, animated: Bool) {
+        segmentedControl.selectedSegmentIndex = index
+    }
+}

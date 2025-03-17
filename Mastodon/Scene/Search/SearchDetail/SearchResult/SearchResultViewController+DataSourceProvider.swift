@@ -6,9 +6,18 @@
 //
 
 import UIKit
+import MastodonSDK
 
 // MARK: - DataSourceProvider
 extension SearchResultViewController: DataSourceProvider {
+    var filterContext: MastodonSDK.Mastodon.Entity.FilterContext? {
+        return .none
+    }
+    
+    func didToggleContentWarningDisplayStatus(status: MastodonSDK.MastodonStatus) {
+        tableView.reloadData()
+    }
+    
     func item(from source: DataSourceItem.Source) async -> DataSourceItem? {
         var _indexPath = source.indexPath
         if _indexPath == nil, let cell = source.tableViewCell {
@@ -21,15 +30,19 @@ extension SearchResultViewController: DataSourceProvider {
         }
         
         switch item {
-        case .user(let record):
-            return .user(record: record)
+        case .account(let account, let relationship):
+            return .account(account: account, relationship: relationship)
         case .status(let record):
             return .status(record: record)
-        case .hashtag(let entity):
-            return .hashtag(tag: .entity(entity))
+        case .hashtag(let tag):
+            return .hashtag(tag: tag)
         default:
             return nil
         }
+    }
+    
+    func update(status: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
+        viewModel.dataController.update(status: status, intent: intent)
     }
     
     @MainActor
@@ -40,7 +53,6 @@ extension SearchResultViewController: DataSourceProvider {
 
 extension SearchResultViewController {
     func aspectTableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): indexPath: \(indexPath.debugDescription)")
         Task {
             let source = DataSourceItem.Source(tableViewCell: nil, indexPath: indexPath)
             guard let item = await item(from: source) else {
@@ -53,25 +65,25 @@ extension SearchResultViewController {
             )
             
             switch item {
+            case .account(let account, relationship: _):
+                    await DataSourceFacade.coordinateToProfileScene(provider: self, account: account)
             case .status(let status):
                 await DataSourceFacade.coordinateToStatusThreadScene(
                     provider: self,
                     target: .status,    // remove reblog wrapper
                     status: status
                 )
-            case .user(let user):
-                await DataSourceFacade.coordinateToProfileScene(
-                    provider: self,
-                    user: user
-                )
             case .hashtag(let tag):
                 await DataSourceFacade.coordinateToHashtagScene(
                     provider: self,
                     tag: tag
                 )
-            case .notification:
+            case .notification, .notificationBanner(_):
                 assertionFailure()
+                break
             }   // end switch
+
+            tableView.deselectRow(at: indexPath, animated: true)
         }   // end Task
     }   // end func
 }

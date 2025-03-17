@@ -6,8 +6,17 @@
 //
 
 import UIKit
+import MastodonSDK
 
 extension BookmarkViewController: DataSourceProvider {
+    var filterContext: MastodonSDK.Mastodon.Entity.FilterContext? {
+        return .none
+    }
+    
+    func didToggleContentWarningDisplayStatus(status: MastodonSDK.MastodonStatus) {
+        tableView.reloadData()
+    }
+    
     func item(from source: DataSourceItem.Source) async -> DataSourceItem? {
         var _indexPath = source.indexPath
         if _indexPath == nil, let cell = source.tableViewCell {
@@ -25,6 +34,10 @@ extension BookmarkViewController: DataSourceProvider {
         default:
             return nil
         }
+    }
+
+    func update(status: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
+        viewModel.dataController.update(status: status, intent: intent)
     }
     
     @MainActor

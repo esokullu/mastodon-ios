@@ -114,7 +114,7 @@ extension Mastodon.Entity.Instance {
 }
 
 extension Mastodon.Entity.Instance {
-    public struct Configuration: Codable {
+    public struct Configuration: Codable, InstanceConfigLimitingPropertyContaining {
         public let statuses: Statuses?
         public let mediaAttachments: MediaAttachments?
         public let polls: Polls?
@@ -170,5 +170,15 @@ extension Mastodon.Entity.Instance.Configuration {
             case minExpiration = "min_expiration"
             case maxExpiration = "max_expiration"
         }
+    }
+}
+
+extension Mastodon.Entity.Instance: Hashable {
+    public static func == (lhs: Mastodon.Entity.Instance, rhs: Mastodon.Entity.Instance) -> Bool {
+        lhs.uri == rhs.uri
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(uri)
     }
 }

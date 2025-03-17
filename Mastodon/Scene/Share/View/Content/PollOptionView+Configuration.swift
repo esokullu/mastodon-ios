@@ -11,101 +11,101 @@ import CoreDataStack
 import MetaTextKit
 import MastodonCore
 import MastodonUI
+import MastodonSDK
 
 extension PollOptionView {
-    public func configure(pollOption option: PollOption) {
-        viewModel.objects.insert(option)
+    public func configure(pollOption option: MastodonPollOption) {
+        let poll = option.poll
+        let status = option.poll.status
         
-        // background
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.viewModel.roundedBackgroundViewColor = theme.systemElevatedBackgroundColor
-            }
-            .store(in: &disposeBag)
         // metaContent
-        option.publisher(for: \.title)
+        option.$title
             .map { title -> MetaContent? in
                 return PlaintextMetaContent(string: title)
             }
             .assign(to: \.metaContent, on: viewModel)
             .store(in: &disposeBag)
+        
         // percentage
         Publishers.CombineLatest(
-            option.poll.publisher(for: \.votersCount),
-            option.publisher(for: \.votesCount)
+            poll.$votersCount,
+            option.$votesCount
         )
         .map { pollVotersCount, optionVotesCount -> Double? in
-            guard pollVotersCount > 0, optionVotesCount >= 0 else { return 0 }
+            guard let pollVotersCount, pollVotersCount > 0, let optionVotesCount, optionVotesCount >= 0 else { return 0 }
             return Double(optionVotesCount) / Double(pollVotersCount)
         }
         .assign(to: \.percentage, on: viewModel)
         .store(in: &disposeBag)
+        
         // $isExpire
-        option.poll.publisher(for: \.expired)
+        poll.$expired
             .assign(to: \.isExpire, on: viewModel)
             .store(in: &disposeBag)
-        // isMultiple
-        viewModel.isMultiple = option.poll.multiple
         
-        let optionIndex = option.index
-        let authorDomain = option.poll.status.author.domain
-        let authorID = option.poll.status.author.id
+        // isMultiple
+        viewModel.isMultiple = poll.multiple
+        
+        let authenticationBox = viewModel.authenticationBox
+        
+        let authorDomain = status?.entity.account.domain ?? ""
+        let authorID = status?.entity.account.id ?? ""
         // isSelect, isPollVoted, isMyPoll
-        Publishers.CombineLatest4(
-            option.publisher(for: \.poll),
-            option.publisher(for: \.votedBy),
-            option.publisher(for: \.isSelected),
-            viewModel.$authContext
-        )
-        .sink { [weak self] poll, optionVotedBy, isSelected, authContext in
-            guard let self = self else { return }
+        let domain = authenticationBox?.domain ?? ""
+        let userID = authenticationBox?.userID ?? ""
 
-            let domain = authContext?.mastodonAuthenticationBox.domain ?? ""
-            let userID = authContext?.mastodonAuthenticationBox.userID ?? ""
-            
-            let options = poll.options
-            let pollVoteBy = poll.votedBy ?? Set()
+        let isMyPoll = authorDomain == domain
+                    && authorID == userID
 
-            let isMyPoll = authorDomain == domain
-                        && authorID == userID
+        self.viewModel.isSelect = option.isSelected
+        self.viewModel.isPollVoted = poll.voted == true
+        self.viewModel.isMyPoll = isMyPoll
 
-            let votedOptions = options.filter { option in
-                let votedBy = option.votedBy ?? Set()
-                return votedBy.contains(where: { $0.id == userID && $0.domain == domain })
-            }
-            let isRemoteVotedOption = votedOptions.contains(where: { $0.index == optionIndex })
-            let isRemoteVotedPoll = pollVoteBy.contains(where: { $0.id == userID && $0.domain == domain })
-
-            let isLocalVotedOption = isSelected
-
-            let isSelect: Bool? = {
-                if isLocalVotedOption {
-                    return true
-                } else if !votedOptions.isEmpty {
-                    return isRemoteVotedOption ? true : false
-                } else if isRemoteVotedPoll, votedOptions.isEmpty {
-                    // the poll voted. But server not mark voted options
-                    return nil
-                } else {
-                    return false
-                }
-            }()
-            self.viewModel.isSelect = isSelect
-            self.viewModel.isPollVoted = isRemoteVotedPoll
-            self.viewModel.isMyPoll = isMyPoll
-        }
-        .store(in: &disposeBag)
         // appearance
-        ThemeService.shared.currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                guard let self = self else { return }
-                self.checkmarkBackgroundView.backgroundColor = UIColor(dynamicProvider: { trailtCollection in
-                    return trailtCollection.userInterfaceStyle == .light ? .white : theme.tableViewCellSelectionBackgroundColor
-                })
-            }
-            .store(in: &disposeBag)
+        checkmarkBackgroundView.backgroundColor = SystemTheme.tableViewCellSelectionBackgroundColor
+    }
+    
+    public func configure(poll: Mastodon.Entity.Poll, option pollOption: Mastodon.Entity.Poll.Option, isMyPoll: Bool) {
+        // metaContent
+        viewModel.metaContent = PlaintextMetaContent(string: pollOption.title)
+        
+        // percentage
+        let denominator = poll.votersCount ?? poll.votesCount
+        let optionVotesCount = pollOption.votesCount ?? 0
+        if denominator > 0, optionVotesCount >= 0 {
+            viewModel.percentage = Double(optionVotesCount) / Double(denominator)
+        } else {
+            viewModel.percentage = 0
+        }
+        
+        // expiration
+        viewModel.isExpire = poll.expired
+        
+        // isMultiple
+        viewModel.isMultiple = poll.multiple
+
+        if let isSelectedIndex = poll.options.firstIndex(of: pollOption) {
+            viewModel.isSelect = poll.ownVotes?.contains(isSelectedIndex) ?? false
+        } else {
+            viewModel.isSelect = false
+        }
+        viewModel.isPollVoted = poll.voted == true
+        viewModel.isMyPoll = isMyPoll
+
+        // appearance
+        checkmarkBackgroundView.backgroundColor = SystemTheme.tableViewCellSelectionBackgroundColor
+    }
+}
+
+extension PollOptionView {
+    public func configure(historyPollOption option: Mastodon.Entity.StatusEdit.Poll.Option) {
+        // background
+        viewModel.roundedBackgroundViewColor = SystemTheme.systemElevatedBackgroundColor
+        // metaContent
+        viewModel.metaContent = PlaintextMetaContent(string: option.title)
+        // show left-hand-side dots, otherwise view looks "incomplete"
+        viewModel.selectState = .off
+        // appearance
+        checkmarkBackgroundView.backgroundColor = SystemTheme.tableViewCellSelectionBackgroundColor
     }
 }

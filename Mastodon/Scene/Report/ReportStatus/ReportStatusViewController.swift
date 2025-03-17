@@ -5,7 +5,6 @@
 //  Created by MainasuK on 2022-5-10.
 //
 
-import os.log
 import UIKit
 import Combine
 import CoreDataStack
@@ -19,15 +18,9 @@ protocol ReportStatusViewControllerDelegate: AnyObject {
     func reportStatusViewController(_ viewController: ReportStatusViewController, nextButtonDidPressed button: UIButton)
 }
 
-class ReportStatusViewController: UIViewController, NeedsDependency, ReportViewControllerAppearance {
-    
-    let logger = Logger(subsystem: "ReportStatusViewController", category: "ViewController")
-    
+class ReportStatusViewController: UIViewController, ReportViewControllerAppearance {
     var disposeBag = Set<AnyCancellable>()
     private var observations = Set<NSKeyValueObservation>()
-
-    weak var context: AppContext! { willSet { precondition(!isViewLoaded) } }
-    weak var coordinator: SceneCoordinator! { willSet { precondition(!isViewLoaded) } }
         
     var viewModel: ReportStatusViewModel!
     
@@ -58,9 +51,6 @@ class ReportStatusViewController: UIViewController, NeedsDependency, ReportViewC
         return navigationActionView
     }()
     
-    deinit {
-        os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s", ((#file as NSString).lastPathComponent), #line, #function)
-    }
     
 }
 
@@ -103,17 +93,6 @@ extension ReportStatusViewController {
             }
             .store(in: &observations)
         
-        // setup batch fetch
-        viewModel.listBatchFetchViewModel.setup(scrollView: tableView)
-        viewModel.listBatchFetchViewModel.shouldFetch
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                guard self.view.window != nil else { return }
-                self.viewModel.stateMachine.enter(ReportStatusViewModel.State.Loading.self)
-            }
-            .store(in: &disposeBag)
-        
         viewModel.$isNextButtonEnabled
             .receive(on: DispatchQueue.main)
             .assign(to: \.isEnabled, on: navigationActionView.nextButton)
@@ -124,7 +103,9 @@ extension ReportStatusViewController {
         }
         
         navigationActionView.backButton.addTarget(self, action: #selector(ReportStatusViewController.skipButtonDidPressed(_:)), for: .touchUpInside)
-        navigationActionView.nextButton.addTarget(self, action: #selector(ReportStatusViewController.nextButtonDidPressed(_:)), for: .touchUpInside)        
+        navigationActionView.nextButton.addTarget(self, action: #selector(ReportStatusViewController.nextButtonDidPressed(_:)), for: .touchUpInside)
+
+        viewModel.stateMachine.enter(ReportStatusViewModel.State.Loading.self)
     }
     
 }
@@ -136,16 +117,12 @@ extension ReportStatusViewController {
     }
 
     @objc private func skipButtonDidPressed(_ sender: UIButton) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
-        
         assert(viewModel.delegate != nil)
         viewModel.isSkip = true
         viewModel.delegate?.reportStatusViewController(self, skipButtonDidPressed: sender)
     }
 
     @objc private func nextButtonDidPressed(_ sender: UIButton) {
-        logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public)")
-        
         assert(viewModel.delegate != nil)
         viewModel.isSkip = false
         viewModel.delegate?.reportStatusViewController(self, nextButtonDidPressed: sender)
@@ -204,5 +181,15 @@ extension ReportStatusViewController: UITableViewDelegate {
 extension ReportStatusViewController: UIAdaptivePresentationControllerDelegate {
     func presentationControllerShouldDismiss(_ presentationController: UIPresentationController) -> Bool {
         return false
+    }
+}
+
+//MARK: - UIScrollViewDelegate
+
+extension ReportStatusViewController: UIScrollViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        Self.scrollViewDidScrollToEnd(scrollView) {
+            viewModel.stateMachine.enter(ReportStatusViewModel.State.Loading.self)
+        }
     }
 }

@@ -5,7 +5,6 @@
 //  Created by MainasuK Cirno on 2021-3-30.
 //
 
-import os.log
 import Foundation
 import GameplayKit
 import MastodonCore
@@ -13,9 +12,6 @@ import MastodonSDK
 
 extension UserTimelineViewModel {
     class State: GKState {
-        
-        let logger = Logger(subsystem: "UserTimelineViewModel.State", category: "StateMachine")
-
         let id = UUID()
 
         weak var viewModel: UserTimelineViewModel?
@@ -24,22 +20,11 @@ extension UserTimelineViewModel {
             self.viewModel = viewModel
         }
         
-        override func didEnter(from previousState: GKState?) {
-            super.didEnter(from: previousState)
-            
-            let from = previousState.flatMap { String(describing: $0) } ?? "nil"
-            let to = String(describing: self)
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): \(from) -> \(to)")
-        }
-        
         @MainActor
         func enter(state: State.Type) {
             stateMachine?.enter(state)
         }
         
-        deinit {
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): [\(self.id.uuidString)] \(String(describing: self))")
-        }
     }
 }
 
@@ -69,11 +54,13 @@ extension UserTimelineViewModel.State {
         override func didEnter(from previousState: GKState?) {
             super.didEnter(from: previousState)
             guard let viewModel = viewModel, let stateMachine = stateMachine else { return }
-            
-            // reset
-            viewModel.statusFetchedResultsController.statusIDs = []
 
-            stateMachine.enter(Loading.self)
+            Task {
+                // reset
+                await viewModel.dataController.reset()
+
+                stateMachine.enter(Loading.self)
+            }
         }
     }
     
@@ -92,9 +79,7 @@ extension UserTimelineViewModel.State {
             super.didEnter(from: previousState)
             guard let _ = viewModel, let stateMachine = stateMachine else { return }
             
-            os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: retry loading 3s later…", ((#file as NSString).lastPathComponent), #line, #function)
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                os_log(.info, log: .debug, "%{public}s[%{public}ld], %{public}s: retry loading", ((#file as NSString).lastPathComponent), #line, #function)
                 stateMachine.enter(Loading.self)
             }
         }
@@ -129,33 +114,33 @@ extension UserTimelineViewModel.State {
             super.didEnter(from: previousState)
             guard let viewModel = viewModel, let stateMachine = stateMachine else { return }
             
-            let maxID = viewModel.statusFetchedResultsController.statusIDs.last
-            
-            guard let userID = viewModel.userIdentifier?.userID, !userID.isEmpty else {
-                stateMachine.enter(Fail.self)
-                return
-            }
-            
-            let queryFilter = viewModel.queryFilter
 
             Task {
-    
+                let maxID = await viewModel.dataController.records.last?.id
+
+                guard let userID = viewModel.userIdentifier?.userID, !userID.isEmpty else {
+                    stateMachine.enter(Fail.self)
+                    return
+                }
+                
+                let queryFilter = viewModel.queryFilter
+
                 do {
-                    let response = try await viewModel.context.apiService.userTimeline(
+                    let response = try await APIService.shared.userTimeline(
                         accountID: userID,
                         maxID: maxID,
                         sinceID: nil,
                         excludeReplies: queryFilter.excludeReplies,
                         excludeReblogs: queryFilter.excludeReblogs,
                         onlyMedia: queryFilter.onlyMedia,
-                        authenticationBox: viewModel.authContext.mastodonAuthenticationBox
+                        authenticationBox: viewModel.authenticationBox
                     )
                     
                     var hasNewStatusesAppend = false
-                    var statusIDs = viewModel.statusFetchedResultsController.statusIDs
+                    var statusIDs = await viewModel.dataController.records
                     for status in response.value {
-                        guard !statusIDs.contains(status.id) else { continue }
-                        statusIDs.append(status.id)
+                        guard !statusIDs.contains(where: { $0.id == status.id }) else { continue }
+                        statusIDs.append(.fromEntity(status))
                         hasNewStatusesAppend = true
                     }
                     
@@ -164,10 +149,9 @@ extension UserTimelineViewModel.State {
                     } else {
                         await enter(state: NoMore.self)
                     }
-                    viewModel.statusFetchedResultsController.statusIDs = statusIDs
+                    await viewModel.dataController.setRecords(statusIDs)
                     
                 } catch {
-                    logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): fetch user timeline fail: \(error.localizedDescription)")
                     await enter(state: Fail.self)
                 }
             }   // end Task

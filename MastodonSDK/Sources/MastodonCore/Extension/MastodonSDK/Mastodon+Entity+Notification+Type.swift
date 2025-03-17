@@ -11,13 +11,13 @@ import UIKit
 import MastodonAsset
 import MastodonLocalization
 
-extension Mastodon.Entity.Notification.NotificationType {
+extension Mastodon.Entity.NotificationType {
     public var color: UIColor {
         get {
             var color: UIColor
             switch self {
             case .follow:
-                color = Asset.Colors.brand.color
+                color = Asset.Colors.Brand.blurple.color
             case .favourite:
                 color = Asset.Colors.Notification.favourite.color
             case .reblog:
@@ -25,9 +25,9 @@ extension Mastodon.Entity.Notification.NotificationType {
             case .mention:
                 color = Asset.Colors.Notification.mention.color
             case .poll:
-                color = Asset.Colors.brand.color
+                color = Asset.Colors.Brand.blurple.color
             case .followRequest:
-                color = Asset.Colors.brand.color
+                color = Asset.Colors.Brand.blurple.color
             default:
                 color = .clear
             }

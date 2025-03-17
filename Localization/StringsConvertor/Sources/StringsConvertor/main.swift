@@ -1,4 +1,3 @@
-import os.log
 import Foundation
 
 // conver i18n JSON templates to strings files
@@ -12,15 +11,13 @@ private func convert(from inputDirectoryURL: URL, to outputDirectory: URL) {
         for inputLanguageDirectoryURL in inputLanguageDirectoryURLs {
             let language = inputLanguageDirectoryURL.lastPathComponent
             guard let mappedLanguage = map(language: language) else { continue }
-            os_log("%{public}s[%{public}ld], %{public}s: process %s -> %s", ((#file as NSString).lastPathComponent), #line, #function, language, mappedLanguage)
-            
+
             let fileURLs = try FileManager.default.contentsOfDirectory(
                 at: inputLanguageDirectoryURL,
                 includingPropertiesForKeys: [.nameKey, .isDirectoryKey],
                 options: []
             )
             for jsonURL in fileURLs where jsonURL.pathExtension == "json" {
-                os_log("%{public}s[%{public}ld], %{public}s: process %s", ((#file as NSString).lastPathComponent), #line, #function, jsonURL.debugDescription)
                 let filename = jsonURL.deletingPathExtension().lastPathComponent
                 guard let (mappedFilename, keyStyle) = map(filename: filename) else { continue }
                 guard let bundle = bundle(filename: filename) else { continue }
@@ -40,7 +37,6 @@ private func convert(from inputDirectoryURL: URL, to outputDirectory: URL) {
             }
         }
     } catch {
-        os_log("%{public}s[%{public}ld], %{public}s: %s", ((#file as NSString).lastPathComponent), #line, #function, error.localizedDescription)
         exit(1)
     }
 }
@@ -74,6 +70,9 @@ private func map(language: String) -> String? {
     case "th.lproj":        return "th"         // Thai
     case "tr.lproj":        return "tr"         // Turkish
     case "vi.lproj":        return "vi"         // Vietnamese
+    case "el.lproj":        return "el"         // Greek
+    case "be.lproj":        return "be"         // Belarussian
+    case "hy.lproj":        return "hy"         // Armenian
     default:                return nil
     }
 }
@@ -101,7 +100,6 @@ private func process(url: URL, keyStyle: Parser.KeyStyle) throws -> String {
         let strings = parser.generateStrings(keyStyle: keyStyle)
         return strings
     } catch {
-        os_log("%{public}s[%{public}ld], %{public}s: error: %s", ((#file as NSString).lastPathComponent), #line, #function, error.localizedDescription)
         throw error
     }
 }
@@ -118,15 +116,13 @@ private func move(from inputDirectoryURL: URL, to outputDirectoryURL: URL, pathE
             let language = inputLanguageDirectoryURL.lastPathComponent
             guard let mappedLanguage = map(language: language) else { continue }
             let outputDirectoryURL = outputDirectoryURL.appendingPathComponent(mappedLanguage + ".lproj", isDirectory: true)
-            os_log("%{public}s[%{public}ld], %{public}s: process %s -> %s", ((#file as NSString).lastPathComponent), #line, #function, language, mappedLanguage)
-            
+
             let fileURLs = try FileManager.default.contentsOfDirectory(
                 at: inputLanguageDirectoryURL,
                 includingPropertiesForKeys: [.nameKey, .isDirectoryKey],
                 options: []
             )
             for dictURL in fileURLs where dictURL.pathExtension == pathExtension {
-                os_log("%{public}s[%{public}ld], %{public}s: process %s", ((#file as NSString).lastPathComponent), #line, #function, dictURL.debugDescription)
                 let filename = dictURL.deletingPathExtension().lastPathComponent
                 
                 let outputFileURL = outputDirectoryURL.appendingPathComponent(filename).appendingPathExtension(pathExtension)
@@ -135,7 +131,6 @@ private func move(from inputDirectoryURL: URL, to outputDirectoryURL: URL, pathE
             }
         }
     } catch {
-        os_log("%{public}s[%{public}ld], %{public}s: %s", ((#file as NSString).lastPathComponent), #line, #function, error.localizedDescription)
         exit(2)
     }
 }

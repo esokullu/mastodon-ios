@@ -5,26 +5,28 @@
 //  Created by MainasuK on 2022-1-26.
 //
 
-import os.log
 import UIKit
 import CoreDataStack
+import MastodonCore
 import MastodonUI
 import MastodonLocalization
+import MastodonSDK
 
 extension DataSourceFacade {
     
     @MainActor
     static func coordinateToMediaPreviewScene(
-        dependency: NeedsDependency & MediaPreviewableViewController,
+        dependency: UIViewController & MediaPreviewableViewController,
         mediaPreviewItem: MediaPreviewViewModel.PreviewItem,
         mediaPreviewTransitionItem: MediaPreviewTransitionItem
     ) {
         let mediaPreviewViewModel = MediaPreviewViewModel(
-            context: dependency.context,
+            context: AppContext.shared,
             item: mediaPreviewItem,
             transitionItem: mediaPreviewTransitionItem
         )
-        _ = dependency.coordinator.present(
+        guard let coordinator = dependency.sceneCoordinator else { return }
+        _ = coordinator.present(
             scene: .mediaPreview(viewModel: mediaPreviewViewModel),
             from: dependency,
             transition: .custom(transitioningDelegate: dependency.mediaPreviewTransitionController)
@@ -61,16 +63,12 @@ extension DataSourceFacade {
     
     @MainActor
     static func coordinateToMediaPreviewScene(
-        dependency: NeedsDependency & MediaPreviewableViewController,
-        status: ManagedObjectRecord<Status>,
+        dependency: UIViewController & MediaPreviewableViewController,
+        status: MastodonStatus,
         previewContext: AttachmentPreviewContext
     ) async throws {
-        let managedObjectContext = dependency.context.managedObjectContext
-        let attachments: [MastodonAttachment] = try await managedObjectContext.perform {
-            guard let _status = status.object(in: managedObjectContext) else { return [] }
-            let status = _status.reblog ?? _status
-            return status.attachments
-        }
+        let status = status.reblog ?? status
+        let attachments = status.entity.mastodonAttachments
         
         let thumbnails = await previewContext.thumbnails()
         
@@ -94,8 +92,13 @@ extension DataSourceFacade {
             
             let mediaView = previewContext.mediaView
 
-            item.initialFrame = {
+            item.initialContainerFrame = {
                 let initialFrame = mediaView.superview!.convert(mediaView.frame, to: nil)
+                assert(initialFrame != .zero)
+                return initialFrame
+            }()
+            item.initialFrame = {
+                let initialFrame = mediaView.contentView().frame
                 assert(initialFrame != .zero)
                 return initialFrame
             }()
@@ -143,91 +146,62 @@ extension DataSourceFacade {
             case profileBanner(ProfileHeaderView)
         }
         
-        func thumbnail() async -> UIImage? {
-            return await imageView.image
+        func thumbnail() -> UIImage? {
+            return imageView.image
         }
     }
     
     @MainActor
     static func coordinateToMediaPreviewScene(
-        dependency: NeedsDependency & MediaPreviewableViewController,
-        user: ManagedObjectRecord<MastodonUser>,
+        dependency: MediaPreviewableViewController,
+        account: Mastodon.Entity.Account,
         previewContext: ImagePreviewContext
     ) async throws {
-        let logger = Logger(subsystem: "DataSourceFacade", category: "Media")
+
+        let avatarAssetURL = account.avatar
+        let headerAssetURL = account.header
+
+        let thumbnail = previewContext.thumbnail()
         
-        let managedObjectContext = dependency.context.managedObjectContext
-        
-        var _avatarAssetURL: String?
-        var _headerAssetURL: String?
-        
-        try await managedObjectContext.perform {
-            guard let user = user.object(in: managedObjectContext) else { return }
-            _avatarAssetURL = user.avatar
-            _headerAssetURL = user.header
+        let source: MediaPreviewTransitionItem.Source
+        switch previewContext.containerView {
+            case .profileAvatar(let view): source = .profileAvatar(view)
+            case .profileBanner(let view): source = .profileBanner(view)
         }
-        
-        let thumbnail = await previewContext.thumbnail()
-        
-        let source: MediaPreviewTransitionItem.Source = {
+
+        let mediaPreviewTransitionItem = MediaPreviewTransitionItem(
+            source: source,
+            previewableViewController: dependency
+        )
+
+        let imageView = previewContext.imageView
+        mediaPreviewTransitionItem.initialFrame = imageView.superview?.convert(imageView.frame, to: nil)
+        mediaPreviewTransitionItem.image = thumbnail
+        mediaPreviewTransitionItem.aspectRatio = thumbnail?.size ?? CGSize(width: 100, height: 100)
+        mediaPreviewTransitionItem.sourceImageViewCornerRadius = {
             switch previewContext.containerView {
-            case .profileAvatar(let view):      return .profileAvatar(view)
-            case .profileBanner(let view):      return .profileBanner(view)
-            }
-        }()
-        
-        let mediaPreviewTransitionItem: MediaPreviewTransitionItem = {
-            let item = MediaPreviewTransitionItem(
-                source: source,
-                previewableViewController: dependency
-            )
-            
-            let imageView = previewContext.imageView
-            item.initialFrame = {
-                let initialFrame = imageView.superview!.convert(imageView.frame, to: nil)
-                assert(initialFrame != .zero)
-                return initialFrame
-            }()
-            
-            item.image = thumbnail
-            
-            item.aspectRatio = {
-                if let thumbnail = thumbnail {
-                    return thumbnail.size
-                }
-                return CGSize(width: 100, height: 100)
-            }()
-            
-            item.sourceImageViewCornerRadius = {
-                switch previewContext.containerView {
                 case .profileAvatar:
                     return ProfileHeaderView.avatarImageViewCornerRadius
                 case .profileBanner:
                     return 0
-                }
-            }()
-            
-            return item
+            }
         }()
-        
-        
-        let mediaPreviewItem: MediaPreviewViewModel.PreviewItem = {
-            switch previewContext.containerView {
+
+        let mediaPreviewItem: MediaPreviewViewModel.PreviewItem
+        switch previewContext.containerView {
             case .profileAvatar:
-                return .profileAvatar(.init(
-                    assetURL: _avatarAssetURL,
+                mediaPreviewItem = .profileAvatar(.init(
+                    assetURL: avatarAssetURL,
                     thumbnail: thumbnail
                 ))
             case .profileBanner:
-                return .profileBanner(.init(
-                    assetURL: _headerAssetURL,
+                mediaPreviewItem = .profileBanner(.init(
+                    assetURL: headerAssetURL,
                     thumbnail: thumbnail
                 ))
-            }
-        }()
-        
+        }
+
         guard mediaPreviewItem.isAssetURLValid else {
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): discard preview due to assetURL invalid")
             return
         }
         

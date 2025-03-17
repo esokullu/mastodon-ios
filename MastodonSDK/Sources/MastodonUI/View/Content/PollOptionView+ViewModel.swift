@@ -30,7 +30,7 @@ extension PollOptionView {
         
         let layoutDidUpdate = PassthroughSubject<Void, Never>()
 
-        @Published public var authContext: AuthContext?
+        @Published public var authenticationBox: MastodonAuthenticationBox?
 
         @Published public var style: PollOptionView.Style?
 
@@ -50,8 +50,8 @@ extension PollOptionView {
         @Published public var voteState: VoteState = .hidden
         
         @Published public var roundedBackgroundViewColor: UIColor = .clear
-        @Published public var primaryStripProgressViewTintColor: UIColor = Asset.Colors.brand.color.withAlphaComponent(0.8)
-        @Published public var secondaryStripProgressViewTintColor: UIColor = Asset.Colors.brand.color.withAlphaComponent(0.5)
+        @Published public var primaryStripProgressViewTintColor: UIColor = Asset.Colors.Brand.blurple.color.withAlphaComponent(0.8)
+        @Published public var secondaryStripProgressViewTintColor: UIColor = Asset.Colors.Brand.blurple.color.withAlphaComponent(0.5)
         
         @Published public var groupedAccessibilityLabel = ""
         

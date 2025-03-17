@@ -5,100 +5,87 @@
 //  Created by MainasuK Cirno on 2021/2/2.
 //
 
-import os.log
 import CoreDataStack
 import Foundation
 import Combine
-import CommonOSLog
 import MastodonCommon
 import MastodonSDK
 
 extension APIService {
-    public func authenticatedUserInfo(
-        authenticationBox: MastodonAuthenticationBox
-    ) async throws -> Mastodon.Response.Content<Mastodon.Entity.Account> {
-        try await accountInfo(
-            domain: authenticationBox.domain,
-            userID: authenticationBox.userID,
-            authorization: authenticationBox.userAuthorization
-        )
+    public func accountInfo(_ authenticationBox: MastodonAuthenticationBox
+    ) async throws -> Mastodon.Entity.Account {
+        let account = try await Mastodon.API.Account.verifyCredentials(session: session, domain: authenticationBox.domain, authorization: authenticationBox.userAuthorization)
+        
+        PersistenceManager.shared.cacheAccount(account, forUserID: authenticationBox.authentication.userIdentifier())
+        
+        return account
     }
-
-    public func accountInfo(
-        domain: String,
-        userID: Mastodon.Entity.Account.ID,
-        authorization: Mastodon.API.OAuth.Authorization
-    ) async throws -> Mastodon.Response.Content<Mastodon.Entity.Account> {
-        let response = try await Mastodon.API.Account.accountInfo(
+    
+    public func accountInfo(domain: String, userID: String, authorization: Mastodon.API.OAuth.Authorization) async throws -> Mastodon.Entity.Account {
+        let account = try await Mastodon.API.Account.accountInfo(
             session: session,
             domain: domain,
             userID: userID,
             authorization: authorization
-        ).singleOutput()
-        
-        let managedObjectContext = self.backgroundManagedObjectContext
-        try await managedObjectContext.performChanges {
-            let result = Persistence.MastodonUser.createOrMerge(
-                in: managedObjectContext,
-                context: Persistence.MastodonUser.PersistContext(
-                    domain: domain,
-                    entity: response.value,
-                    cache: nil,
-                    networkDate: response.networkDate
-                )
-            )
-            
-            let flag = result.isNewInsertion ? "+" : "-"
-            let logger = Logger(subsystem: "APIService", category: "AccountInfo")
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): fetch mastodon user [\(flag)](\(response.value.id))\(response.value.username)")
-        }
-        
-        return response
+        ).singleOutput().value
+        return account
     }
     
 }
 
 extension APIService {
     
-    public func accountVerifyCredentials(
+    private func saveAndActivateVerifiedUser(account: Mastodon.Entity.Account,
+                           domain: String,
+                           clientID: String,
+                           clientSecret: String,
+                           authorization: Mastodon.API.OAuth.Authorization) -> MastodonAuthenticationBox {
+        let authentication = MastodonAuthentication.createFrom(domain: domain,
+                                                               userID: account.id,
+                                                               username: account.username,
+                                                               appAccessToken: authorization.accessToken,  // TODO: swap app token
+                                                               userAccessToken: authorization.accessToken,
+                                                               clientID: clientID,
+                                                               clientSecret: clientSecret,
+                                                               accountCreatedAt: account.createdAt)
+        
+        let authBox = MastodonAuthenticationBox(authentication: authentication)
+        PersistenceManager.shared.cacheAccount(account, forUserID: authentication.userIdentifier())
+        AuthenticationServiceProvider.shared.activateAuthentication(authBox)
+        return authBox
+    }
+    
+    public func verifyAndActivateUser(
         domain: String,
+        clientID: String,
+        clientSecret: String,
         authorization: Mastodon.API.OAuth.Authorization
-    ) -> AnyPublisher<Mastodon.Response.Content<Mastodon.Entity.Account>, Error> {
+    ) -> AnyPublisher<(Mastodon.Entity.Account, MastodonAuthenticationBox), Error> {
         return Mastodon.API.Account.verifyCredentials(
             session: session,
             domain: domain,
             authorization: authorization
-        )
-        .flatMap { response -> AnyPublisher<Mastodon.Response.Content<Mastodon.Entity.Account>, Error> in
-            let logger = Logger(subsystem: "Account", category: "API")
+        ).tryMap { response -> (Mastodon.Entity.Account, MastodonAuthenticationBox) in
             let account = response.value
-            
-            let managedObjectContext = self.backgroundManagedObjectContext
-            return managedObjectContext.performChanges {
-                let result = Persistence.MastodonUser.createOrMerge(
-                    in: managedObjectContext,
-                    context: Persistence.MastodonUser.PersistContext(
-                        domain: domain,
-                        entity: account,
-                        cache: nil,
-                        networkDate: response.networkDate
-                    )
-                )
-                let flag = result.isNewInsertion ? "+" : "-"
-                logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): mastodon user [\(flag)](\(result.user.id))\(result.user.username) verifed")
-            }
-            .setFailureType(to: Error.self)
-            .tryMap { result -> Mastodon.Response.Content<Mastodon.Entity.Account> in
-                switch result {
-                case .success:
-                    return response
-                case .failure(let error):
-                    throw error
-                }
-            }
-            .eraseToAnyPublisher()
+            let authBox = self.saveAndActivateVerifiedUser(account: account, domain: domain, clientID: clientID, clientSecret: clientSecret, authorization: authorization)
+            return (account, authBox)
         }
         .eraseToAnyPublisher()
+    }
+    
+    public func verifyAndActivateUser(
+        domain: String,
+        clientID: String,
+        clientSecret: String,
+        authorization: Mastodon.API.OAuth.Authorization
+    ) async throws -> (Mastodon.Entity.Account, MastodonAuthenticationBox) {
+        let account = try await Mastodon.API.Account.verifyCredentials(
+            session: session,
+            domain: domain,
+            authorization: authorization
+        )
+        let authBox = self.saveAndActivateVerifiedUser(account: account, domain: domain, clientID: clientID, clientSecret: clientSecret, authorization: authorization)
+        return (account, authBox)
     }
     
     public func accountUpdateCredentials(
@@ -106,8 +93,6 @@ extension APIService {
         query: Mastodon.API.Account.UpdateCredentialQuery,
         authorization: Mastodon.API.OAuth.Authorization
     ) async throws -> Mastodon.Response.Content<Mastodon.Entity.Account> {
-        let logger = Logger(subsystem: "Account", category: "API")
-        
         let response = try await Mastodon.API.Account.updateCredentials(
             session: session,
             domain: domain,
@@ -115,23 +100,8 @@ extension APIService {
             authorization: authorization
         ).singleOutput()
         
-        let managedObjectContext = self.backgroundManagedObjectContext
-        try await managedObjectContext.performChanges {
-            let result = Persistence.MastodonUser.createOrMerge(
-                in: managedObjectContext,
-                context: Persistence.MastodonUser.PersistContext(
-                    domain: domain,
-                    entity: response.value,
-                    cache: nil,
-                    networkDate: response.networkDate
-                )
-            )
-            let flag = result.isNewInsertion ? "+" : "-"
-            let userID = response.value.id
-            let username = response.value.username
-            logger.log(level: .debug, "\((#file as NSString).lastPathComponent, privacy: .public)[\(#line, privacy: .public)], \(#function, privacy: .public): mastodon user [\(flag)](\(userID)\(username) verifed")
-        }
-
+        PersistenceManager.shared.cacheAccount(response.value, forUserID: MastodonUserIdentifier(domain: domain, userID: response.value.id))
+        
         return response
     }
     
@@ -139,8 +109,8 @@ extension APIService {
         domain: String,
         query: Mastodon.API.Account.RegisterQuery,
         authorization: Mastodon.API.OAuth.Authorization
-    ) -> AnyPublisher<Mastodon.Response.Content<Mastodon.Entity.Token>, Error> {
-        return Mastodon.API.Account.register(
+    ) async throws -> Mastodon.Entity.Token {
+        return try await Mastodon.API.Account.register(
             session: session,
             domain: domain,
             query: query,
@@ -173,37 +143,20 @@ extension APIService {
         let domain = authenticationBox.domain
         let authorization = authenticationBox.userAuthorization
         
-        let response = try await Mastodon.API.Account.followedTags(
+        let followedTags = try await Mastodon.API.Account.followedTags(
             session: session,
             domain: domain,
             query: query,
             authorization: authorization
         ).singleOutput()
-        
-        let managedObjectContext = self.backgroundManagedObjectContext
-        try await managedObjectContext.performChanges {
-            let me = authenticationBox.authenticationRecord.object(in: managedObjectContext)?.user
 
-            for entity in response.value {
-                _ = Persistence.Tag.createOrMerge(
-                    in: managedObjectContext,
-                    context: Persistence.Tag.PersistContext(
-                        domain: domain,
-                        entity: entity,
-                        me: me,
-                        networkDate: response.networkDate
-                    )
-                )
-            }
-        }
-        
-        return response
-    }   // end func
+        return followedTags
+    }
 }
 
 extension APIService {
-    public func fetchUser(username: String, domain: String, authenticationBox: MastodonAuthenticationBox)
-    async throws -> MastodonUser? {
+    public func fetchNotMeUser(username: String, domain: String, authenticationBox: MastodonAuthenticationBox)
+    async throws -> Mastodon.Entity.Account? {
         let query = Mastodon.API.Account.AccountLookupQuery(acct: "\(username)@\(domain)")
         let authorization = authenticationBox.userAuthorization
 
@@ -214,29 +167,9 @@ extension APIService {
             authorization: authorization
         ).singleOutput()
 
-        // user
-        let managedObjectContext = self.backgroundManagedObjectContext
-        try await managedObjectContext.performChanges {
-            _ = Persistence.MastodonUser.createOrMerge(
-                in: managedObjectContext,
-                context: Persistence.MastodonUser.PersistContext(
-                    domain: domain,
-                    entity: response.value,
-                    cache: nil,
-                    networkDate: response.networkDate
-                )
-            )
-        }
-        var result: MastodonUser?
-        try await managedObjectContext.perform {
-            result = Persistence.MastodonUser.fetch(in: managedObjectContext,
-                                                  context: Persistence.MastodonUser.PersistContext(
-                                                    domain: domain,
-                                                    entity: response.value,
-                                                    cache: nil,
-                                                    networkDate: response.networkDate
-                                                  ))
-        }
-        return result
+        let fetchedAccount = response.value
+        
+        
+        return fetchedAccount
     }
 }

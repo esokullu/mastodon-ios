@@ -4,6 +4,7 @@ import WidgetKit
 import SwiftUI
 import Intents
 import MastodonSDK
+import MastodonCore
 import MastodonLocalization
 
 struct FollowersCountWidgetProvider: IntentTimelineProvider {
@@ -54,10 +55,7 @@ struct FollowersCountEntry: TimelineEntry {
 
 struct FollowersCountWidget: Widget {
     private var availableFamilies: [WidgetFamily] {
-        if #available(iOS 16, *) {
-            return [.systemSmall, .accessoryRectangular, .accessoryCircular]
-        }
-        return [.systemSmall]
+        return [.systemSmall, .accessoryRectangular, .accessoryCircular]
     }
 
     var body: some WidgetConfiguration {
@@ -67,17 +65,16 @@ struct FollowersCountWidget: Widget {
         .configurationDisplayName(L10n.Widget.FollowersCount.configurationDisplayName)
         .description(L10n.Widget.FollowersCount.configurationDescription)
         .supportedFamilies(availableFamilies)
+        .contentMarginsDisabled() // Disable excessive margins (only effective for iOS >= 17.0
     }
 }
 
 private extension FollowersCountWidgetProvider {
     func loadCurrentEntry(for configuration: FollowersCountIntent, in context: Context, completion: @escaping (FollowersCountEntry) -> Void) {
-        Task {
+        Task { @MainActor in
+
             guard
-                let authBox = WidgetExtension.appContext
-                    .authenticationService
-                    .mastodonAuthenticationBoxes
-                    .first
+                let authBox = AuthenticationServiceProvider.shared.currentActiveUser.value
             else {
                 guard !context.isPreview else {
                     return completion(.placeholder)
@@ -86,16 +83,13 @@ private extension FollowersCountWidgetProvider {
             }
             
             guard
-                let desiredAccount = configuration.account ?? authBox.authenticationRecord.object(
-                    in: WidgetExtension.appContext.managedObjectContext
-                )?.user.acctWithDomain
+                let desiredAccount = configuration.account ?? authBox.cachedAccount?.acctWithDomain
             else {
                 return completion(.unconfigured)
             }
             
             guard
-                let resultingAccount = try await WidgetExtension.appContext
-                    .apiService
+                let resultingAccount = try? await APIService.shared
                     .search(query: .init(q: desiredAccount, type: .accounts), authenticationBox: authBox)
                     .value
                     .accounts
@@ -104,14 +98,19 @@ private extension FollowersCountWidgetProvider {
                 return completion(.unconfigured)
             }
             
-            let imageData = try await URLSession.shared.data(from: resultingAccount.avatarImageURLWithFallback(domain: authBox.domain)).0
-                        
+            let imageData = try? await URLSession.shared.data(from: resultingAccount.avatarImageURLWithFallback(domain: authBox.domain)).0
+            let avatarImage: UIImage
+            if let imageData {
+                avatarImage = UIImage(data: imageData) ?? UIImage(named: "missingAvatar")!
+            } else {
+                avatarImage = UIImage(named: "missingAvatar")!
+            }
             let entry = FollowersCountEntry(
                 date: Date(),
                 account: FollowersEntryAccount.from(
                     mastodonAccount: resultingAccount,
                     domain: authBox.domain,
-                    avatarImage: UIImage(data: imageData) ?? UIImage(named: "missingAvatar")!
+                    avatarImage: avatarImage
                 ),
                 configuration: configuration
             )

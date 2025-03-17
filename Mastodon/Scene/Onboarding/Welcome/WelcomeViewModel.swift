@@ -8,23 +8,57 @@
 import Foundation
 import Combine
 import MastodonCore
+import MastodonSDK
 
+@MainActor
 final class WelcomeViewModel {
  
     var disposeBag = Set<AnyCancellable>()
-    
-    // input
-    let context: AppContext
+    private(set) var defaultServers: [Mastodon.Entity.DefaultServer]?
+    var randomDefaultServer: Mastodon.Entity.Server?
     
     // output
     @Published var needsShowDismissEntry = false
     
-    init(context: AppContext) {
-        self.context = context
-        
-        context.authenticationService.$mastodonAuthenticationBoxes
+    init() {
+        AuthenticationServiceProvider.shared.$mastodonAuthenticationBoxes
             .map { !$0.isEmpty }
             .assign(to: &$needsShowDismissEntry)
     }
-    
+
+    func downloadDefaultServer(completion: (() -> Void)? = nil) {
+        APIService.shared.defaultServers()
+            .timeout(.milliseconds(500) , scheduler: DispatchQueue.main)
+            .sink { [weak self] result in
+
+                switch result {
+                case .finished:
+                    if let defaultServers = self?.defaultServers, defaultServers.isEmpty == false {
+                        self?.randomDefaultServer = self?.pickRandomDefaultServer()
+                    } else {
+                        self?.randomDefaultServer = Mastodon.Entity.Server.mastodonDotSocial
+                    }
+                case .failure(_):
+                    self?.randomDefaultServer = Mastodon.Entity.Server.mastodonDotSocial
+                }
+
+                completion?()
+            } receiveValue: { [weak self] servers in
+                self?.defaultServers = servers.value
+            }
+            .store(in: &disposeBag)
+    }
+
+    func pickRandomDefaultServer() -> Mastodon.Entity.Server? {
+        guard let defaultServers else { return nil }
+
+        let weightedServers = defaultServers
+            .compactMap { [Mastodon.Entity.DefaultServer](repeating: $0, count: $0.weight) }
+            .reduce([], +)
+
+        let randomServer = weightedServers.randomElement()
+            .map { Mastodon.Entity.Server(domain: $0.domain, instance: Mastodon.Entity.Instance(domain: $0.domain)) }
+
+        return randomServer
+    }
 }
