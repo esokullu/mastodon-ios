@@ -59,7 +59,8 @@ extension APIService {
     }
     
     public func groupedNotifications(
-        olderThan maxID: Mastodon.Entity.Status.ID?,
+        olderThan maxID: Mastodon.Entity.Notification.ID?,
+        newerThan minID: Mastodon.Entity.Notification.ID?,
         fromAccount accountID: String? = nil,
         scope: MastodonNotificationScope?,
         authenticationBox: MastodonAuthenticationBox
@@ -71,7 +72,7 @@ extension APIService {
         
         switch scope {
         case .everything:
-            types = [.follow, .followRequest, .mention, .reblog, .favourite, .poll, .status, .moderationWarning]
+            types = nil
             excludedTypes = nil
         case .mentions:
             types = [.mention]
@@ -83,6 +84,7 @@ extension APIService {
         
         let query = Mastodon.API.Notifications.GroupedQuery(
             maxID: maxID,
+            minID: minID,
             types: types,
             excludeTypes: excludedTypes,
             accountID: accountID

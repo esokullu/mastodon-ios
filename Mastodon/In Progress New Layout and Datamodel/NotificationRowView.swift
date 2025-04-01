@@ -52,7 +52,7 @@ extension GroupedNotificationType {
         case .poll:
             return "chart.bar.yaxis"
         case .adminReport:
-            return "info.circle"
+            return "flag.fill"
         case .severedRelationships:
             return "person.badge.minus"
         case .moderationWarning:
@@ -68,7 +68,7 @@ extension GroupedNotificationType {
         case .update:
             return "pencil"
         case .adminSignUp:
-            return nil
+            return "person.fill.badge.plus"
         }
     }
 
@@ -123,13 +123,15 @@ extension GroupedNotificationType {
                     plainString = firstAuthorName
                 case .poll(let status):
                     let votersCount = status?.poll?.votersCount ?? 0
-                    let pollDescription = L10n.Plural.Count.pollThatYouAndOthersVotedIn(votersCount)
+                    let pollDescription = L10n.Plural.Count.pollThatYouAndOthersVotedIn(votersCount - 1)
                     plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameRanPoll(firstAuthorName, pollDescription)
                 case .status:
                     plainString = firstAuthorName
                 case .adminSignUp:
                     plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameSignedUp(firstAuthorName)
-                default:
+                case .update:
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.singleNameEditedAPost(firstAuthorName)
+                case .adminReport, .severedRelationships, .moderationWarning, ._other:
                     plainString = firstAuthorName
                 }
             } else {
@@ -140,6 +142,8 @@ extension GroupedNotificationType {
                     plainString = L10n.Plural.Count.peopleFollowedYou(totalAuthorCount)
                 case .reblog:
                     plainString = L10n.Plural.Count.peopleBoosted(totalAuthorCount)
+                case .adminSignUp:
+                    plainString = L10n.Scene.Notification.GroupedNotificationDescription.multiplePeopleSignedUp(totalAuthorCount)
                 default:
                     plainString = L10n.Plural.Count.others(totalAuthorCount)
                 }
@@ -658,14 +662,10 @@ struct NotificationRowView: View {
                 .onTapGesture {
                     statusViewModel.navigateToStatus()
                 }
-        case .hyperlinkButton(let label, let url):
-            Button(label) {
-                if let url {
-                    UIApplication.shared.open(url)
-                }
-            }
-            .bold()
-            .tint(Color(asset: Asset.Colors.accent))
+        case .hyperlink(let label, _):
+            Text(label)
+                .bold()
+                .foregroundStyle(Color(asset: Asset.Colors.accent))
         case ._other(let string):
             Text(string)
         case .textAndTimeLabel(let string, let date):
@@ -819,7 +819,7 @@ enum NotificationViewComponent: Identifiable {
     case timeSinceLabel(Date)
     case weightedText(String, SwiftUICore.Font.Weight)
     case status(Mastodon.Entity.Status.ViewModel)
-    case hyperlinkButton(String, URL?)
+    case hyperlink(String, URL?)
     case _other(String)
 
     var id: String {
@@ -834,7 +834,7 @@ enum NotificationViewComponent: Identifiable {
             return string
         case .status:
             return "status"
-        case .hyperlinkButton(let text, _):
+        case .hyperlink(let text, _):
             return text
         case ._other(let string):
             return string
