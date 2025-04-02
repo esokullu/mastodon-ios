@@ -972,17 +972,9 @@ public enum L10n {
         public static func multiplePeopleFollowedYou(_ p1: Any) -> String {
           return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.MultiplePeopleFollowedYou", String(describing: p1), fallback: "%@ followed you")
         }
-        /// %@ new signups
-        public static func multiplePeopleSignedUp(_ p1: Any) -> String {
-          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.MultiplePeopleSignedUp", String(describing: p1), fallback: "%@ new signups")
-        }
         /// %@ boosted:
         public static func singleNameBoosted(_ p1: Any) -> String {
           return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SingleNameBoosted", String(describing: p1), fallback: "%@ boosted:")
-        }
-        /// %@ edited a post you interacted with
-        public static func singleNameEditedAPost(_ p1: Any) -> String {
-          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SingleNameEditedAPost", String(describing: p1), fallback: "%@ edited a post you interacted with")
         }
         /// %@ favorited:
         public static func singleNameFavourited(_ p1: Any) -> String {
@@ -1363,14 +1355,6 @@ public enum L10n {
         public enum Avatar {
           /// Delete
           public static let delete = L10n.tr("Localizable", "Scene.Register.Input.Avatar.Delete", fallback: "Delete")
-        }
-        public enum BirthDate {
-          /// We have to make sure you're at least %d to join %@. This won't get stored after signup.
-          public static func explanationMessage(_ p1: Int, _ p2: Any) -> String {
-            return L10n.tr("Localizable", "Scene.Register.Input.BirthDate.ExplanationMessage", p1, String(describing: p2), fallback: "We have to make sure you're at least %d to join %@. This won't get stored after signup.")
-          }
-          /// Date of Birth
-          public static let label = L10n.tr("Localizable", "Scene.Register.Input.BirthDate.Label", fallback: "Date of Birth")
         }
         public enum DisplayName {
           /// display name

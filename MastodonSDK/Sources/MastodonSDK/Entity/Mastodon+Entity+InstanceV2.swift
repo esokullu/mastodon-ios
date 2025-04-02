@@ -6,7 +6,7 @@ extension Mastodon.Entity.V2 {
     /// - Since: 4.0.0
     /// - Version: 4.0.3
     /// # Last Update
-    ///   2025/03/24
+    ///   2022/12/09
     /// # Reference
     ///  [Document](https://docs.joinmastodon.org/entities/instance/)
     public struct Instance: Codable {
@@ -19,6 +19,7 @@ extension Mastodon.Entity.V2 {
         public let apiVersions: [String : Int]?
         public let languages: [String]?     // (ISO 639 Part 1-5 language codes)
         public let registrations: Mastodon.Entity.V2.Instance.Registrations?
+        public let approvalRequired: Bool?
         public let invitesEnabled: Bool?
         public let urls: Mastodon.Entity.Instance.InstanceURL?
         public let statistics: Mastodon.Entity.Instance.Statistics?
@@ -40,6 +41,7 @@ extension Mastodon.Entity.V2 {
             self.apiVersions = nil
             self.languages = nil
             self.registrations = nil
+            self.approvalRequired = approvalRequired
             self.invitesEnabled = nil
             self.urls = nil
             self.statistics = nil
@@ -57,6 +59,7 @@ extension Mastodon.Entity.V2 {
             case apiVersions = "api_versions"
             case languages
             case registrations
+            case approvalRequired = "approval_required"
             case invitesEnabled = "invites_enabled"
             case urls
             case statistics = "stats"
@@ -89,16 +92,6 @@ extension Mastodon.Entity.V2.Instance {
 extension Mastodon.Entity.V2.Instance {
     public struct Registrations: Codable {
         public let enabled: Bool
-        public let minAge: Int?
-        public let approvalRequired: Bool?
-        public let reasonRequired: Bool?
-        
-        enum CodingKeys: String, CodingKey {
-            case enabled
-            case minAge = "min_age"
-            case approvalRequired = "approval_required"
-            case reasonRequired = "reason_required"
-        }
     }
 }
 

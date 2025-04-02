@@ -12,34 +12,20 @@ import UIKit
 import MastodonAsset
 import MastodonCore
 import MastodonLocalization
-import SwiftUI
 
 @MainActor
 final class MastodonRegisterViewModel: ObservableObject {
-    
-    enum RegistrationField: Hashable {
-        case displayName
-        case handle
-        case email
-        case password
-        case confirmPassword
-        case dateOfBirth
-        case proposedApprovalReason
-    }
-    
-    
     var disposeBag = Set<AnyCancellable>()
     
     // input
     let domain: String
     let authenticateInfo: AuthenticationViewModel.AuthenticateInfo
-    let instance: RegistrationInstance
+    let instance: Mastodon.Entity.Instance
     let applicationToken: Mastodon.Entity.Token
     let viewDidAppear = CurrentValueSubject<Void, Never>(Void())
     let submitValidatedUserRegistration: (MastodonRegisterViewModel, Bool) async -> ()
 
     @Published var backgroundColor: UIColor = Asset.Scene.Onboarding.background.color
-    @Published var dateOfBirth = Date.now
     @Published var name = ""
     @Published var username = ""
     @Published var email = ""
@@ -57,25 +43,13 @@ final class MastodonRegisterViewModel: ObservableObject {
     // output
     var diffableDataSource: UITableViewDiffableDataSource<RegisterSection, RegisterItem>?
     let approvalRequired: Bool
-    let reasonRequired: Bool
-    let minAge: Int?
     let applicationAuthorization: Mastodon.API.OAuth.Authorization
     
-    @Published var dateOfBirthValidateState: ValidateState = .empty
     @Published var usernameValidateState: ValidateState = .empty
     @Published var displayNameValidateState: ValidateState = .empty
     @Published var emailValidateState: ValidateState = .empty
-    @Published var passwordBaseValidateState: ValidateState = .empty
-    @Published var passwordConfirmationValidateState: ValidateState = .empty
+    @Published var passwordValidateState: ValidateState = .empty
     @Published var reasonValidateState: ValidateState = .empty
-    
-    public var editingField: RegistrationField? {
-        didSet {
-            if let oldValue {
-                validate(oldValue)
-            }
-        }
-    }
         
     @Published var isRegistering = false
     @Published var isAllValid = false
@@ -86,7 +60,7 @@ final class MastodonRegisterViewModel: ObservableObject {
     init(
         domain: String,
         authenticateInfo: AuthenticationViewModel.AuthenticateInfo,
-        instance: RegistrationInstance,
+        instance: Mastodon.Entity.Instance,
         applicationToken: Mastodon.Entity.Token,
         submitValidatedUserRegistration: @escaping (MastodonRegisterViewModel, Bool) async ->()
     ) {
@@ -95,67 +69,36 @@ final class MastodonRegisterViewModel: ObservableObject {
         self.instance = instance
         self.applicationToken = applicationToken
         self.approvalRequired = instance.approvalRequired ?? false
-        self.reasonRequired = instance.reasonRequired
-        self.minAge = instance.minAge
         self.applicationAuthorization = Mastodon.API.OAuth.Authorization(accessToken: applicationToken.accessToken)
         self.submitValidatedUserRegistration = submitValidatedUserRegistration
         
-        $dateOfBirth
-            .map { [weak self] dob in
-                guard let self else { return .invalid }
-                switch dateOfBirthValidateState {
-                case .empty:
-                    return .filling
-                case .filling:
-                    if self.validate(dateOfBirth: dob) == .valid {
-                        return .valid
-                    } else {
-                        return .filling
-                    }
-                case .invalid, .valid:
-                    return self.validate(dateOfBirth: dob)
-                }
-            }
-            .assign(to: \.dateOfBirthValidateState, on: self)
-            .store(in: &disposeBag)
-        
         $name
-            .map { [weak self] name in
+            .map { name in
                 guard !name.isEmpty else { return .empty }
-                guard let self else { return .invalid }
-                switch self.displayNameValidateState {
-                case .empty:
-                    return .filling
-                case .filling:
-                    if self.validate(displayName: name) == .valid {
-                        return .valid
-                    } else {
-                        return .filling
-                    }
-                case .invalid, .valid:
-                    return self.validate(displayName: name)
-                }
+                return .valid
             }
             .assign(to: \.displayNameValidateState, on: self)
             .store(in: &disposeBag)
         
         $username
             .removeDuplicates()
-            .map { [weak self] username in
+            .map { username in
                 guard !username.isEmpty else { return .empty }
-                guard let self else { return .invalid }
-                switch self.usernameValidateState {
-                case .empty:
-                    return .filling
-                case .filling:
-                    if self.validate(handle: username) == .valid {
-                        return .valid
-                    } else {
-                        return .filling
+                var isValid = true
+                
+                // regex opt-out way to check validation
+                // allowed:
+                // a-z (isASCII && isLetter)
+                // A-Z (isASCII && isLetter)
+                // 0-9 (isASCII && isNumber)
+                // _ ("_")
+                for char in username {
+                    guard char.isASCII, char.isLetter || char.isNumber || char == "_" else {
+                        isValid = false
+                        break
                     }
-                case .invalid, .valid:
-                    return self.validate(handle: username)
                 }
+                return isValid ? .valid : .invalid
             }
             .assign(to: \.usernameValidateState, on: self)
             .store(in: &disposeBag)
@@ -202,79 +145,31 @@ final class MastodonRegisterViewModel: ObservableObject {
             .store(in: &disposeBag)
 
         $email
-            .map { [weak self] email in
+            .map { email in
                 guard !email.isEmpty else { return .empty }
-                guard let self else { return .invalid }
-                switch self.emailValidateState {
-                case .empty:
-                    return .filling
-                case .filling:
-                    if self.validate(email: email) == .valid {
-                        return .valid
-                    } else {
-                        return .filling
-                    }
-                case .invalid, .valid:
-                    return self.validate(email: email)
-                }
+                return MastodonRegisterViewModel.isValidEmail(email) ? .valid : .invalid
             }
             .assign(to: \.emailValidateState, on: self)
             .store(in: &disposeBag)
         
-        $password
-            .map { [weak self] password in
-                guard !password.isEmpty else { return .empty }
-                guard let self else { return .invalid }
-                switch self.passwordBaseValidateState {
-                case .empty:
-                    return .filling
-                case .filling:
-                    if self.validate(password: password) == .valid {
-                        return .valid
-                    } else {
-                        return .filling
-                    }
-                case .invalid, .valid:
-                    return self.validate(password: password)
-                }
-            }
-            .assign(to: \.passwordBaseValidateState, on: self)
-            .store(in: &disposeBag)
-        
         Publishers.CombineLatest($password, $passwordConfirmation)
-            .map { [weak self] password, confirmation in
+            .map { password, confirmation in
                 guard !password.isEmpty && !confirmation.isEmpty else { return .empty }
-                guard let self else { return .invalid }
-                switch self.passwordConfirmationValidateState {
-                case .empty, .filling:
-                    if self.validate(password: password, confirmation: confirmation) == .valid {
-                        return .valid
-                    } else {
-                        return .filling
-                    }
-                case .invalid, .valid:
-                    return self.validate(password: password, confirmation: confirmation)
+
+                if password.count >= 8 && password == confirmation {
+                    return .valid
+                } else {
+                    return .invalid
                 }
             }
-            .assign(to: \.passwordConfirmationValidateState, on: self)
+            .assign(to: \.passwordValidateState, on: self)
             .store(in: &disposeBag)
         
         if approvalRequired {
             $reason
-                .map { joinReason in
-                    guard !joinReason.isEmpty else { return .empty }
-                    switch self.reasonValidateState {
-                    case .empty:
-                        return .filling
-                    case .filling:
-                        if self.validate(reason: joinReason) == .valid {
-                            return .valid
-                        } else {
-                            return .filling
-                        }
-                    case .invalid, .valid:
-                        return self.validate(reason: joinReason)
-                    }
+                .map { invite in
+                    guard !invite.isEmpty else { return .empty }
+                    return .valid
                 }
                 .assign(to: \.reasonValidateState, on: self)
                 .store(in: &disposeBag)
@@ -293,7 +188,7 @@ final class MastodonRegisterViewModel: ObservableObject {
                     self.emailErrorPrompt = details.emailErrorDescriptions.first
                     details.emailErrorDescriptions.first.flatMap { _ in self.emailValidateState = .invalid }
                     self.passwordErrorPrompt = details.passwordErrorDescriptions.first
-                    details.passwordErrorDescriptions.first.flatMap { _ in self.passwordBaseValidateState = .invalid }
+                    details.passwordErrorDescriptions.first.flatMap { _ in self.passwordValidateState = .invalid }
                     self.reasonErrorPrompt = details.reasonErrorDescriptions.first
                     details.reasonErrorDescriptions.first.flatMap { _ in self.reasonValidateState = .invalid }
                 } else {
@@ -309,7 +204,7 @@ final class MastodonRegisterViewModel: ObservableObject {
             $usernameValidateState,
             $displayNameValidateState,
             $emailValidateState,
-            $passwordBaseValidateState
+            $passwordValidateState
         )
         .map {
             $0.0 == .valid &&
@@ -318,17 +213,9 @@ final class MastodonRegisterViewModel: ObservableObject {
             $0.3 == .valid
         }
         
-        let publisherTwo = Publishers.CombineLatest3(
-            $reasonValidateState,
-            $dateOfBirthValidateState,
-            $passwordConfirmationValidateState
-        )
-            .map { [weak self] reasonValidateState, dobValidateState, passwordConfirmationValidateState -> Bool in
-                guard let self else { return false }
-                let reasonOK = !self.reasonRequired || reasonValidateState == .valid
-                let dobOK = (self.minAge == nil) || dobValidateState == .valid
-                let passwordConfirmationCorrect = passwordConfirmationValidateState == .valid
-                return reasonOK && dobOK && passwordConfirmationCorrect
+        let publisherTwo = $reasonValidateState.map { reasonValidateState -> Bool in
+            guard self.approvalRequired else { return true }
+            return reasonValidateState == .valid
         }
         
         Publishers.CombineLatest(
@@ -338,123 +225,25 @@ final class MastodonRegisterViewModel: ObservableObject {
         .map { $0 && $1 }
         .assign(to: \.isAllValid, on: self)
         .store(in: &disposeBag)
-        
-        Publishers.CombineLatest4(
-            publisherOne,
-            $reasonValidateState,
-            $passwordConfirmationValidateState,
-            $dateOfBirthValidateState
-        )
-        .sink { [weak self] publisherOne, reasonValidState, passwordConfirmValidState, dobValidState in
-            if publisherOne == false { return }
-            if reasonValidState == .valid && passwordConfirmValidState == .valid && dobValidState != .valid {
-                self?.dateOfBirthValidateState = .invalid // this will highlight the DOB field if everything else has been filled in
-            }
-        }
-        .store(in: &disposeBag)
     }
 }
 
 extension MastodonRegisterViewModel {
     enum ValidateState: Hashable {
         case empty
-        case filling
         case invalid
         case valid
-    }
-    
-    static func isValidEmail(_ email: String) -> Bool {
-        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        
-        let emailPred = NSPredicate(format: "SELF MATCHES %@", emailRegEx)
-        return emailPred.evaluate(with: email)
-    }
-    
-    func validate(_ field: RegistrationField) {
-        let state = validationState(forCurrentContentsOf: field)
-        switch field {
-        case .displayName:
-            displayNameValidateState = state
-        case .handle:
-            usernameValidateState = state
-        case .email:
-            emailValidateState = state
-        case .password:
-            passwordBaseValidateState = state
-        case .confirmPassword:
-            passwordConfirmationValidateState = state
-        case .dateOfBirth:
-            dateOfBirthValidateState = state
-        case .proposedApprovalReason:
-            reasonValidateState = state
-        }
-    }
-    
-    private func validate(dateOfBirth: Date) -> ValidateState {
-        guard let minAge else { return .valid }
-        let years = Calendar.current.dateComponents([.year], from: dateOfBirth, to: Date.now).year ?? 0
-        print("looks to be \(years) old")
-        return years < minAge ? .invalid : .valid
-    }
-    
-    private func validate(displayName: String) -> ValidateState {
-        return displayName.isEmpty ? .empty : .valid
-    }
-    
-    private func validate(handle: String) -> ValidateState {
-        var isValid = true
-        // regex opt-out way to check validation
-        // allowed:
-        // a-z (isASCII && isLetter)
-        // A-Z (isASCII && isLetter)
-        // 0-9 (isASCII && isNumber)
-        // _ ("_")
-        for char in handle {
-            guard char.isASCII, char.isLetter || char.isNumber || char == "_" else {
-                isValid = false
-                break
-            }
-        }
-        return isValid ? .valid : .invalid
-    }
-    
-    private func validate(email: String) -> ValidateState {
-        return MastodonRegisterViewModel.isValidEmail(email) ? .valid : .invalid
-    }
-   
-    private func validate(password: String) -> ValidateState {
-        return password.count >= 8 ? .valid : .invalid
-    }
-    
-    private func validate(password: String, confirmation: String) -> ValidateState {
-        return password == passwordConfirmation ? .valid : .invalid
-    }
-    
-    private func validate(reason: String) -> ValidateState {
-        return reason.isEmpty ? .invalid : .valid
-    }
-    
-    private func validationState(forCurrentContentsOf field: RegistrationField) -> ValidateState {
-        switch field {
-        case .displayName:
-            return validate(displayName: name)
-        case .handle:
-            return validate(handle: username)
-        case .email:
-            return validate(email: email)
-        case .password:
-            return validate(password: password)
-        case .confirmPassword:
-            return validate(password: password, confirmation: passwordConfirmation)
-        case .dateOfBirth:
-            return validate(dateOfBirth: dateOfBirth)
-        case .proposedApprovalReason:
-            return validate(reason: reason)
-        }
     }
 }
 
 extension MastodonRegisterViewModel {
+    static func isValidEmail(_ email: String) -> Bool {
+        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+
+        let emailPred = NSPredicate(format: "SELF MATCHES %@", emailRegEx)
+        return emailPred.evaluate(with: email)
+    }
+
     static func checkmarkImage(font: UIFont = .preferredFont(forTextStyle: .caption1)) -> UIImage {
         let configuration = UIImage.SymbolConfiguration(font: font)
         return UIImage(systemName: "checkmark.circle.fill", withConfiguration: configuration)!
@@ -503,35 +292,5 @@ extension MastodonRegisterViewModel {
     var accessibilityLabelUsernameField: String {
         let username = username.isEmpty ? L10n.Scene.Register.Input.Username.placeholder : username
         return "@\(username)@\(domain)"
-    }
-}
-
-protocol RegistrationInstance {
-    var approvalRequired: Bool? { get }
-    var reasonRequired: Bool { get }
-    var minAge: Int? { get }
-    var isBeyondVersion1: Bool { get }
-    var isOpenToNewRegistrations: Bool? { get }
-    var rules: [Mastodon.Entity.Instance.Rule]? { get }
-}
-
-extension Mastodon.Entity.Instance: RegistrationInstance {
-    var minAge: Int? { return nil }
-    var isBeyondVersion1: Bool {
-        return version?.majorServerVersion(greaterThanOrEquals: 4) ?? false
-    }
-    var isOpenToNewRegistrations: Bool? { return registrations }
-    var reasonRequired: Bool {
-        return approvalRequired ?? false
-    }
-}
-
-extension Mastodon.Entity.V2.Instance: RegistrationInstance {
-    var minAge: Int? { return registrations?.minAge }
-    var isBeyondVersion1: Bool { return true }
-    var isOpenToNewRegistrations: Bool? { return registrations?.enabled }
-    var approvalRequired: Bool? { return registrations?.approvalRequired }
-    var reasonRequired: Bool {
-        return registrations?.reasonRequired ?? approvalRequired ?? false
     }
 }

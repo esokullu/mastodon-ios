@@ -77,9 +77,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>einn annar</string>
+        <string>one other</string>
         <key>other</key>
-        <string>%ld aðrir</string>
+        <string>%ld others</string>
       </dict>
     </dict>
     <key>plural.count.people_boosted</key>
@@ -93,9 +93,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>einn aðili endurbirti:</string>
+        <string>one person boosted:</string>
         <key>other</key>
-        <string>%ld aðilar endurbirtu:</string>
+        <string>%ld people boosted:</string>
       </dict>
     </dict>
     <key>plural.count.people_favourited</key>
@@ -109,9 +109,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>einn aðili setti í eftirlæti:</string>
+        <string>one person favorited:</string>
         <key>other</key>
-        <string>%ld aðilar settu í eftirlæti:</string>
+        <string>%ld people favorited:</string>
       </dict>
     </dict>
     <key>plural.count.people_followed_you</key>
@@ -125,9 +125,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>einn aðili fylgist með þér</string>
+        <string>one person followed you</string>
         <key>other</key>
-        <string>%ld aðilar fylgjast með þér</string>
+        <string>%ld people followed you</string>
       </dict>
     </dict>
     <key>plural.count.poll_that_you_and_others_voted_in</key>
@@ -141,9 +141,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>könnun sem þú og einn til viðbótar tóku þátt í</string>
+        <string>a poll that you and one other voted in</string>
         <key>other</key>
-        <string>könnun sem þú og %ld til viðbótar tóku þátt í</string>
+        <string>a poll that you and %ld others voted in</string>
       </dict>
     </dict>
     <key>plural.count.media</key>
@@ -173,9 +173,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 mynd</string>
+        <string>1 image</string>
         <key>other</key>
-        <string>%ld myndir</string>
+        <string>%ld images</string>
       </dict>
     </dict>
     <key>plural.count.gif</key>
@@ -189,9 +189,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 hreyfimynd</string>
+        <string>1 gif</string>
         <key>other</key>
-        <string>%ld hreyfimyndir</string>
+        <string>%ld gifs</string>
       </dict>
     </dict>
     <key>plural.count.video</key>
@@ -205,9 +205,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 myndskeið</string>
+        <string>1 video</string>
         <key>other</key>
-        <string>%ld myndskeið</string>
+        <string>%ld videos</string>
       </dict>
     </dict>
     <key>plural.count.audio</key>
@@ -221,9 +221,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 hljóðskrá</string>
+        <string>1 audio</string>
         <key>other</key>
-        <string>%ld hljóðskrár</string>
+        <string>%ld audios</string>
       </dict>
     </dict>
     <key>plural.count.attachment</key>
@@ -237,9 +237,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 viðhengi</string>
+        <string>1 attachment</string>
         <key>other</key>
-        <string>%ld viðhengi</string>
+        <string>%ld attachments</string>
       </dict>
     </dict>
     <key>plural.count.poll</key>
@@ -253,9 +253,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 könnun</string>
+        <string>1 poll</string>
         <key>other</key>
-        <string>%ld kannanir</string>
+        <string>%ld polls</string>
       </dict>
     </dict>
     <key>plural.count.post</key>
@@ -429,9 +429,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 af fylgjendunum þínum</string>
+        <string>1 of your followers</string>
         <key>other</key>
-        <string>%ld af fylgjendunum þínum</string>
+        <string>%ld of your followers</string>
       </dict>
     </dict>
     <key>plural.count.accounts_that_you_follow</key>
@@ -445,9 +445,9 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 notandi sem þú fylgist með</string>
+        <string>1 account that you follow</string>
         <key>other</key>
-        <string>%ld notendur sem þú fylgist með</string>
+        <string>%ld accounts that you follow</string>
       </dict>
     </dict>
     <key>date.year.left</key>

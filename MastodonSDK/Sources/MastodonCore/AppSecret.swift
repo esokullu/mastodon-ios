@@ -9,6 +9,7 @@ import Foundation
 import CryptoKit
 import KeychainAccess
 import MastodonCommon
+import ArkanaKeys
 
 public final class AppSecret {
     
@@ -35,11 +36,11 @@ public final class AppSecret {
     
     init() {
         #if DEBUG
-        //let keys = Keys.Debug()
-        self.notificationEndpoint = "https://app.joinmastodon.org/relay-to/production"
+        let keys = Keys.Debug()
+        self.notificationEndpoint = keys.notificationEndpoint
         #else
-        //let keys = Keys.Release()
-        self.notificationEndpoint = "https://app.joinmastodon.org/relay-to/production"
+        let keys = Keys.Release()
+        self.notificationEndpoint = keys.notificationEndpoint
         #endif
     }
     
