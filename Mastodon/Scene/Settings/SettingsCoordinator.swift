@@ -85,9 +85,8 @@ extension SettingsCoordinator: SettingsViewControllerDelegate {
                 navigationController.pushViewController(generalSettingsViewController, animated: true)
             case .notifications:
 
-            let currentSetting = SettingService.shared.currentSetting.value
-            let notificationsEnabled = NotificationService.shared.isNotificationPermissionGranted.value
-                let notificationViewController = NotificationSettingsViewController(currentSetting: currentSetting, notificationsEnabled: notificationsEnabled)
+                let currentSetting = SettingService.shared.currentSetting.value
+                let notificationViewController = NotificationSettingsViewController(currentSetting: currentSetting)
                 notificationViewController.delegate = self
 
                 navigationController.pushViewController(notificationViewController, animated: true)
@@ -218,35 +217,17 @@ extension SettingsCoordinator: NotificationSettingsViewControllerDelegate {
 
         guard let subscription = setting.activeSubscription,
               setting.domain == authenticationBox.domain,
-              setting.userID == authenticationBox.userID,
-              let legacyViewModel = NotificationService.shared.dequeueNotificationViewModel(mastodonAuthenticationBox: authenticationBox), let deviceToken = NotificationService.shared.deviceToken.value else { return }
+              setting.userID == authenticationBox.userID else { return }
 
-        let queryData = Mastodon.API.Subscriptions.QueryData(
-            policy: viewModel.selectedPolicy.subscriptionPolicy,
-            alerts: Mastodon.API.Subscriptions.QueryData.Alerts(
+        NotificationService.shared.requestUpdate(
+            .singleAccount(subscriptionObjectID: subscription.objectID, userAuthBox: authenticationBox, policy:  viewModel.selectedPolicy.subscriptionPolicy, alerts: Mastodon.API.Subscriptions.QueryData.Alerts(
                 favourite: viewModel.notifyFavorites,
                 follow: viewModel.notifyNewFollowers,
                 reblog: viewModel.notifyBoosts,
                 mention: viewModel.notifyMentions,
-                poll: subscription.alert.poll
+                poll: subscription.alert.poll)
             )
         )
-        let query = legacyViewModel.createSubscribeQuery(
-            deviceToken: deviceToken,
-            queryData: queryData,
-            mastodonAuthenticationBox: authenticationBox
-        )
-
-        APIService.shared.createSubscription(
-            subscriptionObjectID: subscription.objectID,
-            query: query,
-            mastodonAuthenticationBox: authenticationBox
-        ).sink(receiveCompletion: { completion in
-            print(completion)
-        }, receiveValue: { output in
-            print(output)
-        })
-        .store(in: &disposeBag)
     }
     
     func showNotificationSettings(_ viewController: UIViewController) {
