@@ -16,7 +16,7 @@ extension Mastodon.Entity {
     ///   2021/1/29
     /// # Reference
     ///  [Document](https://docs.joinmastodon.org/entities/notification/)
-    public struct Notification: Codable, Sendable, Identifiable {
+    public struct Notification: Codable, Sendable {
         public typealias ID = String
         
         public let id: ID
@@ -50,7 +50,7 @@ extension Mastodon.Entity {
     ///   2024/12/19
     /// # Reference
     ///  [Document](https://docs.joinmastodon.org/methods/grouped_notifications/#NotificationGroup)
-    public struct NotificationGroup: Codable, Sendable, Identifiable {
+    public struct NotificationGroup: Codable, Sendable {
         public typealias ID = String
         
         public let id: ID
@@ -262,10 +262,6 @@ extension Mastodon.Entity {
             case "favourite":           self = .favourite
             case "poll":                self = .poll
             case "status":              self = .status
-            case "update":              self = .update
-            case "admin.sign_up":       self = .adminSignUp
-            case "admin.report":        self = .adminReport
-            case "severed_relationships": self = .severedRelationships
             case "moderation_warning":  self = .moderationWarning
             default:                    self = ._other(rawValue)
             }

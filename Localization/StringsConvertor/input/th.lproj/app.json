@@ -156,10 +156,10 @@
                 }
             },
             "status": {
-                "reply": "การตอบกลับ",
-                "private_reply": "การตอบกลับแบบส่วนตัว",
-                "mention": "การกล่าวถึง",
-                "private_mention": "การกล่าวถึงแบบส่วนตัว",
+                "reply": "Reply",
+                "private_reply": "Private reply",
+                "mention": "Mention",
+                "private_mention": "Private mention",
                 "user_reblogged": "%s ได้ดัน",
                 "user_replied_to": "ตอบกลับ %s",
                 "show_post": "แสดงโพสต์",
@@ -387,10 +387,6 @@
         "register": {
             "title": "สร้างบัญชี",
             "input": {
-                "birth_date": {
-                    "label": "Date of Birth",
-                    "explanation_message": "We have to make sure you're at least %d to join %@. This won't get stored after signup."
-                },
                 "avatar": {
                     "delete": "ลบ"
                 },
@@ -746,7 +742,7 @@
                 "follow": "Follow",
                 "follow_request": "Follow request",
                 "moderation_warning": "Warning",
-                "poll": "การสำรวจความคิดเห็น",
+                "poll": "Poll",
                 "boost": "Boost",
                 "severed_relationships": "Domain block",
                 "status": "Post",
@@ -833,7 +829,7 @@
                 "general": "ทั่วไป",
                 "notifications": "การแจ้งเตือน",
                 "privacy_safety": "ความเป็นส่วนตัวและความปลอดภัย",
-                "support_mastodon": "บริจาคให้ Mastodon",
+                "support_mastodon": "สนับสนุน Mastodon",
                 "about_mastodon": "เกี่ยวกับ Mastodon",
                 "server_details": "รายละเอียดเซิร์ฟเวอร์",
                 "logout": "ออกจากระบบ %@"
@@ -921,7 +917,7 @@
             },
             "donation": {
                 "title": "Donate to Mastodon",
-                "manage": "จัดการการบริจาค"
+                "manage": "Manage donations"
             }
         },
         "report": {

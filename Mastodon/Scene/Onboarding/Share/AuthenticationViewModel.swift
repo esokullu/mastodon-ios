@@ -103,17 +103,9 @@ extension AuthenticationViewModel {
         
         stateStreamContinuation.yield(.joiningServer(server))
         
-        let instance: RegistrationInstance
-        do {
-            instance = try await APIService.shared.instanceV2(domain: server.domain, authenticationBox: nil)
-        } catch {
-            instance = try await APIService.shared.instance(domain: server.domain, authenticationBox: nil)
-            if instance.isBeyondVersion1 {
-                throw APIService.APIError.explicit(.badResponse)
-            }
-        }
+        let instance = try await APIService.shared.instance(domain: server.domain, authenticationBox: nil)
         
-        guard instance.isOpenToNewRegistrations ?? true else {
+        guard instance.registrations != false else {
             throw AuthenticationViewModel.AuthenticationError.registrationClosed
         }
         let application = try await APIService.shared.createApplication(domain: server.domain)
@@ -165,11 +157,10 @@ extension AuthenticationViewModel {
         assert(hasAgreedToRules == true)
         let query = Mastodon.API.Account.RegisterQuery(
             reason: info.reason,
-            dateOfBirth: info.minAge == nil ? nil : info.dateOfBirth,
             username: info.username,
             email: info.email,
             password: info.password,
-            agreement: hasAgreedToRules,
+            agreement: hasAgreedToRules, 
             locale: locale ?? self.locale
         )
 

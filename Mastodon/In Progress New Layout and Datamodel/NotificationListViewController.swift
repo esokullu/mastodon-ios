@@ -146,7 +146,9 @@ struct NotificationListView: View {
                     viewDidDisappear()
                 }
                 .accessibilityAction(named: L10n.Common.Controls.Actions.seeMore) {
-                    viewModel.requestLoad(.newer)
+                    Task {
+                        await viewModel.refreshFeedFromTop()
+                    }
                 }
             }
         }
@@ -217,7 +219,9 @@ struct NotificationListView: View {
     
     func viewDidAppear() {
         NotificationService.shared.clearNotificationCountForActiveUser()
-        viewModel.requestLoad(.newer)
+        Task {
+            await viewModel.refreshFeedFromTop()
+        }
     }
     
     func viewDidDisappear() {
@@ -228,7 +232,7 @@ struct NotificationListView: View {
     }
     
     func loadMore() {
-        viewModel.requestLoad(.older)
+        viewModel.loadOlder()
     }
 
     func didTap(item: NotificationListItem) {
@@ -365,7 +369,9 @@ private class NotificationListViewModel: ObservableObject {
             notificationPolicyBannerRow
             + withoutFilteredRow
         
-        feedLoader.requestLoad(.reload)
+        Task {
+            await feedLoader.asyncLoadMore(olderThan: nil, newerThan: nil)
+        }
     }
     
     func isUnread(_ item: NotificationListItem) -> Bool? {
@@ -430,13 +436,15 @@ private class NotificationListViewModel: ObservableObject {
     }
 
     public func refreshFeedFromTop() async {
-        if feedLoader.permissionToLoadImmediately {
-            await feedLoader.loadImmediately(.newer)
-        }
+        let newestKnown = feedLoader.records.allRecords.first?.newestID
+        await feedLoader.asyncLoadMore(olderThan: nil, newerThan: newestKnown)
     }
-    
-    public func requestLoad(_ loadRequest: GroupedNotificationFeedLoader.FeedLoadRequest) {
-        feedLoader.requestLoad(loadRequest)
+
+    public func loadOlder() {
+        let oldestKnown = feedLoader.records.allRecords.last?.oldestID
+        Task {
+            await feedLoader.asyncLoadMore(olderThan: oldestKnown, newerThan: nil)
+        }
     }
     
     public func commitToCache() async {
@@ -447,8 +455,6 @@ private class NotificationListViewModel: ObservableObject {
 extension NotificationRowViewModel.NotificationNavigation {
     var a11yTitle: String? {
         switch self {
-        case .link(let description, _):
-            return description
         case .myFollowers:
             return L10n.Scene.Profile.Dashboard.myFollowers // TODO: improve string
         case .profile(let account):
