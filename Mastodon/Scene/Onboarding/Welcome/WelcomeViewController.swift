@@ -37,51 +37,23 @@ final class WelcomeViewController: UIViewController {
     private(set) lazy var viewModel = WelcomeViewModel()
     
     let welcomeIllustrationView = WelcomeIllustrationView()
-    let separatorView = WelcomeSeparatorView(frame: .zero)
-
-    private(set) lazy var mastodonLogo: UIImageView = {
-        let imageView = UIImageView(image: Asset.Scene.Welcome.mastodonLogo.image)
-        return imageView
-    }()
-
-
+    
     //TODO: Extract all those UI-elements in a UIView-subclass
     private(set) lazy var dismissBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: self, action: #selector(WelcomeViewController.dismissBarButtonItemDidPressed(_:)))
     
     let buttonContainer = UIStackView()
 
-    private(set) lazy var joinDefaultServerButton: UIButton = {
-        var buttonConfiguration = UIButton.Configuration.filled()
-        buttonConfiguration.baseForegroundColor = .white
-        buttonConfiguration.background.backgroundColor = Asset.Colors.Brand.blurple.color
-        buttonConfiguration.background.cornerRadius = 14
-        buttonConfiguration.activityIndicatorColorTransformer = UIConfigurationColorTransformer({ _ in
-            return UIColor.white
-        })
-
-        buttonConfiguration.contentInsets = .init(top: WelcomeViewController.actionButtonPadding.top,
-                                                  leading: WelcomeViewController.actionButtonPadding.left,
-                                                  bottom: WelcomeViewController.actionButtonPadding.bottom,
-                                                  trailing: WelcomeViewController.actionButtonPadding.right)
-
-        let button = UIButton(configuration: buttonConfiguration)
-
-        return button
-    }()
-
     private(set) lazy var pickOtherServerButton: UIButton = {
 
-        var buttonConfiguration = UIButton.Configuration.borderedTinted()
+        var buttonConfiguration = UIButton.Configuration.filled()
         buttonConfiguration.attributedTitle = AttributedString(
-            L10n.Scene.Welcome.pickServer,
+            L10n.Scene.Register.title,
             attributes: .init([.font: UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 17, weight: .semibold))])
         )
 
         buttonConfiguration.background.cornerRadius = 14
-        buttonConfiguration.background.strokeColor = UIColor.white.withAlphaComponent(0.6)
-        buttonConfiguration.background.strokeWidth = 1
-        buttonConfiguration.baseBackgroundColor = .clear
-        buttonConfiguration.baseForegroundColor = .white
+        buttonConfiguration.baseBackgroundColor = .white
+        buttonConfiguration.baseForegroundColor = .black
 
         buttonConfiguration.contentInsets = .init(top: WelcomeViewController.actionButtonPadding.top,
                                                   leading: WelcomeViewController.actionButtonPadding.left,
@@ -103,29 +75,6 @@ final class WelcomeViewController: UIViewController {
 
         let button = UIButton(configuration: buttonConfiguration)
         return button
-    }()
-
-    private(set) lazy var learnMoreButton: UIButton = {
-        var buttonConfiguration = UIButton.Configuration.plain()
-        buttonConfiguration.baseForegroundColor = .white
-        buttonConfiguration.attributedTitle = AttributedString(
-            L10n.Scene.Welcome.learnMore,
-            attributes: .init([.font: UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 17, weight: .semibold))])
-        )
-
-        let button = UIButton(configuration: buttonConfiguration)
-        return button
-    }()
-
-    private(set) lazy var bottomButtonStackView: UIStackView = {
-        let bottomButtonStackView = UIStackView(arrangedSubviews: [learnMoreButton, signInButton])
-        bottomButtonStackView.axis = .horizontal
-        bottomButtonStackView.distribution = .fill
-        bottomButtonStackView.alignment = .center
-        bottomButtonStackView.spacing = 16
-        bottomButtonStackView.setContentHuggingPriority(.required, for: .vertical)
-
-        return bottomButtonStackView
     }()
 }
 
@@ -196,17 +145,8 @@ extension WelcomeViewController {
         view.addSubview(welcomeIllustrationView)
         welcomeIllustrationView.translatesAutoresizingMaskIntoConstraints = false
 
-        mastodonLogo.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(mastodonLogo)
-        
-        NSLayoutConstraint.activate([
-            mastodonLogo.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
-            mastodonLogo.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            mastodonLogo.widthAnchor.constraint(equalToConstant: 300),
-        ])
-        
         buttonContainer.axis = .vertical
-        buttonContainer.spacing = 12
+        buttonContainer.spacing = 8
         buttonContainer.isLayoutMarginsRelativeArrangement = true
         
         buttonContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -217,44 +157,20 @@ extension WelcomeViewController {
             view.layoutMarginsGuide.bottomAnchor.constraint(equalTo: buttonContainer.bottomAnchor),
         ])
 
-        joinDefaultServerButton.translatesAutoresizingMaskIntoConstraints = false
-        buttonContainer.addArrangedSubview(joinDefaultServerButton)
-        NSLayoutConstraint.activate([
-            joinDefaultServerButton.heightAnchor.constraint(greaterThanOrEqualToConstant: WelcomeViewController.actionButtonHeight)
-        ])
-        
         pickOtherServerButton.translatesAutoresizingMaskIntoConstraints = false
         buttonContainer.addArrangedSubview(pickOtherServerButton)
         NSLayoutConstraint.activate([
             pickOtherServerButton.heightAnchor.constraint(greaterThanOrEqualToConstant: WelcomeViewController.actionButtonHeight)
         ])
 
-        buttonContainer.addArrangedSubview(separatorView)
-
         signInButton.translatesAutoresizingMaskIntoConstraints = false
+        buttonContainer.addArrangedSubview(signInButton)
         NSLayoutConstraint.activate([
             signInButton.heightAnchor.constraint(greaterThanOrEqualToConstant: WelcomeViewController.actionButtonHeight)
         ])
 
-        learnMoreButton.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            learnMoreButton.heightAnchor.constraint(greaterThanOrEqualToConstant: WelcomeViewController.actionButtonHeight),
-            bottomButtonStackView.heightAnchor.constraint(equalTo: learnMoreButton.heightAnchor),
-        ])
-
-        buttonContainer.addArrangedSubview(bottomButtonStackView)
-
-        NSLayoutConstraint.activate([
-            welcomeIllustrationView.topAnchor.constraint(equalTo: view.topAnchor),
-            welcomeIllustrationView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            view.trailingAnchor.constraint(equalTo: welcomeIllustrationView.trailingAnchor),
-            separatorView.centerYAnchor.constraint(equalTo: welcomeIllustrationView.bottomAnchor)
-        ])
-
-        joinDefaultServerButton.addTarget(self, action: #selector(joinDefaultServerTapped(_:)), for: .touchUpInside)
         pickOtherServerButton.addTarget(self, action: #selector(pickOtherServerTapped(_:)), for: .touchUpInside)
         signInButton.addTarget(self, action: #selector(signIn(_:)), for: .touchUpInside)
-        learnMoreButton.addTarget(self, action: #selector(learnMore(_:)), for: .touchUpInside)
 
         view.backgroundColor = Asset.Scene.Welcome.Illustration.backgroundGreen.color
         
@@ -267,16 +183,6 @@ extension WelcomeViewController {
             .store(in: &disposeBag)
 
         setupIllustrationLayout()
-
-        configureJoinDefaultServerButton(nil, isLoading: true)
-
-        viewModel.downloadDefaultServer { [weak self] in
-            guard let selectedDefaultServer = self?.viewModel.randomDefaultServer else { return }
-
-            DispatchQueue.main.async {
-                self?.configureJoinDefaultServerButton(selectedDefaultServer.domain, isLoading: false)
-            }
-        }
     }
     
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -298,7 +204,7 @@ extension WelcomeViewController {
             buttonContainer.layoutMargins = UIEdgeInsets(
                 top: 0,
                 left: WelcomeViewController.actionButtonMargin,
-                bottom: 0,
+                bottom: WelcomeViewController.viewBottomPaddingHeight,
                 right: WelcomeViewController.actionButtonMargin
             )
         default:
@@ -306,7 +212,7 @@ extension WelcomeViewController {
             buttonContainer.layoutMargins = UIEdgeInsets(
                 top: 0,
                 left: margin,
-                bottom: 0,
+                bottom: WelcomeViewController.viewBottomPaddingHeightExtend,
                 right: margin
             )
         }
@@ -330,52 +236,6 @@ extension WelcomeViewController {
     }
 
     //MARK: - Actions
-    @objc
-    private func joinDefaultServerTapped(_ sender: UIButton) {
-
-        guard let server = viewModel.randomDefaultServer else { return }
-       
-        configureJoinDefaultServerButton(server.domain, isLoading: true)
-        
-        Task {
-            do {
-                try await authenticationViewModel.joinServer(server)
-                // reset the button after successful completion (which is not completion of the full sign in process, only the first step of reaching the server and getting the rules)
-                configureJoinDefaultServerButton(server.domain, isLoading: false)
-            } catch {
-                // reset to try again with a potentially different random default server
-                guard let randomServer = self.viewModel.pickRandomDefaultServer() else {
-                    configureJoinDefaultServerButton(nil, isLoading: true)
-                    return
-                }
-                self.viewModel.randomDefaultServer = randomServer
-                configureJoinDefaultServerButton(randomServer.domain, isLoading: false)
-            }
-        }
-    }
-    
-    private func configureJoinDefaultServerButton(_ domain: String?, isLoading: Bool) {
-        guard let domain else {
-            joinDefaultServerButton.configuration?.showsActivityIndicator = isLoading
-            joinDefaultServerButton.isEnabled = false
-            joinDefaultServerButton.configuration?.title = nil
-            return
-        }
-        
-        if isLoading {
-            joinDefaultServerButton.configuration?.title = nil
-            joinDefaultServerButton.isEnabled = false
-            joinDefaultServerButton.configuration?.showsActivityIndicator = true
-        } else {
-            joinDefaultServerButton.isEnabled = true
-            joinDefaultServerButton.configuration?.showsActivityIndicator = false
-            joinDefaultServerButton.configuration?.attributedTitle = AttributedString(
-                L10n.Scene.Welcome.joinDefaultServer(domain),
-                attributes: .init([.font: UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 17, weight: .semibold))])
-            )
-        }
-    }
-
     @objc
     private func pickOtherServerTapped(_ sender: UIButton) {
         authenticationViewModel.pickServer()
