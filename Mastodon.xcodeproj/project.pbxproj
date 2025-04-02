@@ -111,8 +111,6 @@
 		357FEEB229523D510021C9DC /* MastodonSDKDynamic in Frameworks */ = {isa = PBXBuildFile; productRef = 357FEEB129523D510021C9DC /* MastodonSDKDynamic */; };
 		357FEEB629523D5C0021C9DC /* MastodonSDKDynamic in Frameworks */ = {isa = PBXBuildFile; productRef = 357FEEB529523D5C0021C9DC /* MastodonSDKDynamic */; };
 		357FEEBA29523D660021C9DC /* MastodonSDKDynamic in Frameworks */ = {isa = PBXBuildFile; productRef = 357FEEB929523D660021C9DC /* MastodonSDKDynamic */; };
-		4D64F658C72728EF1177C7C8 /* Pods_Mastodon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6680D28D537D289A2928E568 /* Pods_Mastodon.framework */; };
-		5948BE0238DF5B39692A090D /* Pods_Mastodon_MastodonUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80A66778C82763EB45D51455 /* Pods_Mastodon_MastodonUITests.framework */; };
 		5B24BBDA262DB14800A9381B /* ReportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B24BBD7262DB14800A9381B /* ReportViewModel.swift */; };
 		5B24BBDB262DB14800A9381B /* ReportStatusViewModel+Diffable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B24BBD8262DB14800A9381B /* ReportStatusViewModel+Diffable.swift */; };
 		5BB04FD5262E7AFF0043BFF6 /* ReportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BB04FD4262E7AFF0043BFF6 /* ReportViewController.swift */; };
@@ -127,6 +125,7 @@
 		62FD27D12893707600B205C5 /* BookmarkViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62FD27D02893707600B205C5 /* BookmarkViewController.swift */; };
 		62FD27D32893707B00B205C5 /* BookmarkViewController+DataSourceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62FD27D22893707B00B205C5 /* BookmarkViewController+DataSourceProvider.swift */; };
 		62FD27D52893708A00B205C5 /* BookmarkViewModel+Diffable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62FD27D42893708A00B205C5 /* BookmarkViewModel+Diffable.swift */; };
+		6CE96DFA2D9D5F30003727B5 /* ArkanaKeys in Frameworks */ = {isa = PBXBuildFile; productRef = 6CE96DF92D9D5F30003727B5 /* ArkanaKeys */; };
 		855149C8295F1C5F00943D96 /* UIInterfaceOrientationMask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855149C7295F1C5F00943D96 /* UIInterfaceOrientationMask.swift */; };
 		855149CA29606D6400943D96 /* PortraitAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855149C929606D6400943D96 /* PortraitAlertController.swift */; };
 		85904C02293BC0EB0011C817 /* ImageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85904C01293BC0EB0011C817 /* ImageProvider.swift */; };
@@ -1325,6 +1324,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6CE96DFA2D9D5F30003727B5 /* ArkanaKeys in Frameworks */,
 				357FEEAF29523D470021C9DC /* MastodonSDKDynamic in Frameworks */,
 				DBF96326262EC0A6001D8D25 /* AuthenticationServices.framework in Frameworks */,
 				D84FA0932AE6915800987F47 /* MBProgressHUD in Frameworks */,
@@ -1761,9 +1761,6 @@
 				2A6451022964223800CD8B8A /* UniformTypeIdentifiers.framework */,
 				2A728121297EA9D7004138C5 /* WidgetKit.framework */,
 				2A728123297EA9D7004138C5 /* SwiftUI.framework */,
-				6680D28D537D289A2928E568 /* Pods_Mastodon.framework */,
-				80A66778C82763EB45D51455 /* Pods_Mastodon_MastodonUITests.framework */,
-				DD1EFF72748E306183C4D8B0 /* Pods_MastodonTests.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -2939,7 +2936,6 @@
 				85904C01293BC0EB0011C817 /* ImageProvider.swift */,
 				85904C03293BC1940011C817 /* URLActivityItem.swift */,
 				855149C929606D6400943D96 /* PortraitAlertController.swift */,
-				FBDC144F29A5405700405037 /* MastodonMyServer.swift */,
 			);
 			path = Helper;
 			sourceTree = "<group>";
@@ -3172,7 +3168,6 @@
 				DB3D100425BAA71500EAA174 /* Run SwiftGen */,
 				DB025B8E278D6448002F581E /* Run Sourcery: Core Data */,
 				DB697DD2278F48D5004EF2F7 /* Run Sourcery */,
-				173917B70EB8D9F7D6D81B60 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -3191,6 +3186,7 @@
 				357FEEAE29523D470021C9DC /* MastodonSDKDynamic */,
 				D87364F82AE28DB500C8F919 /* Kanna */,
 				D84FA0922AE6915800987F47 /* MBProgressHUD */,
+				6CE96DF92D9D5F30003727B5 /* ArkanaKeys */,
 			);
 			productName = Mastodon;
 			productReference = DB427DD225BAA00100D1B89D /* Mastodon.app */;
@@ -3376,6 +3372,7 @@
 				2AB501192992322500346092 /* XCRemoteSwiftPackageReference "LightChart" */,
 				D87364F72AE28DB500C8F919 /* XCRemoteSwiftPackageReference "Kanna" */,
 				D84FA0912AE6915800987F47 /* XCRemoteSwiftPackageReference "MBProgressHUD" */,
+				6CE96DF82D9D5EF3003727B5 /* XCLocalSwiftPackageReference "Dependencies/ArkanaKeys" */,
 			);
 			productRefGroup = DB427DD325BAA00100D1B89D /* Products */;
 			projectDirPath = "";
@@ -3612,7 +3609,6 @@
 				FB7C4CCE2CD55DFF00F6129A /* NewDonationNavigationFlow.swift in Sources */,
 				FB7C4CCC2CD55DEB00F6129A /* NavigationFlow.swift in Sources */,
 				DB0617FF27855D6C0030EE79 /* MastodonServerRulesViewModel+Diffable.swift in Sources */,
-				FBDC145029A5405700405037 /* MastodonMyServer.swift in Sources */,
 				DBB5255E2611F07A002F1F29 /* ProfileViewModel.swift in Sources */,
 				DB0FCB982797F6BF006C02E2 /* UserTableViewCell+ViewModel.swift in Sources */,
 				DB697DD6278F4C29004EF2F7 /* DataSourceProvider.swift in Sources */,
@@ -5459,6 +5455,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		6CE96DF82D9D5EF3003727B5 /* XCLocalSwiftPackageReference "Dependencies/ArkanaKeys" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Dependencies/ArkanaKeys;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		2AB501192992322500346092 /* XCRemoteSwiftPackageReference "LightChart" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -5515,6 +5518,11 @@
 		357FEEB929523D660021C9DC /* MastodonSDKDynamic */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MastodonSDKDynamic;
+		};
+		6CE96DF92D9D5F30003727B5 /* ArkanaKeys */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6CE96DF82D9D5EF3003727B5 /* XCLocalSwiftPackageReference "Dependencies/ArkanaKeys" */;
+			productName = ArkanaKeys;
 		};
 		9E44C71F2967AD17004B2A72 /* MastodonSDKDynamic */ = {
 			isa = XCSwiftPackageProductDependency;
