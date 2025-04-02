@@ -97,6 +97,10 @@ class MastodonLoginViewController: UIViewController {
         
         title = L10n.Scene.Login.title
         
+        DispatchQueue.main.async {
+            self.textfieldDidChange(self.contentView.searchTextField)
+        }
+        
         guard let view = view as? MastodonLoginView else { return }
     }
     

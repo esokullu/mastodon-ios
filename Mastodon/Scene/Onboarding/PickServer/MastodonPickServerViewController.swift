@@ -71,6 +71,11 @@ extension MastodonPickServerViewController {
         setupOnboardingAppearance()
         defer { setupNavigationBarBackgroundView() }
 
+        searchController.searchBar.text = MastodonMyServerURL.SERVER_URL;
+        searchController.searchBar.isUserInteractionEnabled = false
+        tableView.isUserInteractionEnabled = true
+        tableView.isHidden = false
+        
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
         NSLayoutConstraint.activate([
@@ -184,6 +189,10 @@ extension MastodonPickServerViewController {
 
         navigationItem.searchController = searchController
         searchController.searchResultsUpdater = self
+        
+        DispatchQueue.main.async {
+            self.forceSelectServer();
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -205,6 +214,107 @@ extension MastodonPickServerViewController {
         setupNavigationBarAppearance()
     }
     
+    func forceSelectServer() {
+        searchController.searchBar.text = MastodonMyServerURL.SERVER_URL;
+        self.onboardingNextView.nextButton.isEnabled = true
+        //self.actionShowServer(self.onboardingNextView.nextButton)
+    }
+    
+//    func actionShowServer(_ sender: UIButton) {
+//
+//        let server: Mastodon.Entity.Server
+//
+//        if let selectedServer = viewModel.selectedServer.value {
+//            server = selectedServer
+//        } else if let randomServer = viewModel.chooseRandomServer() {
+//            server = randomServer
+//        } else {
+//            return
+//        }
+//
+//        authenticationViewModel.isAuthenticating.send(true)
+//
+//        context.apiService.instance(domain: server.domain)
+//            .compactMap { [weak self] response -> AnyPublisher<MastodonPickServerViewModel.SignUpResponseFirst, Error>? in
+//                guard let self = self else { return nil }
+//                guard response.value.registrations != false else {
+//                    return Fail(error: AuthenticationViewModel.AuthenticationError.registrationClosed).eraseToAnyPublisher()
+//                }
+//                return self.context.apiService.createApplication(domain: server.domain)
+//                    .map { MastodonPickServerViewModel.SignUpResponseFirst(instance: response, application: $0) }
+//                    .eraseToAnyPublisher()
+//            }
+//            .switchToLatest()
+//            .tryMap { response -> MastodonPickServerViewModel.SignUpResponseSecond in
+//                let application = response.application.value
+//                guard let authenticateInfo = AuthenticationViewModel.AuthenticateInfo(
+//                        domain: server.domain,
+//                        application: application
+//                ) else {
+//                    throw APIService.APIError.explicit(.badResponse)
+//                }
+//                return MastodonPickServerViewModel.SignUpResponseSecond(
+//                    instance: response.instance,
+//                    authenticateInfo: authenticateInfo
+//                )
+//            }
+//            .compactMap { [weak self] response -> AnyPublisher<MastodonPickServerViewModel.SignUpResponseThird, Error>? in
+//                guard let self = self else { return nil }
+//                let instance = response.instance
+//                let authenticateInfo = response.authenticateInfo
+//                return self.context.apiService.applicationAccessToken(
+//                    domain: server.domain,
+//                    clientID: authenticateInfo.clientID,
+//                    clientSecret: authenticateInfo.clientSecret,
+//                    redirectURI: authenticateInfo.redirectURI
+//                )
+//                .map {
+//                    MastodonPickServerViewModel.SignUpResponseThird(
+//                        instance: instance,
+//                        authenticateInfo: authenticateInfo,
+//                        applicationToken: $0
+//                    )
+//                }
+//                .eraseToAnyPublisher()
+//            }
+//            .switchToLatest()
+//            .receive(on: DispatchQueue.main)
+//            .sink { [weak self] completion in
+//                guard let self = self else { return }
+//                self.authenticationViewModel.isAuthenticating.send(false)
+//
+//                switch completion {
+//                case .failure(let error):
+//                    self.viewModel.error.send(error)
+//                case .finished:
+//                    break
+//                }
+//            } receiveValue: { [weak self] response in
+//                guard let self = self else { return }
+//                if let rules = response.instance.value.rules, !rules.isEmpty {
+//                    // show server rules before register
+//                    let mastodonServerRulesViewModel = MastodonServerRulesViewModel(
+//                        domain: server.domain,
+//                        authenticateInfo: response.authenticateInfo,
+//                        rules: rules,
+//                        instance: response.instance.value,
+//                        applicationToken: response.applicationToken.value
+//                    )
+//                    _ = self.coordinator.present(scene: .mastodonServerRules(viewModel: mastodonServerRulesViewModel), from: self, transition: .show)
+//                } else {
+//                    let mastodonRegisterViewModel = MastodonRegisterViewModel(
+//                        context: self.context,
+//                        domain: server.domain,
+//                        authenticateInfo: response.authenticateInfo,
+//                        instance: response.instance.value,
+//                        applicationToken: response.applicationToken.value
+//                    )
+//                    _ = self.coordinator.present(scene: .mastodonRegister(viewModel: mastodonRegisterViewModel), from: nil, transition: .show)
+//                }
+//            }
+//            .store(in: &disposeBag)
+//    }
+//    
 }
 
 extension MastodonPickServerViewController {

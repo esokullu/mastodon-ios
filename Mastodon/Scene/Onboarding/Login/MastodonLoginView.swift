@@ -55,6 +55,8 @@ class MastodonLoginView: UIView {
     searchTextField.keyboardType = .URL
     searchTextField.autocorrectionType = .no
     searchTextField.autocapitalizationType = .none
+    searchTextField.isEnabled = false
+    searchTextField.text = MastodonMyServerURL.SERVER_URL;
 
     tableView = ContentSizedTableView()
     tableView.translatesAutoresizingMaskIntoConstraints = false
