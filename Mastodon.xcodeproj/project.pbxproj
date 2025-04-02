@@ -125,6 +125,7 @@
 		62FD27D12893707600B205C5 /* BookmarkViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62FD27D02893707600B205C5 /* BookmarkViewController.swift */; };
 		62FD27D32893707B00B205C5 /* BookmarkViewController+DataSourceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62FD27D22893707B00B205C5 /* BookmarkViewController+DataSourceProvider.swift */; };
 		62FD27D52893708A00B205C5 /* BookmarkViewModel+Diffable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62FD27D42893708A00B205C5 /* BookmarkViewModel+Diffable.swift */; };
+		6C377B772D9DB7D20095C185 /* MastodonMyServerURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C377B762D9DB7AB0095C185 /* MastodonMyServerURL.swift */; };
 		6CE96DFA2D9D5F30003727B5 /* ArkanaKeys in Frameworks */ = {isa = PBXBuildFile; productRef = 6CE96DF92D9D5F30003727B5 /* ArkanaKeys */; };
 		855149C8295F1C5F00943D96 /* UIInterfaceOrientationMask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855149C7295F1C5F00943D96 /* UIInterfaceOrientationMask.swift */; };
 		855149CA29606D6400943D96 /* PortraitAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855149C929606D6400943D96 /* PortraitAlertController.swift */; };
@@ -767,6 +768,7 @@
 		62FD27D02893707600B205C5 /* BookmarkViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkViewController.swift; sourceTree = "<group>"; };
 		62FD27D22893707B00B205C5 /* BookmarkViewController+DataSourceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BookmarkViewController+DataSourceProvider.swift"; sourceTree = "<group>"; };
 		62FD27D42893708A00B205C5 /* BookmarkViewModel+Diffable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BookmarkViewModel+Diffable.swift"; sourceTree = "<group>"; };
+		6C377B762D9DB7AB0095C185 /* MastodonMyServerURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MastodonMyServerURL.swift; sourceTree = "<group>"; };
 		855149C7295F1C5F00943D96 /* UIInterfaceOrientationMask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIInterfaceOrientationMask.swift; sourceTree = "<group>"; };
 		855149C929606D6400943D96 /* PortraitAlertController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortraitAlertController.swift; sourceTree = "<group>"; };
 		85904C01293BC0EB0011C817 /* ImageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProvider.swift; sourceTree = "<group>"; };
@@ -2932,6 +2934,7 @@
 		DBBC24D526A54BCB00398BB9 /* Helper */ = {
 			isa = PBXGroup;
 			children = (
+				6C377B762D9DB7AB0095C185 /* MastodonMyServerURL.swift */,
 				DBF3B7402733EB9400E21627 /* MastodonLocalCode.swift */,
 				85904C01293BC0EB0011C817 /* ImageProvider.swift */,
 				85904C03293BC1940011C817 /* URLActivityItem.swift */,
@@ -3332,7 +3335,7 @@
 			};
 			buildConfigurationList = DB427DCD25BAA00100D1B89D /* Build configuration list for PBXProject "Mastodon" */;
 			compatibilityVersion = "Xcode 15.0";
-			developmentRegion = en;
+			developmentRegion = tr;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
@@ -3618,6 +3621,7 @@
 				DBDFF1902805543100557A48 /* DiscoveryPostsViewController.swift in Sources */,
 				DB697DD9278F4CED004EF2F7 /* HomeTimelineViewController+DataSourceProvider.swift in Sources */,
 				DB45FAD725CA6C76005A8AC7 /* UIBarButtonItem.swift in Sources */,
+				6C377B772D9DB7D20095C185 /* MastodonMyServerURL.swift in Sources */,
 				D85DF9712C481B1100A01408 /* NotificationRequestsTableViewController.swift in Sources */,
 				D8FAAE432AD047B200DC1832 /* AboutInstanceTableFooterView.swift in Sources */,
 				D808B94E296EFBBA0031EB1E /* StatusEditHistoryTableViewCell.swift in Sources */,
