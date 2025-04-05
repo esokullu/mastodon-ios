@@ -679,7 +679,7 @@ extension SceneCoordinator: SettingsCoordinatorDelegate {
 
 public extension UIViewController {
     var sceneCoordinator: SceneCoordinator? {
-        guard let view = viewIfLoaded else { assert(false); return nil }
+        guard let view = viewIfLoaded else { return nil }
         if let coordinator = SceneCoordinator.coordinator(for: view) {
             return coordinator
         }

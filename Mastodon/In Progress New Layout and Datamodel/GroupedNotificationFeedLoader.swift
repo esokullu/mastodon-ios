@@ -82,7 +82,7 @@ final public class GroupedNotificationFeedLoader {
         case .notificationsAll, .notificationsMentionsOnly:
             if let currentInstance = AuthenticationServiceProvider.shared.currentActiveUser.value?.authentication.instanceConfiguration {
                 useGrouped = currentInstance.canGroupNotifications
-            } else { assertionFailure("no instance configuration")
+            } else {
                 useGrouped = true
             }
         case .notificationsWithAccount:

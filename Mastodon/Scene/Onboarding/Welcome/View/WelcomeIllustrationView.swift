@@ -120,6 +120,7 @@ extension WelcomeIllustrationView {
         NSLayoutConstraint.activate([
             elephantOnAirplaneWithContrailImageView.leftAnchor.constraint(equalTo: leftAnchor, constant: .airplaneStartPosition),
             elephantOnAirplaneWithContrailImageView.bottomAnchor.constraint(equalTo: leftHillImageView.topAnchor),
+            elephantOnAirplaneWithContrailImageView.topAnchor.constraint(equalTo: self.topAnchor, constant: 120),
             // make a little bit large
             elephantOnAirplaneWithContrailImageView.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.84),
         ])
