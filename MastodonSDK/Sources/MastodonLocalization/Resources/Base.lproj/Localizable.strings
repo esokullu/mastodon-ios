@@ -573,6 +573,7 @@ If you disagree with the policy for **%@**, you can go back and pick a different
 "Scene.ServerPicker.Label.Users" = "USERS";
 "Scene.ServerPicker.Language.All" = "All";
 "Scene.ServerPicker.NoServerSelectedHint" = "We’ll pick a server based on your language if you continue without making a selection.";
+"Scene.ServerPicker.SwitchServerToDiffOne" = "Switch Server"
 "Scene.ServerPicker.Search.Placeholder" = "Search name or URL";
 "Scene.ServerPicker.SignupSpeed.All" = "All";
 "Scene.ServerPicker.SignupSpeed.Instant" = "Instant Sign-up";

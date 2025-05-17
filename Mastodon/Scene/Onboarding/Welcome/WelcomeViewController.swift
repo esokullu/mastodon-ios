@@ -12,12 +12,14 @@ import MastodonCore
 import MastodonLocalization
 import MastodonSDK
 
+
 final class WelcomeViewController: UIViewController {
     
     private enum Constants {
         static let topAnchorInset: CGFloat = 20
+        static let DemoIntroKeyName = "should_show_demo_video"
     }
-    
+
     init() {
         super.init(nibName: nil, bundle: nil)
         authenticationStateTask = Task { [weak self] in
@@ -183,6 +185,15 @@ extension WelcomeViewController {
             .store(in: &disposeBag)
 
         setupIllustrationLayout()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: { [weak self] in
+            guard let self else { return }
+            if ConfigureSettings.Introduction.shouldShowDemoIntroKey {
+                _ = self.sceneCoordinator?.present(scene: .demoIntro, from: self, transition: .modal(animated: true, completion: nil ))
+            }
+        })
     }
     
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {

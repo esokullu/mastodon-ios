@@ -193,6 +193,8 @@ extension MastodonPickServerViewController {
         DispatchQueue.main.async {
             self.forceSelectServer();
         }
+        
+        pickAnotherServerAction()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -440,5 +442,13 @@ extension MastodonPickServerViewController: UISearchResultsUpdating {
     func updateSearchResults(for searchController: UISearchController) {
         guard let searchText = searchController.searchBar.text else { return }
         viewModel.searchText.send(searchText)
+    }
+}
+
+extension MastodonPickServerViewController {
+    func pickAnotherServerAction() {
+        onboardingNextView.onPickAnotherServerTapped = { [weak self] in
+            self?.forceSelectServer()
+        }
     }
 }

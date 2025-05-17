@@ -572,6 +572,7 @@ If you disagree with the policy for **%@**, you can go back and pick a different
 "Scene.ServerPicker.Label.Users" = "KULLANICILAR";
 "Scene.ServerPicker.Language.All" = "Hepsi";
 "Scene.ServerPicker.NoServerSelectedHint" = "We’ll pick a server based on your language if you continue without making a selection.";
+"Scene.ServerPicker.SwitchServerToDiffOne" = "Sunucu Degistir"
 "Scene.ServerPicker.Search.Placeholder" = "İsim ya da bağlantı arayın";
 "Scene.ServerPicker.SignupSpeed.All" = "Hepsi";
 "Scene.ServerPicker.SignupSpeed.Instant" = "Instant Sign-up";

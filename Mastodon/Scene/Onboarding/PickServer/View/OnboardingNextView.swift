@@ -13,11 +13,13 @@ import MastodonLocalization
 final class OnboardingNextView: UIView {
     
     static let buttonHeight: CGFloat = 50
+    
+    var onPickAnotherServerTapped: (()-> Void)?
         
     private let container: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
-        stackView.spacing = 8
+        stackView.spacing = 12
         stackView.alignment = .center
         return stackView
     }()
@@ -32,13 +34,17 @@ final class OnboardingNextView: UIView {
         return button
     }()
 
-    let explanationLabel: UILabel = {
-        let label = UILabel()
-        label.numberOfLines = 0
-        label.textColor = .secondaryLabel
-        label.font = UIFontMetrics(forTextStyle: .footnote).scaledFont(for: .systemFont(ofSize: 13, weight: .regular))
-        label.text = L10n.Scene.ServerPicker.noServerSelectedHint
-        return label
+    let pickDifferentServerButton: UIButton = {
+        let button = UIButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.layer.cornerRadius = 14
+        //button.backgroundColor = Asset.Colors.Brand.blurple.color
+        button.layer.borderColor = Asset.Colors.Brand.blurple.color.cgColor
+        button.layer.borderWidth = 2
+        button.setTitle( L10n.Scene.ServerPicker.switchServerToDiffOneHint, for: .normal)
+        button.titleLabel?.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 16, weight: .bold))
+        button.setTitleColor(Asset.Colors.Brand.blurple.color, for: .normal)
+        return button
     }()
 
     lazy var activityIndicator: UIActivityIndicatorView = {
@@ -62,7 +68,7 @@ final class OnboardingNextView: UIView {
     private func _init() {
         container.translatesAutoresizingMaskIntoConstraints = false
         container.addArrangedSubview(nextButton)
-        container.addArrangedSubview(explanationLabel)
+        container.addArrangedSubview(pickDifferentServerButton)
 
         addSubview(container)
 
@@ -73,12 +79,14 @@ final class OnboardingNextView: UIView {
             safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: 16),
 
             nextButton.widthAnchor.constraint(equalTo: container.widthAnchor),
-            explanationLabel.widthAnchor.constraint(equalTo: container.widthAnchor),
+            pickDifferentServerButton.widthAnchor.constraint(equalTo: container.widthAnchor),
         ])
         
         NSLayoutConstraint.activate([
             nextButton.heightAnchor.constraint(greaterThanOrEqualToConstant: NavigationActionView.buttonHeight)
         ])
+        
+        addTargetForPickAnotherServerButton()
     }
 
     func showLoading() {
@@ -103,6 +111,16 @@ final class OnboardingNextView: UIView {
         }
         nextButton.isEnabled = true
         nextButton.setTitle(L10n.Common.Controls.Actions.next, for: .disabled)
+    }
+    
+    func addTargetForPickAnotherServerButton() {
+        pickDifferentServerButton.addTarget(self, action: #selector(pickAnotherServerAction), for: .touchUpInside)
+    }
+    
+    @objc func pickAnotherServerAction() {
+        if let pick = onPickAnotherServerTapped {
+            pick()
+        }
     }
 }
 
