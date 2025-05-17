@@ -67,9 +67,9 @@ extension NotificationTimelineViewController: DataSourceProvider {
         }
     }
     
-    func update(contentStatus: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
-        MastodonFeedItemCacheManager.shared.addToCache(contentStatus.entity)
-        if let reblog = contentStatus.entity.reblog {
+    func update(status: MastodonStatus, intent: MastodonStatus.UpdateIntent) {
+        MastodonFeedItemCacheManager.shared.addToCache(status.entity)
+        if let reblog = status.entity.reblog {
             MastodonFeedItemCacheManager.shared.addToCache(reblog)
         }
         viewModel.reloadData()

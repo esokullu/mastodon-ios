@@ -28,7 +28,7 @@ extension DataSourceFacade {
             authenticationBox: dependency.authenticationBox
         ).value.asMastodonStatus
         
-        dependency.update(contentStatus: deletedStatus, intent: .delete)
+        dependency.update(status: deletedStatus, intent: .delete)
     }
     
 }
@@ -116,14 +116,12 @@ extension DataSourceFacade {
         case .reblog:
             try await DataSourceFacade.responseToStatusReblogAction(
                 provider: provider,
-                wrappingStatus: status,
-                contentStatus: _status
+                status: _status
             )
         case .like:
             try await DataSourceFacade.responseToStatusFavoriteAction(
                 provider: provider,
-                wrappingStatus: status,
-                contentStatus: _status
+                status: _status
             )
         case .share:
             try await DataSourceFacade.responseToStatusShareAction(
@@ -393,19 +391,19 @@ extension DataSourceFacade {
             alertController.addAction(cancelAction)
             dependency.present(alertController, animated: true)
         case .boostStatus(_):
-            guard let wrappingStatus = menuContext.statusViewModel?._originalStatus else {
+            guard let status: MastodonStatus = menuContext.statusViewModel?._originalStatus?.reblog ?? menuContext.statusViewModel?._originalStatus else {
                 assertionFailure()
                 return
             }
-            let contentStatus = menuContext.statusViewModel?._originalStatus?.reblog ?? wrappingStatus
-            try await responseToStatusReblogAction(provider: dependency, wrappingStatus: wrappingStatus, contentStatus: contentStatus)
+
+            try await responseToStatusReblogAction(provider: dependency, status: status)
         case .favoriteStatus(_):
-            guard let wrappingStatus: MastodonStatus = menuContext.statusViewModel?._originalStatus else {
+            guard let status: MastodonStatus = menuContext.statusViewModel?._originalStatus?.reblog ?? menuContext.statusViewModel?._originalStatus else {
                 assertionFailure()
                 return
             }
-            let contentStatus = menuContext.statusViewModel?._originalStatus?.reblog ?? wrappingStatus
-            try await responseToStatusFavoriteAction(provider: dependency, wrappingStatus: wrappingStatus, contentStatus: contentStatus)
+
+            try await responseToStatusFavoriteAction(provider: dependency, status: status)
         case .copyStatusLink:
             guard let status: MastodonStatus = menuContext.statusViewModel?._originalStatus?.reblog ?? menuContext.statusViewModel?._originalStatus else {
                 assertionFailure()

@@ -44,9 +44,9 @@ extension GroupedNotificationType {
     var iconSystemName: String? {
         switch self {
         case .favourite:
-            return PostAction.favourite.systemIconName(filled: true)
+            return "star.fill"
         case .reblog:
-            return PostAction.boost.systemIconName(filled: false)
+            return "arrow.2.squarepath"
         case .follow:
             return "person.fill.badge.plus"
         case .poll:
@@ -140,8 +140,6 @@ extension GroupedNotificationType {
                     plainString = L10n.Plural.Count.peopleFollowedYou(totalAuthorCount)
                 case .reblog:
                     plainString = L10n.Plural.Count.peopleBoosted(totalAuthorCount)
-                case .adminSignUp:
-                    plainString = L10n.Plural.Count.newSignups(totalAuthorCount)
                 default:
                     plainString = L10n.Plural.Count.others(totalAuthorCount)
                 }
@@ -161,42 +159,15 @@ extension GroupedNotificationType {
 
 extension Mastodon.Entity.Report {
     // "Someone reported X posts from someone else for rule violation"
-    // "Someone reported X posts from someone else for spam"
-    // "Someone reported X posts from someone else"
     var summary: AttributedString {
         if let targetedAccountName = targetAccount?.displayNameWithFallback {
-            
-            let postCountString: String? = {
-                if let postCount = flaggedStatusIDs?.count {
-                    return L10n.Plural.Count.post(postCount)
-                } else {
-                    return nil
-                }
-            }()
-            
-            let summaryPlainstring: String = {
-                switch category {
-                case .spam:
-                    if let postCountString {
-                        return L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedPostsFromAccountForSpam(postCountString, targetedAccountName)
-                    } else {
-                        return L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedAccountForSpam(targetedAccountName)
-                    }
-                case .violation:
-                    if let postCountString {
-                        return L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedPostsFromAccountForRuleViolation(postCountString, targetedAccountName)
-                    } else {
-                        return L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedAccountForRuleViolation(targetedAccountName)
-                    }
-                case ._other, nil:
-                    if let postCountString {
-                        return L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedPostsFromAccount(postCountString, targetedAccountName)
-                    } else {
-                        return L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedAccount(targetedAccountName)
-                    }
-                }
-            }()
-            
+            let summaryPlainstring: String
+            if let postCount = flaggedStatusIDs?.count {
+                let postsString = L10n.Plural.Count.post(postCount)
+                summaryPlainstring = L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedPostsFromAccountForRuleViolation(postsString, targetedAccountName)
+            } else {
+                summaryPlainstring = L10n.Scene.Notification.GroupedNotificationDescription.someoneReportedAccountForRuleViolation(targetedAccountName)
+            }
             var attributedString = AttributedString(summaryPlainstring)
             let boldedName = styledNameComponent(targetedAccountName, style: AttributeContainer.font(
                 .system(.body, weight: .bold)), emojis: targetAccount?.emojiMeta)
@@ -249,23 +220,87 @@ extension Mastodon.Entity.RelationshipSeveranceEvent {
     }
 }
 
-struct NotificationIconView: View {
-    @ScaledMetric private var largeAvatarSize = AvatarSize.large
+private let avatarShape = RoundedRectangle(cornerRadius: 8)
+
+
+struct AvatarView: View {
     
-    let systemName: String
-    let color: Color
+    @State var isNavigating: Bool = false
+    
+    let author: AccountInfo
+    let goToProfile: ((AccountInfo) async throws -> ())?
     
     var body: some View {
-        HStack {
-            Image(systemName: systemName)
-                .foregroundStyle(color)
+        ZStack {
+            AsyncImage(
+                url: author.avatarURL,
+                content: { image in
+                    image.resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .clipShape(avatarShape)
+                        .overlay {
+                            avatarShape.stroke(.separator)
+                        }
+                },
+                placeholder: {
+                    avatarShape
+                        .foregroundStyle(
+                            Color(UIColor.secondarySystemFill))
+                }
+            )
+            
+            if isNavigating {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .frame(width: 30)
+            }
         }
-        .font(.system(size: 25))
-        .frame(width: largeAvatarSize)
-        .fontWeight(.semibold)
+        .onTapGesture {
+            if let goToProfile, !isNavigating {
+                Task {
+                    do {
+                        isNavigating = true
+                        try await goToProfile(author)
+                    } catch {
+                    }
+                    isNavigating = false
+                }
+            }
+        }
     }
 }
 
+private let iconViewSize: CGFloat = 44
+
+@ViewBuilder
+func NotificationIconView(_ style: GroupedNotificationType.MainIconStyle) -> some View {
+    HStack {
+        switch style {
+        case .icon(let name, let color):
+            Image(systemName: name)
+                .foregroundStyle(color)
+        case .avatar:
+            Image(systemName: "xmark")
+                .foregroundStyle(.red)
+        }
+    }
+    .font(.system(size: 25))
+    .frame(width: iconViewSize)
+    .fontWeight(.semibold)
+}
+
+@ViewBuilder
+func NotificationIconView(systemName: String) -> some View {
+    HStack {
+        Image(
+            systemName: systemName
+        )
+        .foregroundStyle(.secondary)
+    }
+    .font(.system(size: 25))
+    .frame(width: iconViewSize)
+    .fontWeight(.semibold)
+}
 
 enum RelationshipElement: Equatable {
     case noneNeeded
@@ -445,9 +480,6 @@ struct NotificationSourceAccounts {
 fileprivate let avatarSpacing: CGFloat = 8
 
 struct FilteredNotificationsRowView: View {
-    
-    @ScaledMetric var disclosureIndicatorSize = AvatarSize.large
-    
     class ViewModel: ObservableObject {
         var policy: Mastodon.Entity.NotificationPolicy? = nil {
             didSet {
@@ -491,7 +523,7 @@ struct FilteredNotificationsRowView: View {
             // LEFT GUTTER WITH TOP-ALIGNED ICON
             VStack {
                 Spacer()
-                NotificationIconView(systemName: "archivebox", color: .secondary)
+                NotificationIconView(systemName: "archivebox")
                 Spacer().frame(maxHeight: .infinity)
             }
 
@@ -520,7 +552,7 @@ struct FilteredNotificationsRowView: View {
                 }
                 Spacer().frame(maxHeight: .infinity)
             }
-            .frame(width: disclosureIndicatorSize)
+            .frame(width: 44)
         }
     }
 }
@@ -528,9 +560,6 @@ struct FilteredNotificationsRowView: View {
 let actionSuperheaderHeight: CGFloat = 20
 
 struct NotificationRowView: View {
-
-    @ScaledMetric private var smallAvatarSize = AvatarSize.small
-    
     @ObservedObject var viewModel: NotificationRowViewModel
     @ObservedObject var timestamper: TimestampUpdater
     
@@ -561,11 +590,12 @@ struct NotificationRowView: View {
                     }
                     
                     switch iconStyle {
-                    case .icon(let name, let color):
-                        NotificationIconView(systemName: name, color: color)
+                    case .icon:
+                        NotificationIconView(iconStyle)
                     case .avatar:
-                        if let author = viewModel.notification.sourceAccounts.primaryAuthorAccount {
-                            AvatarView(size: .large, author: author, goToProfile: viewModel.navigateToProfile(_:))
+                        if let author = viewModel.author {
+                            AvatarView(author: author, goToProfile: viewModel.navigateToProfile(_:))
+                                .frame(width: iconViewSize, height: iconViewSize)
                         }
                     }
                     Spacer().frame(maxHeight: .infinity)
@@ -586,7 +616,7 @@ struct NotificationRowView: View {
                     componentView($0)
                 }
                 
-                if !viewModel.contentComponents.isEmpty && !viewModel.notification.type.wantsFullStatusLayout {
+                if !viewModel.contentComponents.isEmpty && !viewModel.type.wantsFullStatusLayout {
                     Spacer().frame(height: 2)
                 }
                 
@@ -624,7 +654,7 @@ struct NotificationRowView: View {
         case .weightedText(let string, let weight):
             textComponent(string, fontWeight: weight)
         case .status(let statusViewModel):
-            InlinePostPreview(viewModel: statusViewModel, showAttributionHeader: !viewModel.notification.type.wantsFullStatusLayout)
+            InlinePostPreview(viewModel: statusViewModel, showAttributionHeader: !viewModel.type.wantsFullStatusLayout)
                 .onTapGesture {
                     statusViewModel.navigateToStatus()
                 }
@@ -664,6 +694,8 @@ struct NotificationRowView: View {
         }
     }
 
+    @ScaledMetric private var smallAvatarSize: CGFloat = 32
+
     @ViewBuilder
     func avatarRow(
         accountInfo: NotificationSourceAccounts,
@@ -679,7 +711,8 @@ struct NotificationRowView: View {
                     ForEach(
                         accountInfo.accounts.prefix(maxAvatarCount), id: \.self.id
                     ) { account in
-                        AvatarView(size: .small, author: account, goToProfile: viewModel.navigateToProfile(_:))
+                        AvatarView(author: account, goToProfile: viewModel.navigateToProfile(_:))
+                            .frame(width: smallAvatarSize, height: smallAvatarSize)
                             .onTapGesture {
                                 Task {
                                     try await viewModel.navigateToProfile(account)
@@ -694,7 +727,7 @@ struct NotificationRowView: View {
                         .foregroundStyle(.secondary)
                         .fontWeight(.light)
                     }
-                    .frame(width: 0.75 * AvatarSize.small)
+                    .frame(width: 0.75 * smallAvatarSize)
                 }
                 Spacer().frame(minWidth: 0, maxWidth: .infinity)
                 avatarRowTrailingElement(
@@ -702,7 +735,7 @@ struct NotificationRowView: View {
                 .accessibilityHidden(true)
             }
         }
-        .frame(height: AvatarSize.small)  // this keeps GeometryReader from causing inconsistent visual spacing in the VStack
+        .frame(height: smallAvatarSize)  // this keeps GeometryReader from causing inconsistent visual spacing in the VStack
     }
 
     @ViewBuilder
@@ -815,6 +848,34 @@ func styledNameComponent(_ name: String, style: AttributeContainer, emojis: [Mas
     var nameComponent = attributedString(fromHtml: name, emojis: emojis ?? [:])
     nameComponent.setAttributes(style)
     return nameComponent
+}
+
+let metaTextForHtmlToAttributedStringConversion = {
+    let meta = MetaText()
+    meta.textAttributes = [:]
+    meta.linkAttributes = [:]
+    return meta
+}()
+func attributedString(
+    fromHtml html: String, emojis: [MastodonContent.Shortcode: String]
+) -> AttributedString {
+    let content = MastodonContent(content: html, emojis: emojis)
+    metaTextForHtmlToAttributedStringConversion.reset()
+    do {
+        let metaContent = try MastodonMetaContent.convert(document: content)
+        metaTextForHtmlToAttributedStringConversion.configure(
+            content: metaContent)
+        guard
+            let nsAttributedString = metaTextForHtmlToAttributedStringConversion
+                .textView.attributedText
+        else {
+            throw AppError.unexpected(
+                "could not get attributed string from html")
+        }
+        return AttributedString(nsAttributedString)
+    } catch {
+        return AttributedString(html)
+    }
 }
 
 extension Mastodon.Entity.Status {

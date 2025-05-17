@@ -143,7 +143,7 @@ extension AuthenticationViewModel {
                 disclaimer: LocalizedStringKey(L10n.Scene.ServerRules.subtitle(server.domain)),
                 rules: rules.map({ $0.text }),
                 onAgree: { [weak self] in
-                    let privacyViewModel = PolicyViewModel(domain: server.domain, authenticateInfo: authenticateInfo, instance: instance, applicationToken: applicationToken, didAccept: { doStartRegistration() })
+                    let privacyViewModel = PrivacyViewModel(domain: server.domain, authenticateInfo: authenticateInfo, rows: [.iOSApp, .server(domain: server.domain)], instance: instance, applicationToken: applicationToken, didAccept: { doStartRegistration() })
                     self?.stateStreamContinuation.yield(.showingPrivacyPolicy(privacyViewModel))
                 },
                 onDisagree: { [weak self] in self?.stateStreamContinuation.yield(.showingRules(nil)) })
@@ -272,7 +272,7 @@ extension AuthenticationViewModel {
         case joiningServer(Mastodon.Entity.Server)
         case showingRules(MastodonServerRulesView.ViewModel?) // nil when we're returning to a previously configured state
         case registering(MastodonRegisterViewModel)
-        case showingPrivacyPolicy(PolicyViewModel)
+        case showingPrivacyPolicy(PrivacyViewModel)
         case confirmingEmail(MastodonConfirmEmailViewModel)
         case authenticatingUser
         case authenticatedUser(MastodonAuthenticationBox)
@@ -349,7 +349,7 @@ extension AuthenticationViewModel {
                     let authBox = try await AuthenticationViewModel.verifyAndActivateAuthentication(
                         info: info,
                         userToken: token
-                    ) // See Github issue #1432, would be better to pass along the instance configuration here rather than losing it
+                    )
                     AuthenticationServiceProvider.shared.activateAuthentication(authBox)
                     self.stateStreamContinuation.yield(.authenticatedUser(authBox))
                     self.stateStreamContinuation.finish()

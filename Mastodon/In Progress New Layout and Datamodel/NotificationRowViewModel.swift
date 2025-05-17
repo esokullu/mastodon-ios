@@ -8,35 +8,18 @@ import MastodonLocalization
 import MastodonSDK
 import SwiftUICore
 
-struct MastodonNotificationInfo {
+class NotificationRowViewModel: ObservableObject {
     let identifier: MastodonFeedItemIdentifier
     let timestamp: Date?
+    let timestampUpdater: TimestampUpdater
     let oldestID: String?
     let newestID: String?
     let type: GroupedNotificationType
     let author: AccountInfo?
-    let sourceAccounts: NotificationSourceAccounts
-    
-    init(_ info: GroupedNotificationInfo) {
-        self.identifier = .notificationGroup(id: info.id)
-        self.timestamp = info.timestamp
-        self.oldestID = info.oldestNotificationID
-        self.newestID = info.newestNotificationID
-        self.type = info.groupedNotificationType
-        self.author = info.sourceAccounts.primaryAuthorAccount
-        self.sourceAccounts = info.sourceAccounts
-    }
-}
-
-class NotificationRowViewModel: ObservableObject {
-    let timestampUpdater: TimestampUpdater
-   
     let navigateToScene:
     (SceneCoordinator.Scene, SceneCoordinator.Transition) -> Void
     let presentError: (Error) -> Void
     let primaryNavigation: NotificationNavigation?
-    
-    let notification: MastodonNotificationInfo
     let iconStyle: GroupedNotificationType.MainIconStyle?
     let usePrivateBackground: Bool
     let actionSuperheader: (iconName: String?, text: String, color: Color)?
@@ -64,24 +47,25 @@ class NotificationRowViewModel: ObservableObject {
     init(
         _ notificationInfo: GroupedNotificationInfo,
         timestamper: TimestampUpdater,
-        myAccountID: String,
         myAccountDomain: String,
         navigateToScene: @escaping (
             SceneCoordinator.Scene, SceneCoordinator.Transition
         ) -> Void, presentError: @escaping (Error) -> Void
     ) {
+
+        self.identifier = .notificationGroup(id: notificationInfo.id)
+        self.timestamp = notificationInfo.timestamp
         self.timestampUpdater = timestamper
+        self.oldestID = notificationInfo.oldestNotificationID
+        self.newestID = notificationInfo.newestNotificationID
+        self.type = notificationInfo.groupedNotificationType
+        self.author = notificationInfo.sourceAccounts.primaryAuthorAccount
         self.iconStyle = notificationInfo.groupedNotificationType.mainIconStyle
         self.navigateToScene = navigateToScene
         self.presentError = presentError
         self.primaryNavigation = notificationInfo.primaryNavigation
-        self.notification = MastodonNotificationInfo(notificationInfo)
         
         var needsPrivateBackground = false
-        
-        func newStatusViewModel(_ status: Mastodon.Entity.Status) -> Mastodon.Entity.Status.ViewModel {
-            return statusViewModel(status, myAccountID: myAccountID, myAccountDomain: myAccountDomain, navigateToScene: navigateToScene)
-        }
 
         switch notificationInfo.groupedNotificationType {
 
@@ -119,11 +103,11 @@ class NotificationRowViewModel: ObservableObject {
                     ]
                 }
             }
-        case .mention(let status), .status(let status):
+        case .mention, .status:
             // TODO: eventually make this full status style, not inline
-            if let status
+            if let statusViewModel =
+                notificationInfo.statusViewModel
             {
-                let statusViewModel = newStatusViewModel(status)
                 actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: statusViewModel.isReplyToMe, isPrivateStatus: statusViewModel.visibility == .direct)
                 if let timestamp = notificationInfo.timestamp {
                     headerTextComponents = [
@@ -141,15 +125,14 @@ class NotificationRowViewModel: ObservableObject {
                     ]
                 }
                 contentComponents = [.status(statusViewModel)]
-                needsPrivateBackground = status.visibility == .direct
+                needsPrivateBackground = statusViewModel.visibility == .direct
             } else {
                 actionSuperheader = nil
                 headerTextComponents = [._other("POST BY UNKNOWN ACCOUNT")]
             }
-        case .reblog(let status), .favourite(let status):
-            actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: status?.visibility == .direct)
-            if let status {
-                let statusViewModel = newStatusViewModel(status)
+        case .reblog(let statusViewModel), .favourite(let statusViewModel):
+            actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: statusViewModel?.visibility == .direct)
+            if let statusViewModel = notificationInfo.statusViewModel {
                 avatarRow = .avatarRow(
                     notificationInfo.sourceAccounts,
                     .noneNeeded)
@@ -175,10 +158,11 @@ class NotificationRowViewModel: ObservableObject {
                     ._other("REBLOGGED/FAVOURITED BY UNKNOWN ACCOUNT")
                 ]
             }
-        case .poll(let status), .update(let status):
-            actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: status?.visibility == .direct)
-            if let status {
-                let statusViewModel = newStatusViewModel(status)
+        case .poll(let statusViewModel), .update(let statusViewModel):
+            actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: statusViewModel?.visibility == .direct)
+            if let statusViewModel =
+                notificationInfo.statusViewModel
+            {
                 if let timestamp = notificationInfo.timestamp {
                     headerTextComponents = [
                         .textAndTimeLabel(
@@ -221,7 +205,7 @@ class NotificationRowViewModel: ObservableObject {
                         ?? "")
                 ]
             }
-        case .adminReport(let report, _):
+        case .adminReport(let report):
             actionSuperheader = NotificationRowViewModel.actionSuperheader(notificationInfo.groupedNotificationType, isReply: false, isPrivateStatus: false)
             if let summary = report?.summary {
                 if let timestamp = notificationInfo.timestamp {
@@ -317,9 +301,9 @@ class NotificationRowViewModel: ObservableObject {
         case .mention:
             switch (isReply, isPrivateStatus) {
             case (true, false):
-                return (iconName: PostAction.reply.systemIconName(filled: false), text: L10n.Common.Controls.Status.reply, color: color)
+                return (iconName: "arrow.turn.up.left", text: L10n.Common.Controls.Status.reply, color: color)
             case (true, true):
-                return (iconName: PostAction.reply.systemIconName(filled: false), text: L10n.Common.Controls.Status.privateReply, color: color)
+                return (iconName: "arrow.turn.up.left", text: L10n.Common.Controls.Status.privateReply, color: color)
             case (false, false):
                 return (iconName: "at", text: L10n.Common.Controls.Status.mention, color: color)
             case (false, true):
@@ -350,7 +334,7 @@ class NotificationRowViewModel: ObservableObject {
     private func fetchRelationshipElement(
         sourceAccounts: NotificationSourceAccounts
     ) {
-        switch notification.type {
+        switch type {
         case .follow, .followRequest:
             guard let accountID = sourceAccounts.firstAccountID,
                   let accountIsLocked = sourceAccounts.primaryAuthorAccount?
@@ -365,7 +349,7 @@ class NotificationRowViewModel: ObservableObject {
                         to: accountID)
                     {
 
-                        switch (notification.type, relationship.following) {
+                        switch (type, relationship.following) {
                         case (.follow, true):
                             element = .iFollowThem(theyFollowMe: true)
                         case (.follow, false):
@@ -384,10 +368,10 @@ class NotificationRowViewModel: ObservableObject {
                     element = .error(error)
                 }
 
-                avatarRow = .avatarRow(notification.sourceAccounts, element)
+                avatarRow = .avatarRow(sourceAccounts, element)
             }
         default:
-            avatarRow = .avatarRow(notification.sourceAccounts, .noneNeeded)
+            avatarRow = .avatarRow(sourceAccounts, .noneNeeded)
         }
     }
     
@@ -411,12 +395,7 @@ class NotificationRowViewModel: ObservableObject {
             return nil
         }
     }
-}
-
-extension NotificationRowViewModel: Identifiable {
-    var id: String {
-        return notification.identifier.id
-    }
+    
 }
 
 struct A11yActionInfo: Identifiable {
@@ -512,7 +491,7 @@ extension NotificationRowViewModel: Equatable {
     public static func == (
         lhs: NotificationRowViewModel, rhs: NotificationRowViewModel
     ) -> Bool {
-        return lhs.notification.identifier == rhs.notification.identifier
+        return lhs.identifier == rhs.identifier
     }
 }
 
@@ -616,8 +595,8 @@ extension NotificationRowViewModel {
 }
 
 extension NotificationRowViewModel {
-    static func viewModelsFromGroupedNotificationInfos(
-        _ results: [GroupedNotificationInfo],
+    static func viewModelsFromGroupedNotificationResults(
+        _ results: Mastodon.Entity.GroupedNotificationsResults,
         timestamper: TimestampUpdater,
         myAccountID: String,
         myAccountDomain: String,
@@ -625,9 +604,73 @@ extension NotificationRowViewModel {
             SceneCoordinator.Scene, SceneCoordinator.Transition
         ) -> Void, presentError: @escaping (Error) -> Void
     ) -> [NotificationRowViewModel] {
-        return results.map { info in
-            NotificationRowViewModel(
-                info, timestamper: timestamper, myAccountID: myAccountID, myAccountDomain: myAccountDomain,
+        let fullAccounts = results.accounts.reduce(
+            into: [String: Mastodon.Entity.Account]()
+        ) { partialResult, account in
+            partialResult[account.id] = account
+        }
+        let partialAccounts = results.partialAccounts?.reduce(
+            into: [String: Mastodon.Entity.PartialAccountWithAvatar]()
+        ) { partialResult, account in
+            partialResult[account.id] = account
+        }
+
+        let statuses = results.statuses.reduce(
+            into: [String: Mastodon.Entity.Status](),
+            { partialResult, status in
+                partialResult[status.id] = status
+            })
+
+        return results.notificationGroups.map { group in
+            let accounts: [AccountInfo] = group.sampleAccountIDs.compactMap { accountID in
+                return fullAccounts[accountID] ?? partialAccounts?[accountID]
+            }
+            
+            let sourceAccounts = NotificationSourceAccounts(
+                myAccountID: myAccountID, accounts: accounts,
+                totalActorCount: group.notificationsCount)
+
+            let status = group.statusID == nil ? nil : statuses[group.statusID!]
+            
+            let type = GroupedNotificationType(
+                group, sourceAccounts: sourceAccounts, status: status)
+
+            let info = GroupedNotificationInfo(
+                id: group.id,
+                timestamp: group.latestPageNotificationAt,
+                oldestNotificationID: group.pageNewestID ?? "",
+                newestNotificationID: group.pageOldestID ?? "",
+                groupedNotificationType: type,
+                sourceAccounts: sourceAccounts,
+                statusViewModel: status?.viewModel(
+                    myAccountID: myAccountID,
+                    myDomain: myAccountDomain,
+                    navigateToStatus: {
+                        Task {
+                            guard
+                                let authBox =
+                                    await AuthenticationServiceProvider.shared
+                                    .currentActiveUser.value, let status
+                            else { return }
+                            await navigateToScene(
+                                .thread(
+                                    viewModel: ThreadViewModel(
+                                        authenticationBox: authBox,
+                                        optionalRoot: .root(
+                                            context: .init(
+                                                status: MastodonStatus(
+                                                    entity: status,
+                                                    showDespiteContentWarning:
+                                                        false))))), .show)
+                        }
+                    }),
+                primaryNavigation: defaultNavigation(
+                    group.type, isGrouped: group.notificationsCount > 1,
+                    primaryAccount: sourceAccounts.primaryAuthorAccount)
+            )
+
+            return NotificationRowViewModel(
+                info, timestamper: timestamper, myAccountDomain: myAccountDomain,
                 navigateToScene: navigateToScene,
                 presentError: presentError)
         }
@@ -648,10 +691,30 @@ extension NotificationRowViewModel {
                 myAccountID: myAccountID,
                 accounts: [notification.account], totalActorCount: 1)
             
-            let status = notification.status
+            let statusViewModel = notification.status?.viewModel(
+                myAccountID: myAccountID,
+                myDomain: myAccountDomain,
+                navigateToStatus: {
+                    Task {
+                        guard
+                            let authBox =
+                                await AuthenticationServiceProvider.shared
+                                .currentActiveUser.value,
+                            let status = notification.status
+                        else { return }
+                        await navigateToScene(
+                            .thread(
+                                viewModel: ThreadViewModel(
+                                    authenticationBox: authBox,
+                                    optionalRoot: .root(
+                                        context: .init(
+                                            status: MastodonStatus(
+                                                entity: status,
+                                                showDespiteContentWarning:
+                                                    false))))), .show)
+                    }
+                })
             
-            let groupedNotificationType = GroupedNotificationType(
-                notification, myAccountDomain: myAccountDomain, sourceAccounts: sourceAccounts, adminReportID: notification.adminReport?.id)
             let info = GroupedNotificationInfo(
                 id: notification.id,
                 timestamp: notification.createdAt,
@@ -660,13 +723,13 @@ extension NotificationRowViewModel {
                 groupedNotificationType: GroupedNotificationType(
                     notification, sourceAccounts: sourceAccounts),
                 sourceAccounts: sourceAccounts,
-                status: status,
+                statusViewModel: statusViewModel,
                 primaryNavigation: defaultNavigation(
                                                 notification.type, isGrouped: false,
                                                 primaryAccount: notification.primaryAuthorAccount))
 
             return NotificationRowViewModel(
-                info, timestamper: timestamper, myAccountID: myAccountID, myAccountDomain: myAccountDomain,
+                info, timestamper: timestamper, myAccountDomain: myAccountDomain,
                 navigateToScene: navigateToScene,
                 presentError: presentError)
         }
@@ -719,19 +782,12 @@ extension NotificationRowViewModel {
             if let primaryAccount {
                 return .profile(primaryAccount)
             }
-        case .adminSignUp:
-            if !isGrouped, let primaryAccount {
-                return .profile(primaryAccount)
-            }
-        case .adminReport(_, let url):
-            let linkDescription = L10n.Scene.Notification.viewReport
-            return .link(linkDescription, url)
-        case .severedRelationships(_, let url):
-            let linkDescription = L10n.Scene.Notification.learnMoreAboutServerBlocks
-            return .link(linkDescription, url)
-        case .moderationWarning(_, let url):
-            let linkDescription =  L10n.Scene.Notification.Warning.learnMore
-            return .link(linkDescription, url)
+        case .adminReport:
+            break
+        case .severedRelationships:
+            return .myFollowers
+        case .moderationWarning:
+            break
         case ._other(_):
             break
         }
@@ -742,9 +798,7 @@ extension NotificationRowViewModel {
 extension GroupedNotificationType {
     init(
         _ notification: Mastodon.Entity.Notification,
-        myAccountDomain: String,
-        sourceAccounts: NotificationSourceAccounts,
-        adminReportID: String?
+        sourceAccounts: NotificationSourceAccounts
     ) {
         switch notification.typeFromServer {
         case .follow:
@@ -770,13 +824,7 @@ extension GroupedNotificationType {
         case .adminSignUp:
             self = .adminSignUp
         case .adminReport:
-            let url: URL?
-            if let adminReportID {
-                url = adminReportUrl(forDomain: myAccountDomain, reportID: adminReportID)
-            } else {
-                url = nil
-            }
-            self = .adminReport(notification.adminReport, url)
+            self = .adminReport(notification.ruleViolationReport)
         case .severedRelationships:
             self = .severedRelationships(
                 notification.relationshipSeveranceEvent)
@@ -790,8 +838,7 @@ extension GroupedNotificationType {
     init(
         _ notificationGroup: Mastodon.Entity.NotificationGroup,
         sourceAccounts: NotificationSourceAccounts,
-        status: Mastodon.Entity.Status?,
-        adminReportID: String?
+        status: Mastodon.Entity.Status?
     ) {
         switch notificationGroup.type {
         case .follow:
@@ -817,13 +864,7 @@ extension GroupedNotificationType {
         case .adminSignUp:
             self = .adminSignUp
         case .adminReport:
-            let url: URL?
-            if let adminReportID {
-                url = adminReportUrl(forDomain: myAccountDomain, reportID: adminReportID)
-            } else {
-                url = nil
-            }
-            self = .adminReport(notificationGroup.adminReport, url)
+            self = .adminReport(notificationGroup.ruleViolationReport)
         case .severedRelationships:
             self = .severedRelationships(
                 notificationGroup.relationshipSeveranceEvent)
@@ -875,28 +916,6 @@ extension GroupedNotificationType {
     }
 }
 
-func severedRelationshipsUrl(forDomain domain: String, notificationID: String) -> URL?
-{
-    let trailingPathComponents = ["severed_relationships"]
-    var url = URL(string: "https://" + domain)
-    for component in trailingPathComponents {
-        url?.append(component: component)
-    }
-    return url
-}
-
-func adminReportUrl(forDomain domain: String, reportID: String) -> URL? {
-    let trailingPathComponents = [
-        "admin",
-        "reports",
-        reportID
-    ]
-    var url = URL(string: "https://" + domain)
-    for component in trailingPathComponents {
-        url?.append(component: component)
-    }
-    return url
-}
 extension Mastodon.Entity.AccountWarning.Action {
     var actionDescription: String {
         switch self {
@@ -916,31 +935,4 @@ extension Mastodon.Entity.AccountWarning.Action {
             return L10n.Scene.Notification.Warning.suspend
         }
     }
-}
-
-func statusViewModel(_ status: Mastodon.Entity.Status,  myAccountID: String,
-                     myAccountDomain: String,
-                     navigateToScene: @escaping (
-                        SceneCoordinator.Scene, SceneCoordinator.Transition
-                     ) -> Void) -> Mastodon.Entity.Status.ViewModel {
-                         
-                         return status.viewModel(myAccountID: myAccountID, myDomain: myAccountDomain, navigateToStatus: {
-                             Task {
-                                 guard
-                let authBox =
-                    await AuthenticationServiceProvider.shared
-                    .currentActiveUser.value
-            else { return }
-            await navigateToScene(
-                .thread(
-                    viewModel: ThreadViewModel(
-                        authenticationBox: authBox,
-                        optionalRoot: .root(
-                            context: .init(
-                                status: MastodonStatus(
-                                    entity: status,
-                                    showDespiteContentWarning:
-                                        false))))), .show)
-        }
-    })
 }

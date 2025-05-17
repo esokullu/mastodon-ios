@@ -42,26 +42,6 @@ extension APIService {
         return response
     }
     
-    public func mute(_ accountID: Mastodon.Entity.Account.ID, authenticationBox: MastodonAuthenticationBox) async throws -> Mastodon.Entity.Relationship {
-        let response = try await Mastodon.API.Account.mute(
-            session: session,
-            domain: authenticationBox.domain,
-            accountID: accountID,
-            authorization: authenticationBox.userAuthorization
-        ).singleOutput()
-        return response.value
-    }
-    
-    public func unmute(_ accountID: Mastodon.Entity.Account.ID, authenticationBox: MastodonAuthenticationBox) async throws -> Mastodon.Entity.Relationship {
-        let response = try await Mastodon.API.Account.unmute(
-            session: session,
-            domain: authenticationBox.domain,
-            accountID: accountID,
-            authorization: authenticationBox.userAuthorization
-        ).singleOutput()
-        return response.value
-    }
-    
     public func toggleMute(
         authenticationBox: MastodonAuthenticationBox,
         account: Mastodon.Entity.Account

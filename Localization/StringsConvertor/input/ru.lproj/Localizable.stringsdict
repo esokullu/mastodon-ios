@@ -13,13 +13,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 непрочитанное уведомление</string>
+        <string>1 unread notification</string>
         <key>few</key>
-        <string>%ld непрочитанных уведомления</string>
+        <string>%ld unread notifications</string>
         <key>many</key>
-        <string>%ld непрочитанных уведомлений</string>
+        <string>%ld unread notifications</string>
         <key>other</key>
-        <string>%ld непрочитанных уведомления</string>
+        <string>%ld unread notifications</string>
       </dict>
     </dict>
     <key>a11y.plural.count.input_limit_exceeds</key>
@@ -100,26 +100,6 @@
         <string>%ld others</string>
         <key>other</key>
         <string>%ld others</string>
-      </dict>
-    </dict>
-    <key>plural.count.new_signups</key>
-    <dict>
-      <key>NSStringLocalizedFormatKey</key>
-      <string>%#@count_signups@</string>
-      <key>count_signups</key>
-      <dict>
-        <key>NSStringFormatSpecTypeKey</key>
-        <string>NSStringPluralRuleType</string>
-        <key>NSStringFormatValueTypeKey</key>
-        <string>ld</string>
-        <key>one</key>
-        <string>one new signup</string>
-        <key>few</key>
-        <string>%ld new signups</string>
-        <key>many</key>
-        <string>%ld new signups</string>
-        <key>other</key>
-        <string>%ld new signups</string>
       </dict>
     </dict>
     <key>plural.count.people_boosted</key>
@@ -233,13 +213,13 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>one</key>
-        <string>1 изображение</string>
+        <string>1 image</string>
         <key>few</key>
-        <string>%ld изображения</string>
+        <string>%ld images</string>
         <key>many</key>
-        <string>%ld изображений</string>
+        <string>%ld images</string>
         <key>other</key>
-        <string>%ld изображения</string>
+        <string>%ld images</string>
       </dict>
     </dict>
     <key>plural.count.gif</key>

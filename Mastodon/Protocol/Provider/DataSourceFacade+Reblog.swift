@@ -15,29 +15,28 @@ extension DataSourceFacade {
     @MainActor
     static func responseToStatusReblogAction(
         provider: DataSourceProvider & AuthContextProvider,
-        wrappingStatus: MastodonStatus,
-        contentStatus: MastodonStatus
+        status: MastodonStatus
     ) async throws {
         if UserDefaults.shared.askBeforeBoostingAPost {
             let alertController = UIAlertController(
-                title: contentStatus.entity.reblogged == true ? L10n.Common.Alerts.BoostAPost.titleUnboost : L10n.Common.Alerts.BoostAPost.titleBoost,
+                title: status.entity.reblogged == true ? L10n.Common.Alerts.BoostAPost.titleUnboost : L10n.Common.Alerts.BoostAPost.titleBoost,
                 message: nil,
                 preferredStyle: .alert
             )
             let cancelAction = UIAlertAction(title: L10n.Common.Alerts.BoostAPost.cancel, style: .default)
             alertController.addAction(cancelAction)
             let confirmAction = UIAlertAction(
-                title: contentStatus.entity.reblogged == true ? L10n.Common.Alerts.BoostAPost.unboost : L10n.Common.Alerts.BoostAPost.boost,
+                title: status.entity.reblogged == true ? L10n.Common.Alerts.BoostAPost.unboost : L10n.Common.Alerts.BoostAPost.boost,
                 style: .default
             ) { _ in
                 Task { @MainActor in
-                    try? await performReblog(provider: provider, status: contentStatus)
+                    try? await performReblog(provider: provider, status: status)
                 }
             }
             alertController.addAction(confirmAction)
             provider.present(alertController, animated: true)
         } else {
-            try await performReblog(provider: provider, status: contentStatus)
+            try await performReblog(provider: provider, status: status)
         }
     }
 }
@@ -50,17 +49,17 @@ private extension DataSourceFacade {
     ) async throws {
         FeedbackGenerator.shared.generate(.selectionChanged)
 
-        let updatedContentStatus = try await APIService.shared.reblog(
+        let updatedStatus = try await APIService.shared.reblog(
             status: status,
             authenticationBox: provider.authenticationBox
         ).value
 
-        let newStatus: MastodonStatus = .fromEntity(updatedContentStatus)
+        let newStatus: MastodonStatus = .fromEntity(updatedStatus)
         newStatus.reblog?.showDespiteContentWarning = status.showDespiteContentWarning
         newStatus.reblog?.showDespiteFilter = status.showDespiteFilter
         newStatus.showDespiteContentWarning = status.showDespiteContentWarning
         newStatus.showDespiteFilter = status.showDespiteFilter
         
-        provider.update(contentStatus: newStatus, intent: .reblog(updatedContentStatus.reblogged == true))
+        provider.update(status: newStatus, intent: .reblog(updatedStatus.reblogged == true))
     }
 }

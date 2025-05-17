@@ -69,21 +69,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>other</key>
-        <string>%ld อื่น ๆ</string>
-      </dict>
-    </dict>
-    <key>plural.count.new_signups</key>
-    <dict>
-      <key>NSStringLocalizedFormatKey</key>
-      <string>%#@count_signups@</string>
-      <key>count_signups</key>
-      <dict>
-        <key>NSStringFormatSpecTypeKey</key>
-        <string>NSStringPluralRuleType</string>
-        <key>NSStringFormatValueTypeKey</key>
-        <string>ld</string>
-        <key>other</key>
-        <string>%ld การลงทะเบียนใหม่</string>
+        <string>%ld others</string>
       </dict>
     </dict>
     <key>plural.count.people_boosted</key>
@@ -97,7 +83,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>other</key>
-        <string>%ld คนได้ดัน:</string>
+        <string>%ld people boosted:</string>
       </dict>
     </dict>
     <key>plural.count.people_favourited</key>
@@ -111,7 +97,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>other</key>
-        <string>%ld คนได้ชื่นชอบ:</string>
+        <string>%ld people favorited:</string>
       </dict>
     </dict>
     <key>plural.count.people_followed_you</key>
@@ -125,7 +111,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>other</key>
-        <string>%ld คนได้ติดตามคุณ</string>
+        <string>%ld people followed you</string>
       </dict>
     </dict>
     <key>plural.count.poll_that_you_and_others_voted_in</key>
@@ -139,7 +125,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>other</key>
-        <string>การสำรวจความคิดเห็นที่คุณและ %ld อื่น ๆ ได้ลงคะแนน</string>
+        <string>a poll that you and %ld others voted in</string>
       </dict>
     </dict>
     <key>plural.count.media</key>
@@ -167,7 +153,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>other</key>
-        <string>%ld ภาพ</string>
+        <string>%ld images</string>
       </dict>
     </dict>
     <key>plural.count.gif</key>
@@ -181,7 +167,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>other</key>
-        <string>%ld GIF</string>
+        <string>%ld gifs</string>
       </dict>
     </dict>
     <key>plural.count.video</key>
@@ -195,7 +181,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>other</key>
-        <string>%ld วิดีโอ</string>
+        <string>%ld videos</string>
       </dict>
     </dict>
     <key>plural.count.audio</key>
@@ -209,7 +195,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>other</key>
-        <string>%ld เสียง</string>
+        <string>%ld audios</string>
       </dict>
     </dict>
     <key>plural.count.attachment</key>
@@ -223,7 +209,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>other</key>
-        <string>%ld ไฟล์แนบ</string>
+        <string>%ld attachments</string>
       </dict>
     </dict>
     <key>plural.count.poll</key>
@@ -237,7 +223,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>other</key>
-        <string>%ld การสำรวจความคิดเห็น</string>
+        <string>%ld polls</string>
       </dict>
     </dict>
     <key>plural.count.post</key>
@@ -391,7 +377,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>other</key>
-        <string>%ld ในผู้ติดตามของคุณ</string>
+        <string>%ld of your followers</string>
       </dict>
     </dict>
     <key>plural.count.accounts_that_you_follow</key>
@@ -405,7 +391,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>ld</string>
         <key>other</key>
-        <string>%ld บัญชีที่คุณติดตาม</string>
+        <string>%ld accounts that you follow</string>
       </dict>
     </dict>
     <key>date.year.left</key>

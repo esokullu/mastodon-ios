@@ -313,13 +313,8 @@ extension NotificationService {
                 }
                 let _ = try await createSubscriptionTask.value
                 accountsSubscribed.append(userAuthBox.globallyUniqueUserIdentifier)
-#if DEBUG
-                print("successful register of push notifications for \(String(describing: userAuthBox.cachedAccount?.displayNameWithFallback))")
-#endif
             } catch {
-#if DEBUG
-                print("failed register of push notifications for \(String(describing: userAuthBox.cachedAccount?.displayNameWithFallback))")
-#endif
+                assertionFailure("error creating push notification subscription")
                 registrationStatus.send(.errorUpdatingSubscriptions(error, deviceToken: deviceToken))
                 hasNewError = true
                 do {

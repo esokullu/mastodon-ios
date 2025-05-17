@@ -9,3 +9,5 @@ gem install bundler:2.5.21
 # Install Ruby Gems
 bundle install
 
+# Setup notification endpoint
+bundle exec arkana

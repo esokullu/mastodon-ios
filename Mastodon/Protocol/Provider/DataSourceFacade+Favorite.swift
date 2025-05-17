@@ -14,23 +14,19 @@ extension DataSourceFacade {
     @MainActor
     public static func responseToStatusFavoriteAction(
         provider: DataSourceProvider & AuthContextProvider,
-        wrappingStatus: MastodonStatus,
-        contentStatus: MastodonStatus
+        status: MastodonStatus
     ) async throws {
         FeedbackGenerator.shared.generate(.selectionChanged)
 
         let updatedStatus = try await APIService.shared.favorite(
-            status: contentStatus,
+            status: status,
             authenticationBox: provider.authenticationBox
         ).value
         
-        let showDespiteContentWarning = wrappingStatus.showDespiteContentWarning
-        let showDespiteFilter = wrappingStatus.showDespiteFilter
-        
         let newStatus: MastodonStatus = .fromEntity(updatedStatus)
-        newStatus.showDespiteContentWarning = showDespiteContentWarning
-        newStatus.showDespiteFilter = showDespiteFilter
+        newStatus.showDespiteContentWarning = status.showDespiteContentWarning
+        newStatus.showDespiteFilter = status.showDespiteFilter
         
-        provider.update(contentStatus: newStatus, intent: .favorite(updatedStatus.favourited == true))
+        provider.update(status: newStatus, intent: .favorite(updatedStatus.favourited == true))
     }
 }

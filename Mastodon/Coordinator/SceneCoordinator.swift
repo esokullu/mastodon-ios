@@ -151,7 +151,7 @@ extension SceneCoordinator {
         case safariPresent(animated: Bool, completion: (() -> Void)? = nil)
         case alertController(animated: Bool, completion: (() -> Void)? = nil)
         case activityViewControllerPresent(animated: Bool, completion: (() -> Void)? = nil)
-        case formSheet([UISheetPresentationController.Detent]?)
+        case formSheet
         case none
     }
 
@@ -160,7 +160,7 @@ extension SceneCoordinator {
         case welcome
         case mastodonPickServer(viewMode: MastodonPickServerViewModel)
         case mastodonRegister(viewModel: MastodonRegisterViewModel)
-        case mastodonPrivacyPolicies(viewModel: PolicyViewModel)
+        case mastodonPrivacyPolicies(viewModel: PrivacyViewModel)
         case mastodonServerRules(viewModel: MastodonServerRulesView.ViewModel)
         case mastodonConfirmEmail(viewModel: MastodonConfirmEmailViewModel)
         case mastodonResendEmail(viewModel: MastodonResendEmailViewModel)
@@ -198,7 +198,7 @@ extension SceneCoordinator {
         case settings(setting: Setting)
 
         // Notifications
-        case notificationPolicy(viewModel: NotificationPolicyViewModel)
+        case notificationPolicy(viewModel: NotificationFilterViewModel)
         case notificationRequests(viewModel: NotificationRequestsViewModel)
         case accountNotificationTimeline(viewModel: NotificationTimelineViewModel, request: Mastodon.Entity.NotificationRequest)
 
@@ -357,10 +357,10 @@ extension SceneCoordinator {
             viewController.modalPresentationCapturesStatusBarAppearance = true
             presentingViewController.present(viewController, animated: animated, completion: completion)
 
-        case .formSheet(let detents):
+        case .formSheet:
             viewController.modalPresentationStyle = .formSheet
             if let sheetPresentation = viewController.sheetPresentationController {
-                sheetPresentation.detents = detents ?? [.medium(), .large()]
+                sheetPresentation.detents = [.large(), .medium()]
             }
             presentingViewController.present(viewController, animated: true)
         }
@@ -408,8 +408,8 @@ private extension SceneCoordinator {
 
             viewController = loginViewController
         case .mastodonPrivacyPolicies(let viewModel):
-            let policyViewController = PolicyTableViewController(coordinator: self, viewModel: viewModel)
-            viewController = policyViewController
+            let privacyViewController = PrivacyTableViewController(coordinator: self, viewModel: viewModel)
+            viewController = privacyViewController
         case .mastodonResendEmail(let viewModel):
             let _viewController = MastodonResendEmailViewController()
             _viewController.viewModel = viewModel
@@ -548,7 +548,7 @@ private extension SceneCoordinator {
         case .notificationRequests(let viewModel):
             viewController = NotificationRequestsTableViewController(viewModel: viewModel)
         case .notificationPolicy(let viewModel):
-            viewController = NotificationPolicyViewController(viewModel)
+            viewController = NotificationPolicyViewController(viewModel: viewModel)
         case .accountNotificationTimeline(let viewModel, let request):
             viewController = AccountNotificationTimelineViewController(viewModel: viewModel, notificationRequest: request)
         }
@@ -599,7 +599,7 @@ extension SceneCoordinator: MastodonLoginViewControllerDelegate {
 
 //MARK: - SettingsCoordinatorDelegate
 extension SceneCoordinator: SettingsCoordinatorDelegate {
-    func logout(_ user: MastodonAuthentication, presentingFrom viewController: UIViewController) {
+    func logout(_ settingsCoordinator: SettingsCoordinator) {
 
         let preferredStyle: UIAlertController.Style
 
@@ -617,17 +617,17 @@ extension SceneCoordinator: SettingsCoordinatorDelegate {
 
         let cancelAction = UIAlertAction(title: L10n.Common.Controls.Actions.cancel, style: .cancel)
         let signOutAction = UIAlertAction(title: L10n.Common.Alerts.SignOut.confirm, style: .destructive) { [weak self] _ in
-            guard let self else { return }
+            guard let self, let authenticationBox = self.authenticationBox else { return }
 
             NotificationService.shared.clearNotificationCountForActiveUser()
 
             Task { @MainActor in
                 try await AuthenticationServiceProvider.shared.signOutMastodonUser(
-                    authentication: user
+                    authentication: authenticationBox.authentication
                 )
+                let userIdentifier = authenticationBox
+                PersistenceManager.shared.removeAllCaches(forUser: userIdentifier)
                 self.setup()
-                PersistenceManager.shared.removeAllCaches(forUser: user)
-                try await BodegaPersistence.removeUser(user)
             }
 
         }
@@ -635,7 +635,7 @@ extension SceneCoordinator: SettingsCoordinatorDelegate {
         alertController.addAction(cancelAction)
         alertController.addAction(signOutAction)
 
-        (viewController.navigationController ?? viewController).present(alertController, animated: true)
+        settingsCoordinator.navigationController.present(alertController, animated: true)
     }
 
     @MainActor
@@ -651,7 +651,11 @@ extension SceneCoordinator: SettingsCoordinatorDelegate {
 
     @MainActor
     func openPrivacyURL(_ settingsCoordinator: SettingsCoordinator) {
-        guard let privacyURL = URL(string: "https://joinmastodon.org/ios/privacy") else { return }
+        guard let authenticationBox else { return }
+
+        let domain = authenticationBox.domain
+        let privacyURL = Mastodon.API.privacyURL(domain: domain)
+
         _ = present(scene: .safari(url: privacyURL),
                     from: settingsCoordinator.navigationController,
                     transition: .safariPresent(animated: true))

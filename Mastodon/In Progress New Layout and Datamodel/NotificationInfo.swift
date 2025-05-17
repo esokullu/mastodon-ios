@@ -16,7 +16,7 @@ protocol NotificationInfo {
     var authorAvatarUrls: [URL] { get }
     func availableRelationshipElement() async -> RelationshipElement?
     func fetchRelationshipElement() async -> RelationshipElement
-    var adminReport: Mastodon.Entity.Report? { get }
+    var ruleViolationReport: Mastodon.Entity.Report? { get }
     var relationshipSeveranceEvent: Mastodon.Entity.RelationshipSeveranceEvent?
     { get }
 }
@@ -32,14 +32,14 @@ enum GroupedNotificationType {
     case status(Mastodon.Entity.Status?)  // Someone you enabled notifications for has posted a status
     case update(Mastodon.Entity.Status?)  // A status you interacted with has been edited
     case adminSignUp  // Someone signed up (optionally sent to admins)
-    case adminReport(Mastodon.Entity.Report?, URL?)  // A new report has been filed
-    case severedRelationships(Mastodon.Entity.RelationshipSeveranceEvent?, URL?)  // Some of your follow relationships have been severed as a result of a moderation or block event
-    case moderationWarning(Mastodon.Entity.AccountWarning?, URL?)  //  A moderator has taken action against your account or has sent you a warning
+    case adminReport(Mastodon.Entity.Report?)  // A new report has been filed
+    case severedRelationships(Mastodon.Entity.RelationshipSeveranceEvent?)  // Some of your follow relationships have been severed as a result of a moderation or block event
+    case moderationWarning(Mastodon.Entity.AccountWarning?)  //  A moderator has taken action against your account or has sent you a warning
 
     case _other(String)
 }
 
-struct GroupedNotificationInfo: Identifiable {
+struct GroupedNotificationInfo {
     func availableRelationshipElement() async -> RelationshipElement? {
         return relationshipElement
     }
@@ -76,7 +76,7 @@ struct GroupedNotificationInfo: Identifiable {
         }
     }
 
-    let status: Mastodon.Entity.Status?
+    let statusViewModel: Mastodon.Entity.Status.ViewModel?
 
     let primaryNavigation: NotificationRowViewModel.NotificationNavigation?
 }

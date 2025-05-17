@@ -27,6 +27,13 @@ final class RootSplitViewController: UISplitViewController {
         return contentSplitViewController
     }()
     
+    private(set) lazy var searchViewController: SearchViewController = {
+        let searchViewController = SearchViewController()
+        searchViewController.viewModel = .init(
+            authenticationBox: authenticationBox
+        )
+        return searchViewController
+    }()
     
     lazy var compactMainTabBarViewController = MainTabBarController(authenticationBox: authenticationBox)
     
@@ -47,6 +54,7 @@ final class RootSplitViewController: UISplitViewController {
         
         displayModeButtonVisibility = .never
         
+        setViewController(searchViewController, for: .primary)
         setViewController(contentSplitViewController, for: .secondary)
         setViewController(compactMainTabBarViewController, for: .compact)
     }
@@ -116,7 +124,16 @@ extension RootSplitViewController: ContentSplitViewControllerDelegate {
         }
         switch tab {
         case .search:
-            fallthrough
+            guard isPrimaryDisplay else {
+                // only control search tab behavior when primary display
+                fallthrough
+            }
+            guard let navigationController = searchViewController.navigationController else { return }
+            if navigationController.viewControllers.count == 1 {
+                searchViewController.searchBarTapPublisher.send("")
+            } else {
+                navigationController.popToRootViewController(animated: true)
+            }
         
         default:
             let previousTab = contentSplitViewController.currentSupplementaryTab

@@ -11,48 +11,37 @@ import MastodonCore
 import MastodonSDK
 import MastodonLocalization
 import MastodonAsset
-import Combine
 
-enum PolicyRow {
-    case iosAppPrivacy
-    case serverPrivacy(domain: String)
-    case serverTermsOfService(domain: String, confirmedReachable: Bool)
+enum PrivacyRow {
+    case iOSApp
+    case server(domain: String)
 
     var url: URL? {
         switch self {
-        case .iosAppPrivacy:
-            return URL(string: "https://joinmastodon.org/ios/privacy")
-        case .serverPrivacy(let domain):
-            return URL(string: "https://\(domain)/privacy-policy")
-        case .serverTermsOfService(let domain, _):
-            return URL(string: "\(URL.httpScheme(domain: domain))://" + domain + "/terms-of-service")
+            case .iOSApp:
+                return URL(string: "https://joinmastodon.org/ios/privacy")
+            case .server(let domain):
+                return URL(string: "https://\(domain)/privacy-policy")
         }
     }
 
     var title: String {
         switch self {
-        case .iosAppPrivacy:
+            case .iOSApp:
                 return L10n.Scene.Privacy.Policy.ios
-        case .serverPrivacy(let domain):
+            case .server(let domain):
                 return L10n.Scene.Privacy.Policy.server(domain)
-        case .serverTermsOfService(let domain, let fetched):
-            if fetched {
-                return L10n.Scene.Privacy.Policy.termsOfService(domain)
-            } else {
-                return "..."
-            }
         }
     }
 }
 
-class PolicyTableViewController: UIViewController {
+class PrivacyTableViewController: UIViewController {
 
     private let coordinator: SceneCoordinator
     private let tableView: UITableView
-    let viewModel: PolicyViewModel
-    var disposeBag = Set<AnyCancellable>()
+    let viewModel: PrivacyViewModel
 
-    init(coordinator: SceneCoordinator, viewModel: PolicyViewModel) {
+    init(coordinator: SceneCoordinator, viewModel: PrivacyViewModel) {
         self.coordinator = coordinator
         self.viewModel = viewModel
 
@@ -69,16 +58,9 @@ class PolicyTableViewController: UIViewController {
         view.addSubview(tableView)
         setupConstraints()
 
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: L10n.Scene.Privacy.Button.confirm, style: .done, target: self, action: #selector(PolicyTableViewController.nextButtonPressed(_:)))
-        
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: L10n.Scene.Privacy.Button.confirm, style: .done, target: self, action: #selector(PrivacyTableViewController.nextButtonPressed(_:)))
+
         title = L10n.Scene.Privacy.title
-        
-        viewModel.$sections.receive(on: DispatchQueue.main)
-            .sink { [weak self] newSections in
-                self?.title = newSections.count > 1 ? L10n.Scene.Privacy.termsOfServiceTitle : L10n.Scene.Privacy.title
-                self?.tableView.reloadData()
-            }
-            .store(in: &disposeBag)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) won't been implemented, please don't use Storyboards.") }
@@ -104,33 +86,16 @@ class PolicyTableViewController: UIViewController {
     }
 }
 
-extension PolicyTableViewController: UITableViewDataSource {
-    
-    private func rows(forSection sectionIndex: Int) -> [PolicyRow] {
-        let section = viewModel.sections[sectionIndex]
-        switch section {
-        case .termsOfService(let rows), .privacy(let rows):
-            return rows
-        }
-    }
-    
-    private func row(at indexPath: IndexPath) -> PolicyRow {
-        return rows(forSection: indexPath.section)[indexPath.row]
-    }
-    
-    func numberOfSections(in tableView: UITableView) -> Int {
-        return viewModel.sections.count
-    }
-    
+extension PrivacyTableViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return rows(forSection: section).count
+        return viewModel.rows.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: PrivacyTableViewCell.reuseIdentifier, for: indexPath) as? PrivacyTableViewCell else { fatalError("Wrong cell?") }
 
-        let row = row(at: indexPath)
-        
+        let row = viewModel.rows[indexPath.row]
+
         var contentConfiguration = cell.defaultContentConfiguration()
         contentConfiguration.textProperties.color = Asset.Colors.Brand.blurple.color
         contentConfiguration.text = row.title
@@ -142,24 +107,21 @@ extension PolicyTableViewController: UITableViewDataSource {
     }
 }
 
-extension PolicyTableViewController: UITableViewDelegate {
+extension PrivacyTableViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 
-        let row = row(at: indexPath)
+        let row = viewModel.rows[indexPath.row]
         guard let url = row.url else { return }
 
         _ = coordinator.present(scene: .safari(url: url), from: self, transition: .safariPresent(animated: true))
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        let sectionItem = viewModel.sections[section]
-        
         let wrapper = UIView()
         let controller = UIHostingController(
             rootView: HeaderTextView(
-                title: section == 0 ? nil : LocalizedStringKey(sectionItem.title),
-                text: LocalizedStringKey(sectionItem.description(viewModel.domain) ?? "")
+                text: LocalizedStringKey(L10n.Scene.Privacy.description(viewModel.domain))
             )
         )
         guard let label = controller.view else { return nil }
@@ -179,26 +141,15 @@ extension PolicyTableViewController: UITableViewDelegate {
     }
 }
 
-extension PolicyTableViewController: OnboardingViewControllerAppearance { }
+extension PrivacyTableViewController: OnboardingViewControllerAppearance { }
 
 private struct HeaderTextView: View {
-    let title: LocalizedStringKey?
     let text: LocalizedStringKey
     
     var body: some View {
-        VStack(alignment: .leading) {
-            if let title {
-                Text(title)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .foregroundStyle(Asset.Colors.Label.primary.swiftUIColor)
-                    .font(.title)
-                    .padding(.bottom, 16)
-            }
-            Text(text)
-                .fixedSize(horizontal: false, vertical: true)
-                .foregroundStyle(Asset.Colors.Label.primary.swiftUIColor)
-                .padding(.bottom, 16)
-                .padding(.leading, 5)
-        }
+        Text(text)
+            .fixedSize(horizontal: false, vertical: true)
+            .foregroundStyle(Asset.Colors.Label.primary.swiftUIColor)
+            .padding(.bottom, 16)
     }
 }

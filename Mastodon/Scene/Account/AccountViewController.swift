@@ -103,7 +103,20 @@ extension AccountListViewController: UITableViewDelegate {
                 guard let self else { return }
 
                 UserDefaults.shared.setNotificationCountWithAccessToken(accessToken: record.userAccessToken, value: 0)
-                self.sceneCoordinator?.logout(record, presentingFrom: self)
+
+                Task { @MainActor in
+                    do {
+                        let userIdentifier = record
+                        try await AuthenticationServiceProvider.shared.signOutMastodonUser(authentication: record)
+                        PersistenceManager.shared.removeAllCaches(forUser: userIdentifier)
+                       
+                        self.sceneCoordinator?.setup()
+
+                    } catch {
+                        assertionFailure("Failed to delete Authentication: \(error)")
+                    }
+
+                }
             })
             logoutAction.image = UIImage(systemName: "rectangle.portrait.and.arrow.forward")
 
@@ -140,15 +153,10 @@ extension AccountListViewController: UITableViewDelegate {
                 Task { @MainActor in
                     self.sceneCoordinator?.showLoading()
                     for authenticationBox in AuthenticationServiceProvider.shared.mastodonAuthenticationBoxes {
-                        do {
-                            try await AuthenticationServiceProvider.shared.signOutMastodonUser(authentication: authenticationBox.authentication)
-                            let userIdentifier = authenticationBox.authentication.userIdentifier()
-                            self.sceneCoordinator?.setup()
-                            PersistenceManager.shared.removeAllCaches(forUser: userIdentifier)
-                            try await BodegaPersistence.removeUser(userIdentifier)
-                        } catch {
-                            assertionFailure("failed to sign out")
-                        }
+                        try? await AuthenticationServiceProvider.shared.signOutMastodonUser(authentication: authenticationBox.authentication)
+                        let userIdentifier = authenticationBox.authentication.userIdentifier()
+                        PersistenceManager.shared.removeAllCaches(forUser: userIdentifier)
+                        self.sceneCoordinator?.setup()
                     }
                     self.sceneCoordinator?.hideLoading()
 

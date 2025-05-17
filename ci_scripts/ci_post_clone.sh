@@ -32,3 +32,4 @@ gem install bundler --install-dir $GEM_HOME
 # setup gems
 bundle install
 
+bundle exec arkana

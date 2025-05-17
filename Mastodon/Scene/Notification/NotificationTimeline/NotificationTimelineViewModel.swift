@@ -22,7 +22,7 @@ final class NotificationTimelineViewModel {
     let authenticationBox: MastodonAuthenticationBox
     let scope: Scope
     var notificationPolicy: Mastodon.Entity.NotificationPolicy?
-    let feedLoader: UngroupedNotificationsFeedLoader
+    let feedLoader: MastodonFeedLoader
     @Published var isLoadingLatest = false
     @Published var lastAutomaticFetchTimestamp: Date?
     
@@ -52,8 +52,7 @@ final class NotificationTimelineViewModel {
     ) {
         self.authenticationBox = authenticationBox
         self.scope = scope
-        self.feedLoader = UngroupedNotificationsFeedLoader(scope.feedKind, forUser: authenticationBox.authentication.userIdentifier())
-        self.feedLoader.doFirstLoad()
+        self.feedLoader = MastodonFeedLoader(kind: scope.feedKind)
         self.notificationPolicy = notificationPolicy
 
         NotificationCenter.default.addObserver(self, selector: #selector(Self.notificationFilteringChanged(_:)), name: .notificationFilteringChanged, object: nil)
@@ -145,19 +144,12 @@ extension NotificationTimelineViewModel {
             case .filteredNotificationsInfo:
                 return  diffableDataSource?.snapshot().itemIdentifiers.first(where: { $0.fetchAnchor != nil })?.fetchAnchor
             case .groupedNotification(let viewModel):
-                return viewModel.notification.identifier
+                return viewModel.identifier
             case .none:
                 return nil
             }
         }
         
-        do {
-            if let olderThan {
-                try await feedLoader.load(.older)
-            } else if let newerThan {
-                try await feedLoader.load(.newer)
-            }
-        } catch {
-        }
+        feedLoader.loadMore(olderThan: fetchAnchor(for: olderThan), newerThan: fetchAnchor(for: newerThan))
     }
 }
