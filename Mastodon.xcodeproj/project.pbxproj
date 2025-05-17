@@ -126,6 +126,8 @@
 		62FD27D32893707B00B205C5 /* BookmarkViewController+DataSourceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62FD27D22893707B00B205C5 /* BookmarkViewController+DataSourceProvider.swift */; };
 		62FD27D52893708A00B205C5 /* BookmarkViewModel+Diffable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62FD27D42893708A00B205C5 /* BookmarkViewModel+Diffable.swift */; };
 		6C377B772D9DB7D20095C185 /* MastodonMyServerURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C377B762D9DB7AB0095C185 /* MastodonMyServerURL.swift */; };
+		6C74066E2DD91A93009EF14D /* DemoIntroductionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C74066D2DD91A93009EF14D /* DemoIntroductionViewController.swift */; };
+		6C7406702DD91E66009EF14D /* demo.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 6C74066F2DD91E66009EF14D /* demo.mp4 */; };
 		6CE96DFA2D9D5F30003727B5 /* ArkanaKeys in Frameworks */ = {isa = PBXBuildFile; productRef = 6CE96DF92D9D5F30003727B5 /* ArkanaKeys */; };
 		855149C8295F1C5F00943D96 /* UIInterfaceOrientationMask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855149C7295F1C5F00943D96 /* UIInterfaceOrientationMask.swift */; };
 		855149CA29606D6400943D96 /* PortraitAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855149C929606D6400943D96 /* PortraitAlertController.swift */; };
@@ -769,6 +771,8 @@
 		62FD27D22893707B00B205C5 /* BookmarkViewController+DataSourceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BookmarkViewController+DataSourceProvider.swift"; sourceTree = "<group>"; };
 		62FD27D42893708A00B205C5 /* BookmarkViewModel+Diffable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BookmarkViewModel+Diffable.swift"; sourceTree = "<group>"; };
 		6C377B762D9DB7AB0095C185 /* MastodonMyServerURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MastodonMyServerURL.swift; sourceTree = "<group>"; };
+		6C74066D2DD91A93009EF14D /* DemoIntroductionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoIntroductionViewController.swift; sourceTree = "<group>"; };
+		6C74066F2DD91E66009EF14D /* demo.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = demo.mp4; sourceTree = "<group>"; };
 		855149C7295F1C5F00943D96 /* UIInterfaceOrientationMask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIInterfaceOrientationMask.swift; sourceTree = "<group>"; };
 		855149C929606D6400943D96 /* PortraitAlertController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortraitAlertController.swift; sourceTree = "<group>"; };
 		85904C01293BC0EB0011C817 /* ImageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProvider.swift; sourceTree = "<group>"; };
@@ -1818,6 +1822,14 @@
 			path = Bookmark;
 			sourceTree = "<group>";
 		};
+		6C74066C2DD91A85009EF14D /* DemoIntro */ = {
+			isa = PBXGroup;
+			children = (
+				6C74066D2DD91A93009EF14D /* DemoIntroductionViewController.swift */,
+			);
+			path = DemoIntro;
+			sourceTree = "<group>";
+		};
 		D80911062AC4BFD100EB4D15 /* Server Details */ = {
 			isa = PBXGroup;
 			children = (
@@ -2046,6 +2058,7 @@
 		DB01409B25C40BB600F9F3CF /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				6C74066C2DD91A85009EF14D /* DemoIntro */,
 				D8099076294BC2BA0050219F /* Privacy */,
 				D8A6AB68291C50F3003AB663 /* Login */,
 				DB68A03825E900CC00CFDF14 /* Share */,
@@ -2127,6 +2140,7 @@
 		DB3D0FF825BAA6B200EAA174 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				6C74066F2DD91E66009EF14D /* demo.mp4 */,
 				164F0EBB267D4FE400249499 /* BoopSound.caf */,
 				DBF3B73E2733EAED00E21627 /* local-codes.json */,
 				DB427DDE25BAA00100D1B89D /* Assets.xcassets */,
@@ -3423,6 +3437,7 @@
 				DBF3B73F2733EAED00E21627 /* local-codes.json in Resources */,
 				DB118A8225E4B6E600FAB162 /* Preview Assets.xcassets in Resources */,
 				DB2B3ABC25E37E15007045F9 /* InfoPlist.strings in Resources */,
+				6C7406702DD91E66009EF14D /* demo.mp4 in Resources */,
 				DB68A05D25E9055900CFDF14 /* Settings.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3976,6 +3991,7 @@
 				DBA94436265CBB7400C537E1 /* ProfileFieldItem.swift in Sources */,
 				2A3F6FE5292F6E44002E6DA7 /* FollowedTagsTableViewCell.swift in Sources */,
 				C24C97032922F30500BAE8CB /* RefreshControl.swift in Sources */,
+				6C74066E2DD91A93009EF14D /* DemoIntroductionViewController.swift in Sources */,
 				DB023D2A27A0FE5C005AC798 /* DataSourceProvider+NotificationTableViewCellDelegate.swift in Sources */,
 				D8CF45832B50893900C84D70 /* Tab.swift in Sources */,
 				D8363B1629469CE200A74079 /* OnboardingNextView.swift in Sources */,

@@ -166,7 +166,8 @@ extension SceneCoordinator {
         case mastodonResendEmail(viewModel: MastodonResendEmailViewModel)
         case mastodonWebView(viewModel: WebViewModel)
         case mastodonLogin(authenticationViewModel: AuthenticationViewModel, suggestedDomain: String?)
-
+        case demoIntro
+        
         // search
         case searchDetail(viewModel: SearchDetailViewModel)
         case searchResult(viewModel: SearchResultViewModel)
@@ -387,6 +388,9 @@ private extension SceneCoordinator {
         switch scene {
         case .welcome:
             let _viewController = WelcomeViewController()
+            viewController = _viewController
+        case .demoIntro:
+            let _viewController = DemoIntroductionViewController()
             viewController = _viewController
         case .mastodonPickServer(let viewModel):
             viewController = MastodonPickServerViewController(coordinator: self, viewModel: viewModel)

@@ -679,3 +679,4 @@ If you disagree with the policy for **%@**, you can go back and pick a different
 "Widget.MultipleFollowers.ConfigurationDisplayName" = "Multiple followers";
 "Widget.MultipleFollowers.MockUser.AccountName" = "another@follower.social";
 "Widget.MultipleFollowers.MockUser.DisplayName" = "Another follower";
+"Scene.ServerPicker.SwitchServerToDiffOne" = "Sunucu Degistir"

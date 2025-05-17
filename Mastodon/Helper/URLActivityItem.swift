@@ -23,3 +23,9 @@ class URLActivityItem: NSObject, UIActivityItemSource {
         return url
     }
 }
+
+final public class ConfigureSettings {
+     enum Introduction {
+         static var shouldShowDemoIntroKey: Bool = true
+    }
+}
