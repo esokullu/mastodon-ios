@@ -53,7 +53,53 @@ extension APIService {
         let response = try result.get()
         return response
     }
-
+    
+    /// If visibility is nil, will use the account's default visibility
+    public func boost(
+        boostableStatusId: Mastodon.Entity.Status.ID,
+        withVisibility visibility: Mastodon.Entity.Source.Privacy? = nil,
+        authenticationBox: MastodonAuthenticationBox
+    ) async throws -> Mastodon.Entity.Status {
+        let result: Result<Mastodon.Response.Content<Mastodon.Entity.Status>, Error>
+        do {
+            let defaultVisibility = authenticationBox.authentication.cachedAccount()?.source?.privacy ?? .public
+            let response = try await Mastodon.API.Reblog.reblog(
+                session: session,
+                domain: authenticationBox.domain,
+                statusID: boostableStatusId,
+                reblogKind: .reblog(query: Mastodon.API.Reblog.ReblogQuery(visibility: visibility ?? defaultVisibility)),
+                authorization: authenticationBox.userAuthorization
+            ).singleOutput()
+            result = .success(response)
+        } catch {
+            result = .failure(error)
+        }
+        
+        let response = try result.get()
+        return response.value
+    }
+    
+    public func unboost(
+        boostableStatusId: Mastodon.Entity.Status.ID,
+        authenticationBox: MastodonAuthenticationBox
+    ) async throws -> Mastodon.Entity.Status {
+        let result: Result<Mastodon.Response.Content<Mastodon.Entity.Status>, Error>
+        do {
+            let response = try await Mastodon.API.Reblog.reblog(
+                session: session,
+                domain: authenticationBox.domain,
+                statusID: boostableStatusId,
+                reblogKind: .undoReblog,
+                authorization: authenticationBox.userAuthorization
+            ).singleOutput()
+            result = .success(response)
+        } catch {
+            result = .failure(error)
+        }
+        
+        let response = try result.get()
+        return response.value
+    }
 }
 
 extension APIService {

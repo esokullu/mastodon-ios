@@ -62,6 +62,7 @@ extension APIService {
         olderThan maxID: Mastodon.Entity.Status.ID?,
         fromAccount accountID: String? = nil,
         scope: MastodonNotificationScope?,
+        excludingAdminTypes: [Mastodon.Entity.NotificationType]?,
         authenticationBox: MastodonAuthenticationBox
     ) async throws -> Mastodon.Entity.GroupedNotificationsResults {
         let authorization = authenticationBox.userAuthorization
@@ -71,11 +72,11 @@ extension APIService {
         
         switch scope {
         case .everything:
-            types = [.follow, .followRequest, .mention, .reblog, .favourite, .poll, .status, .moderationWarning]
-            excludedTypes = nil
+            types = nil
+            excludedTypes = excludingAdminTypes
         case .mentions:
             types = [.mention]
-            excludedTypes = [.follow, .followRequest, .reblog, .favourite, .poll]
+            excludedTypes = [.follow, .followRequest, .reblog, .favourite, .poll,.adminReport, .adminSignUp]
         case nil:
             types = nil
             excludedTypes = nil
@@ -133,14 +134,15 @@ extension APIService {
 
     public func updateNotificationPolicy(
         authenticationBox: MastodonAuthenticationBox,
-        filterNotFollowing: Bool,
-        filterNotFollowers: Bool,
-        filterNewAccounts: Bool,
-        filterPrivateMentions: Bool
+        forNotFollowing: Mastodon.Entity.NotificationPolicy.NotificationFilterAction,
+        forNotFollowers: Mastodon.Entity.NotificationPolicy.NotificationFilterAction,
+        forNewAccounts: Mastodon.Entity.NotificationPolicy.NotificationFilterAction,
+        forPrivateMentions: Mastodon.Entity.NotificationPolicy.NotificationFilterAction,
+        forLimitedAccounts: Mastodon.Entity.NotificationPolicy.NotificationFilterAction
     ) async throws -> Mastodon.Response.Content<Mastodon.Entity.NotificationPolicy> {
         let domain = authenticationBox.domain
         let authorization = authenticationBox.userAuthorization
-        let query = Mastodon.API.Notifications.UpdateNotificationPolicyQuery(filterNotFollowing: filterNotFollowing, filterNotFollowers: filterNotFollowers, filterNewAccounts: filterNewAccounts, filterPrivateMentions: filterPrivateMentions)
+        let query = Mastodon.API.Notifications.UpdateNotificationPolicyQuery(forNotFollowing: forNotFollowing, forNotFollowers: forNotFollowers, forNewAccounts: forNewAccounts, forPrivateMentions: forPrivateMentions, forLimitedAccounts: forLimitedAccounts)
 
         let response = try await Mastodon.API.Notifications.updateNotificationPolicy(
             session: session,

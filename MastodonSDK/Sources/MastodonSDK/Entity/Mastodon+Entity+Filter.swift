@@ -35,7 +35,7 @@ extension Mastodon.Entity {
         }
     }
     
-    public enum FilterAction: RawRepresentable, Codable {
+    public enum FilterAction: RawRepresentable, Codable, Sendable {
         public typealias RawValue = String
         case warn
         case hide
@@ -133,9 +133,9 @@ extension Mastodon.Entity {
     ///   2024/11/25
     /// # Reference
     ///  [Document](https://docs.joinmastodon.org/entities/filter/)
-    public struct FilterV2: FilterInfo, Codable {
+    public struct FilterV2: FilterInfo, Codable, Sendable {
         
-        public struct FilterKeyword: Codable {
+        public struct FilterKeyword: Codable, Sendable {
             let id: String
             let keyword: String
             let wholeWord: Bool
@@ -154,7 +154,7 @@ extension Mastodon.Entity {
         public let context: [FilterContext]
         public let expiresAt: Date?
         public let filterAction: FilterAction
-        public let keywords: [FilterKeyword]
+        public let keywords: [FilterKeyword]?
 //        public let statuses  // not using this for now
         
         enum CodingKeys: String, CodingKey {
@@ -175,6 +175,7 @@ extension Mastodon.Entity {
         }
         
         public var matchAll: [String] {
+            guard let keywords else { return [] }
             return keywords.compactMap { keyword in
                 if keyword.wholeWord {
                     return nil
@@ -185,6 +186,7 @@ extension Mastodon.Entity {
         }
         
         public var matchWholeWordOnly: [String] {
+            guard let keywords else { return [] }
             return keywords.compactMap { keyword in
                 if keyword.wholeWord {
                     return keyword.keyword.lowercased()
@@ -199,7 +201,7 @@ extension Mastodon.Entity {
 }
 
 extension Mastodon.Entity {
-    public enum FilterContext: RawRepresentable, Codable, Hashable {
+    public enum FilterContext: RawRepresentable, Codable, Hashable, Sendable {
         case home
         case notifications
         case `public`

@@ -16,22 +16,6 @@ public final class InstanceService {
     
     static let shared = InstanceService()
     
-    var disposeBag = Set<AnyCancellable>()
-    
-    // output
-
-    init() {
-        AuthenticationServiceProvider.shared.currentActiveUser
-            .receive(on: DispatchQueue.main)
-            .asyncMap { [weak self] in
-                if let domain = $0?.domain {
-                    await self?.updateInstance(domain: domain)
-                }
-            }
-            .sink {}
-            .store(in: &disposeBag)
-    }
-    
 }
 
 extension InstanceService {
@@ -85,5 +69,14 @@ public extension String {
         else { return false }
         
         return majorVersionInt >= comparedVersion
+    }
+    func serverVersionGreaterThanOrEqual(toMajorVersion majorThreshold: Int, minorVersion minorThreshold: Int?) -> Bool {
+        let majorAndMinor = split(separator: ".").prefix(2)
+        let major = majorAndMinor.first
+        let minor = majorAndMinor.count > 1 ? majorAndMinor[1] : "0"
+        guard let major, let majorVersionInt = Int(major) else { return false }
+        guard let minorThreshold, minorThreshold > 0 else { return majorVersionInt >= majorThreshold }
+        guard let minorVersionInt = Int(minor) else { return false }
+        return majorVersionInt >= majorThreshold && minorVersionInt >= minorThreshold
     }
 }

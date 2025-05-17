@@ -368,6 +368,15 @@ extension HomeTimelineViewController {
             }
             .store(in: &disposeBag)
         
+        NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                if self.view.window != nil {
+                    self.viewModel?.saveLastRead(self.tableView)
+                }
+            }
+            .store(in: &disposeBag)
+        
         NotificationCenter.default
             .publisher(for: .statusBarTapped, object: nil)
             .throttle(for: 0.5, scheduler: DispatchQueue.main, latest: false)
@@ -525,6 +534,10 @@ extension HomeTimelineViewController {
             self.viewModel?.homeTimelineNeedRefresh.send()
         }
     }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        viewModel?.saveLastRead(tableView)
+    }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
@@ -643,17 +656,6 @@ extension HomeTimelineViewController {
         guard let viewModel, viewModel.loadLatestStateMachine.enter(HomeTimelineViewModel.LoadLatestState.LoadingManually.self) else {
             sender.endRefreshing()
             return
-        }
-    }
-    
-    @objc func signOutAction(_ sender: UIAction) {
-
-        Task { @MainActor in
-            try await AuthenticationServiceProvider.shared.signOutMastodonUser(authentication: authenticationBox.authentication)
-            let userIdentifier = authenticationBox
-            PersistenceManager.shared.removeAllCaches(forUser: userIdentifier)
-            self.sceneCoordinator?.setup()
-            self.sceneCoordinator?.setup()
         }
     }
 

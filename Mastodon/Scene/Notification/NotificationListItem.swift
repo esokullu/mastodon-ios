@@ -14,7 +14,7 @@ enum NotificationListItem {
     case filteredNotificationsInfo(
         Mastodon.Entity.NotificationPolicy?,
         FilteredNotificationsRowView.ViewModel?)
-    case notification(MastodonFeedItemIdentifier)  // TODO: remove
+    case notification(MastodonFeedItemIdentifier)  // TODO: Remove. Will require rewriting the NotificationRequestsTableViewController.
     case groupedNotification(NotificationRowViewModel)
     case bottomLoader
     
@@ -34,7 +34,7 @@ enum NotificationListItem {
         case .notification(let identifier):
             return identifier
         case .groupedNotification(let viewModel):
-            return viewModel.identifier
+            return viewModel.notification.identifier
         case .bottomLoader:
             return nil
         }
@@ -53,7 +53,7 @@ enum NotificationListItem {
         switch self {
         case .filteredNotificationsInfo:
             return L10n.Scene.Notification.FilteredNotification.title // TODO: improve string
-        case .notification(let identifier):
+        case .notification:
             return nil
         case .groupedNotification(let viewModel):
             return viewModel.primaryNavigation?.a11yTitle
@@ -73,7 +73,7 @@ extension NotificationListItem: Identifiable, Equatable, Hashable {
         case .notification(let identifier):
             return identifier.id
         case .groupedNotification(let viewModel):
-            return viewModel.identifier.id
+            return viewModel.id
         case .bottomLoader:
             return "bottom_loader"
         }
@@ -82,7 +82,18 @@ extension NotificationListItem: Identifiable, Equatable, Hashable {
     static func == (lhs: NotificationListItem, rhs: NotificationListItem)
         -> Bool
     {
-        return lhs.id == rhs.id
+        switch (lhs, rhs) {
+        case (.filteredNotificationsInfo(let lPolicy, _), .filteredNotificationsInfo(let rPolicy, _)):
+            return lPolicy == rPolicy
+        case (.groupedNotification(let lViewModel), .groupedNotification(let rViewModel)):
+            return lViewModel.notification.identifier == rViewModel.notification.identifier && lViewModel.notification.newestID == rViewModel.notification.newestID
+        case (.bottomLoader, .bottomLoader):
+            return true
+        case (.notification(let lFeedItem), .notification(let rFeedItem)):
+            return lFeedItem == rFeedItem
+        default:
+            return false
+        }
     }
 
     func hash(into hasher: inout Hasher) {

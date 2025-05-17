@@ -3,25 +3,22 @@
 import MastodonSDK
 import MastodonCore
 
-@MainActor
-protocol NotificationsCacheManager<T> {
-    associatedtype T: NotificationsResultType
-    
-    func currentResults() async -> T?
-    var currentLastReadMarker: LastReadMarkers.MarkerPosition? { get }
-    var mostRecentlyFetchedResults: T? { get }
-    func updateByInserting(newlyFetched: NotificationsResultType, at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation)
-    func didFetchMarkers(_ updatedMarkers: Mastodon.Entity.Marker)
-    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition)
-    func commitToCache() async
+protocol NotificationsResultType: CacheableFeed {
+    var hasContents: Bool { get }
+}
+extension Mastodon.Entity.GroupedNotificationsResults: NotificationsResultType {
+    var hasContents: Bool {
+        return notificationGroups.isNotEmpty
+    }
+}
+extension Array<Mastodon.Entity.Notification>: NotificationsResultType {
+    var hasContents: Bool {
+        return isNotEmpty
+    }
 }
 
-protocol NotificationsResultType {}
-extension Mastodon.Entity.GroupedNotificationsResults: NotificationsResultType {}
-extension Array<Mastodon.Entity.Notification>: NotificationsResultType {}
-
 @MainActor
-class UngroupedNotificationCacheManager: NotificationsCacheManager {
+class UngroupedNotificationCacheManager: MastodonFeedCacheManager {
     typealias T = [Mastodon.Entity.Notification]
     private let userIdentifier: MastodonUserIdentifier
     private let feedKind: MastodonFeedKind
@@ -49,13 +46,21 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
         } else {
             do {
                 switch feedKind {
+                case .home:
+                    assertionFailure("not implemented")
+                    break
                 case .notificationsAll, .notificationsMentionsOnly:
-                    let cachedMarkers: [LastReadMarkers] = try PersistenceManager.shared.cached(.lastReadMarkers(userIdentifier))
-                    self.staleMarkers = cachedMarkers.first(where: { $0.userGUID == userIdentifier.globallyUniqueUserIdentifier })
+                    Task { [weak self] in
+                        guard let self, self.staleMarkers == nil else { return }
+                        self.staleMarkers = await BodegaPersistence.LastRead.lastReadMarkers(for: userIdentifier)
+                    }
                 case .notificationsWithAccount:
                     self.staleMarkers = nil
                 }
                 switch feedKind {
+                case .home:
+                    assertionFailure("not implemented")
+                    break
                 case .notificationsAll:
                     staleResults = try PersistenceManager.shared.cached(.notificationsAll(userIdentifier))
                 case .notificationsMentionsOnly:
@@ -70,17 +75,23 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
         }
     }
     
+    private var shouldSaveCacheToDisk: Bool {
+        switch feedKind {
+        case .home, .notificationsWithAccount:
+            return false
+        case .notificationsAll:
+            return true
+        case .notificationsMentionsOnly:
+            return true
+        }
+    }
+    
     var currentLastReadMarker: LastReadMarkers.MarkerPosition? {
         guard let markers = mostRecentMarkers ?? staleMarkers else { return nil }
         return markers.lastRead(forKind: feedKind)
     }
     
-    func updateByInserting(newlyFetched: NotificationsResultType, at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation) {
-
-        guard let newlyFetched = newlyFetched as? [Mastodon.Entity.Notification] else {
-            assertionFailure("unexpected type cannot be processed")
-            return
-        }
+    func updateByInserting(newlyFetched: [Mastodon.Entity.Notification], at insertionPoint: MastodonFeedLoaderRequest.InsertLocation) {
         
         var updatedMostRecentChunk: [Mastodon.Entity.Notification]
 
@@ -91,7 +102,10 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
             case .end:
                 updatedMostRecentChunk = (previouslyFetched + newlyFetched).removingDuplicates()
             case .replace:
-                updatedMostRecentChunk = newlyFetched.removingDuplicates()
+                updatedMostRecentChunk = newlyFetched
+            case .asOlderThan, .asNewerThan:
+                assertionFailure("not implemented")
+                updatedMostRecentChunk = newlyFetched
             }
         } else {
             updatedMostRecentChunk = newlyFetched
@@ -107,22 +121,26 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
     func didFetchMarkers(_ updatedMarkers: Mastodon.Entity.Marker) {
         var updatable = mostRecentMarkers ?? staleMarkers ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
         if let notifications = updatedMarkers.notifications {
-            updatable = updatable.bySettingLastRead(.fromServer(notifications), forKind: .notificationsAll)
+            updatable = updatable.bySettingPosition(.fromServer(notifications), forKind: .notificationsAll, enforceForwardProgress: true)
         }
         mostRecentMarkers = updatable
     }
  
-    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition) {
+    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition, enforceForwardProgress: Bool) {
         let updatable = mostRecentMarkers ?? staleMarkers ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
-        mostRecentMarkers = updatable.bySettingLastRead(newMarker, forKind: feedKind)
+        mostRecentMarkers = updatable.bySettingPosition(newMarker, forKind: feedKind, enforceForwardProgress: enforceForwardProgress)
     }
     
     func commitToCache() async {
+        guard shouldSaveCacheToDisk else { return }
         if let mostRecentMarkers {
-            PersistenceManager.shared.cache([mostRecentMarkers], for: .lastReadMarkers(userIdentifier))
+            try? await BodegaPersistence.LastRead.saveLastReadMarkers(mostRecentMarkers, for: userIdentifier)
         }
         if let mostRecentlyFetchedResults {
             switch feedKind {
+            case .home:
+                assertionFailure("not implemented")
+                break
             case .notificationsAll:
                 PersistenceManager.shared.cache(mostRecentlyFetchedResults, for: .notificationsAll(userIdentifier))
             case .notificationsMentionsOnly:
@@ -134,35 +152,43 @@ class UngroupedNotificationCacheManager: NotificationsCacheManager {
     }
 }
 
+enum Fetchable<T> {
+    case initial
+    case fetching
+    case known(T?)
+    
+    var value: T? {
+        switch self {
+        case .initial, .fetching:
+            return nil
+        case .known(let value):
+            return value
+        }
+    }
+}
+
 @MainActor
-class GroupedNotificationCacheManager: NotificationsCacheManager {
-    typealias T = Mastodon.Entity.GroupedNotificationsResults
+class GroupedNotificationCacheManager: MastodonFeedCacheManager {
+    typealias CachedType = Mastodon.Entity.GroupedNotificationsResults
     
     private let maxNotificationsListLength = 1000
     
     private let userIdentifier: MastodonUserIdentifier
     private let feedKind: MastodonFeedKind
     
-    private var staleResults: T?
-    private var staleMarkers: LastReadMarkers?
+    private var staleResults: CachedType?
+    private var staleMarkers: Fetchable<LastReadMarkers> = .initial
     
-    internal var mostRecentlyFetchedResults: T?
-    private var mostRecentMarkers: LastReadMarkers?
+    internal var mostRecentlyFetchedResults: CachedType?
+    private var mostRecentMarkers: Fetchable<LastReadMarkers> = .initial
     
     init(feedKind: MastodonFeedKind, userIdentifier: MastodonUserIdentifier) {
         
         self.feedKind = feedKind
         self.userIdentifier = userIdentifier
-        staleMarkers = nil
-        staleResults = nil
     }
     
-    func updateByInserting(newlyFetched: NotificationsResultType, at insertionPoint: GroupedNotificationFeedLoader.FeedLoadRequest.InsertLocation) {
-        
-        guard let newlyFetched = newlyFetched as? Mastodon.Entity.GroupedNotificationsResults else {
-            assertionFailure("unexpected type cannot be processed")
-            return
-        }
+    func updateByInserting(newlyFetched: CachedType, at insertionPoint: MastodonFeedLoaderRequest.InsertLocation) {
         
         let updatedNewerChunk: [Mastodon.Entity.NotificationGroup]
         let includePreviouslyFetched: Bool
@@ -175,6 +201,10 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
                 includePreviouslyFetched = true
                 updatedNewerChunk = previouslyFetched.notificationGroups + newlyFetched.notificationGroups
             case .replace:
+                includePreviouslyFetched = false
+                updatedNewerChunk = newlyFetched.notificationGroups
+            case .asOlderThan, .asNewerThan:
+                assertionFailure("not implemented")
                 includePreviouslyFetched = false
                 updatedNewerChunk = newlyFetched.notificationGroups
             }
@@ -190,6 +220,9 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
                 return Array(notificationGroups.prefix(maxNotificationsListLength))
             case .end:
                 return Array(notificationGroups.suffix(maxNotificationsListLength))
+            case .asOlderThan, .asNewerThan:
+                assertionFailure("not implemented")
+                return Array(notificationGroups.prefix(maxNotificationsListLength))
             }
         }
         
@@ -250,75 +283,103 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
         mostRecentlyFetchedResults = Mastodon.Entity.GroupedNotificationsResults(notificationGroups: Array(truncatedGroups), fullAccounts: accounts, partialAccounts: partialAccounts, statuses: statuses)
     }
     
-    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition) {
-        let updatable = mostRecentMarkers ?? staleMarkers ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
-        mostRecentMarkers = updatable.bySettingLastRead(newMarker, forKind: feedKind)
+    func updateToNewerMarker(_ newMarker: LastReadMarkers.MarkerPosition, enforceForwardProgress: Bool) {
+        let updatable = mostRecentMarkers.value ?? staleMarkers.value ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
+        mostRecentMarkers = .known(updatable.bySettingPosition(newMarker, forKind: feedKind, enforceForwardProgress: enforceForwardProgress))
     }
     
     func didFetchMarkers(_ updatedMarkers: Mastodon.Entity.Marker) {
-        var updatable = mostRecentMarkers ?? staleMarkers ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
+        var updatable = mostRecentMarkers.value ?? staleMarkers.value ?? LastReadMarkers(userGUID: userIdentifier.globallyUniqueUserIdentifier, home: nil, notifications: nil, mentions: nil)
         if let notifications = updatedMarkers.notifications {
-            updatable = updatable.bySettingLastRead(.fromServer(notifications), forKind: .notificationsAll)
+            updatable = updatable.bySettingPosition(.fromServer(notifications), forKind: .notificationsAll, enforceForwardProgress: true)
         }
-        mostRecentMarkers = updatable
+        mostRecentMarkers = .known(updatable)
     }
     
-    func currentResults() async -> T? {
+    func currentResults() -> CachedType? {
         if let mostRecentlyFetchedResults {
             return mostRecentlyFetchedResults
         } else if let staleResults {
             return staleResults
         } else {
-            do {
-                switch feedKind {
-                case .notificationsAll, .notificationsMentionsOnly:
-                    let cachedMarkers: [LastReadMarkers] = try PersistenceManager.shared.cached(.lastReadMarkers(userIdentifier))
-                    self.staleMarkers = cachedMarkers.first(where: { $0.userGUID == userIdentifier.globallyUniqueUserIdentifier })
-                case .notificationsWithAccount:
-                    self.staleMarkers = nil
-                }
-                
-                let notificationGroups: [Mastodon.Entity.NotificationGroup]
-                let accounts: [Mastodon.Entity.Account]
-                let partialAccounts: [Mastodon.Entity.PartialAccountWithAvatar]
-                let statuses: [Mastodon.Entity.Status]
-                switch feedKind {
-                case .notificationsAll:
-                    notificationGroups = (try? PersistenceManager.shared.cached(.groupedNotificationsAll(userIdentifier))) ?? []
-                    accounts = (try? PersistenceManager.shared.cached(.groupedNotificationsAllAccounts(userIdentifier))) ?? []
-                    partialAccounts = (try? PersistenceManager.shared.cached(.groupedNotificationsAllPartialAccounts(userIdentifier))) ?? []
-                    statuses = (try? PersistenceManager.shared.cached(.groupedNotificationsAllStatuses(userIdentifier))) ?? []
-                case .notificationsMentionsOnly:
-                    notificationGroups = (try? PersistenceManager.shared.cached(.groupedNotificationsMentions(userIdentifier))) ?? []
-                    accounts = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsAccounts(userIdentifier))) ?? []
-                    partialAccounts = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsPartialAccounts(userIdentifier))) ?? []
-                    statuses = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsStatuses(userIdentifier))) ?? []
-                case .notificationsWithAccount:
-                    return mostRecentlyFetchedResults
-                }
-                staleResults = Mastodon.Entity.GroupedNotificationsResults(notificationGroups: notificationGroups, fullAccounts: accounts, partialAccounts: partialAccounts, statuses: statuses)
-            } catch {
-                assertionFailure("error reading notifications cache: \(error)")
+            switch feedKind {
+            case .home:
+                assertionFailure("not implemented")
+                break
+            case .notificationsAll, .notificationsMentionsOnly:
+                loadCachedMarkers()
+            case .notificationsWithAccount:
+                staleMarkers = .known(nil)
             }
+            
+            let notificationGroups: [Mastodon.Entity.NotificationGroup]
+            let accounts: [Mastodon.Entity.Account]
+            let partialAccounts: [Mastodon.Entity.PartialAccountWithAvatar]
+            let statuses: [Mastodon.Entity.Status]
+            switch feedKind {
+            case .home:
+                assertionFailure("not implemented")
+                notificationGroups = []
+                accounts = []
+                partialAccounts = []
+                statuses = []
+            case .notificationsAll:
+                notificationGroups = (try? PersistenceManager.shared.cached(.groupedNotificationsAll(userIdentifier))) ?? []
+                accounts = (try? PersistenceManager.shared.cached(.groupedNotificationsAllAccounts(userIdentifier))) ?? []
+                partialAccounts = (try? PersistenceManager.shared.cached(.groupedNotificationsAllPartialAccounts(userIdentifier))) ?? []
+                statuses = (try? PersistenceManager.shared.cached(.groupedNotificationsAllStatuses(userIdentifier))) ?? []
+            case .notificationsMentionsOnly:
+                notificationGroups = (try? PersistenceManager.shared.cached(.groupedNotificationsMentions(userIdentifier))) ?? []
+                accounts = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsAccounts(userIdentifier))) ?? []
+                partialAccounts = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsPartialAccounts(userIdentifier))) ?? []
+                statuses = (try? PersistenceManager.shared.cached(.groupedNotificationsMentionsStatuses(userIdentifier))) ?? []
+            case .notificationsWithAccount:
+                return mostRecentlyFetchedResults
+            }
+            staleResults = Mastodon.Entity.GroupedNotificationsResults(notificationGroups: notificationGroups, fullAccounts: accounts, partialAccounts: partialAccounts, statuses: statuses)
             return mostRecentlyFetchedResults ?? staleResults
         }
     }
     
     var currentLastReadMarker: LastReadMarkers.MarkerPosition? {
         switch feedKind {
+        case .home:
+            assertionFailure("not implemented")
+            return nil
         case .notificationsAll, .notificationsMentionsOnly:
-            return (mostRecentMarkers ?? staleMarkers)?.lastRead(forKind: feedKind)
+            return (mostRecentMarkers.value ?? staleMarkers.value)?.lastRead(forKind: feedKind)
         case .notificationsWithAccount:
             return nil
         }
     }
     
+    func loadCachedMarkers() {
+        switch staleMarkers {
+        case .fetching, .known:
+            return
+        case .initial:
+           break
+        }
+        staleMarkers = .fetching
+        Task { [weak self] in
+            guard let self, self.shouldSaveCacheToDisk else { return }
+            let fromCache = await BodegaPersistence.LastRead.lastReadMarkers(for: self.userIdentifier)
+            staleMarkers = .known(fromCache)
+        }
+    }
+    
     func commitToCache() async {
-        if let mostRecentMarkers {
-            PersistenceManager.shared.cache([mostRecentMarkers], for: .lastReadMarkers(userIdentifier))
+        guard shouldSaveCacheToDisk else { return }
+        if let updatedMarkers = mostRecentMarkers.value {
+            Task {
+                try await BodegaPersistence.LastRead.saveLastReadMarkers(updatedMarkers, for: userIdentifier)
+            }
         }
         if let mostRecentlyFetchedResults {
             switch feedKind {
+            case .home:
+                assertionFailure("not implemented")
+                break
             case .notificationsAll:
                 PersistenceManager.shared.cache(mostRecentlyFetchedResults.notificationGroups, for: .groupedNotificationsAll(userIdentifier))
                 PersistenceManager.shared.cache(mostRecentlyFetchedResults.accounts, for: .groupedNotificationsAllAccounts(userIdentifier))
@@ -332,6 +393,15 @@ class GroupedNotificationCacheManager: NotificationsCacheManager {
             case .notificationsWithAccount:
                 break
             }
+        }
+    }
+    
+    var shouldSaveCacheToDisk: Bool {
+        switch feedKind {
+        case .home, .notificationsWithAccount:
+            return false
+        case .notificationsAll, .notificationsMentionsOnly:
+            return true
         }
     }
 }
