@@ -4,9 +4,9 @@
 
 "CsR7G2" = "在 Mastodon 上发布";
 
-"HZSGTr" = "要发送的内容是什么？";
+"HZSGTr" = "要发布的内容是？";
 
-"HdGikU" = "发送失败";
+"HdGikU" = "发布失败";
 
 "KDNTJ4" = "失败原因";
 
@@ -14,7 +14,7 @@
 
 "RxSqsb" = "帖子";
 
-"WCIR3D" = "在 Mastodon 上发送 ${content}";
+"WCIR3D" = "在 Mastodon 上发布 ${content}";
 
 "ZKJSNu" = "帖子";
 
@@ -42,10 +42,10 @@
 
 "k7dbKQ" = "帖子发送成功。";
 
-"oGiqmY-dYQ5NN" = "确认要选择 “公开”？";
+"oGiqmY-dYQ5NN" = "您确定要选择“公开”吗？";
 
-"oGiqmY-ehFLjY" = "确认要选择 “仅关注者”？";
+"oGiqmY-ehFLjY" = "您确定要选择“仅关注者”吗？";
 
-"rM6dvp" = "URL";
+"rM6dvp" = "网址";
 
 "ryJLwG" = "帖子发送成功。";

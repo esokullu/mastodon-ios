@@ -347,6 +347,10 @@ public enum L10n {
         }
         /// Load Embed
         public static let loadEmbed = L10n.tr("Localizable", "Common.Controls.Status.LoadEmbed", fallback: "Load Embed")
+        /// Matches filter: "%@"
+        public static func matchesFilter(_ p1: Any) -> String {
+          return L10n.tr("Localizable", "Common.Controls.Status.MatchesFilter", String(describing: p1), fallback: "Matches filter: \"%@\"")
+        }
         /// Tap anywhere to reveal
         public static let mediaContentWarning = L10n.tr("Localizable", "Common.Controls.Status.MediaContentWarning", fallback: "Tap anywhere to reveal")
         /// Mention
@@ -363,6 +367,10 @@ public enum L10n {
         public static let reply = L10n.tr("Localizable", "Common.Controls.Status.Reply", fallback: "Reply")
         /// Sensitive Content
         public static let sensitiveContent = L10n.tr("Localizable", "Common.Controls.Status.SensitiveContent", fallback: "Sensitive Content")
+        /// Show anyway
+        public static let showAnyway = L10n.tr("Localizable", "Common.Controls.Status.ShowAnyway", fallback: "Show anyway")
+        /// Show more
+        public static let showMore = L10n.tr("Localizable", "Common.Controls.Status.ShowMore", fallback: "Show more")
         /// Show Post
         public static let showPost = L10n.tr("Localizable", "Common.Controls.Status.ShowPost", fallback: "Show Post")
         /// Show user profile
@@ -392,6 +400,8 @@ public enum L10n {
           public static let reply = L10n.tr("Localizable", "Common.Controls.Status.Actions.Reply", fallback: "Reply")
           /// Share Link in Post
           public static let shareLinkInPost = L10n.tr("Localizable", "Common.Controls.Status.Actions.ShareLinkInPost", fallback: "Share Link in Post")
+          /// Show
+          public static let show = L10n.tr("Localizable", "Common.Controls.Status.Actions.Show", fallback: "Show")
           /// Show GIF
           public static let showGif = L10n.tr("Localizable", "Common.Controls.Status.Actions.ShowGif", fallback: "Show GIF")
           /// Show image
@@ -941,6 +951,24 @@ public enum L10n {
     public enum Notification {
       /// Learn more about server blocks
       public static let learnMoreAboutServerBlocks = L10n.tr("Localizable", "Scene.Notification.LearnMoreAboutServerBlocks", fallback: "Learn more about server blocks")
+      /// View report
+      public static let viewReport = L10n.tr("Localizable", "Scene.Notification.ViewReport", fallback: "View report")
+      public enum AdminFilter {
+        /// Admin Notifications
+        public static let title = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Title", fallback: "Admin Notifications")
+        public enum Reports {
+          /// Show reports of spam, rule violations, and other complaints
+          public static let subtitle = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Reports.Subtitle", fallback: "Show reports of spam, rule violations, and other complaints")
+          /// Admin reports
+          public static let title = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Reports.Title", fallback: "Admin reports")
+        }
+        public enum Signups {
+          /// Show notifications of new accounts created on this instance
+          public static let subtitle = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Signups.Subtitle", fallback: "Show notifications of new accounts created on this instance")
+          /// Account signups
+          public static let title = L10n.tr("Localizable", "Scene.Notification.AdminFilter.Signups.Title", fallback: "Account signups")
+        }
+      }
       public enum FilteredNotification {
         /// Accept
         public static let accept = L10n.tr("Localizable", "Scene.Notification.FilteredNotification.Accept", fallback: "Accept")
@@ -1004,13 +1032,29 @@ public enum L10n {
         public static func singleNameSignedUp(_ p1: Any) -> String {
           return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SingleNameSignedUp", String(describing: p1), fallback: "%@ signed up")
         }
+        /// Someone reported %@.
+        public static func someoneReportedAccount(_ p1: Any) -> String {
+          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SomeoneReportedAccount", String(describing: p1), fallback: "Someone reported %@.")
+        }
         /// Someone reported %@ for rule violation.
         public static func someoneReportedAccountForRuleViolation(_ p1: Any) -> String {
           return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SomeoneReportedAccountForRuleViolation", String(describing: p1), fallback: "Someone reported %@ for rule violation.")
         }
+        /// Someone reported %@ for spam.
+        public static func someoneReportedAccountForSpam(_ p1: Any) -> String {
+          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SomeoneReportedAccountForSpam", String(describing: p1), fallback: "Someone reported %@ for spam.")
+        }
+        /// Someone reported %@ from %@.
+        public static func someoneReportedPostsFromAccount(_ p1: Any, _ p2: Any) -> String {
+          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SomeoneReportedPostsFromAccount", String(describing: p1), String(describing: p2), fallback: "Someone reported %@ from %@.")
+        }
         /// Someone reported %@ from %@ for rule violation.
         public static func someoneReportedPostsFromAccountForRuleViolation(_ p1: Any, _ p2: Any) -> String {
           return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SomeoneReportedPostsFromAccountForRuleViolation", String(describing: p1), String(describing: p2), fallback: "Someone reported %@ from %@ for rule violation.")
+        }
+        /// Someone reported %@ from %@ for spam.
+        public static func someoneReportedPostsFromAccountForSpam(_ p1: Any, _ p2: Any) -> String {
+          return L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.SomeoneReportedPostsFromAccountForSpam", String(describing: p1), String(describing: p2), fallback: "Someone reported %@ from %@ for spam.")
         }
         /// Your poll has ended
         public static let yourPollHasEnded = L10n.tr("Localizable", "Scene.Notification.GroupedNotificationDescription.YourPollHasEnded", fallback: "Your poll has ended")
@@ -1066,6 +1110,32 @@ public enum L10n {
       public enum Policy {
         /// Filter Notifications from…
         public static let title = L10n.tr("Localizable", "Scene.Notification.Policy.Title", fallback: "Filter Notifications from…")
+        public enum Action {
+          public enum Accept {
+            /// Show in notifications
+            public static let subtitle = L10n.tr("Localizable", "Scene.Notification.Policy.Action.Accept.Subtitle", fallback: "Show in notifications")
+            /// Accept
+            public static let title = L10n.tr("Localizable", "Scene.Notification.Policy.Action.Accept.Title", fallback: "Accept")
+          }
+          public enum Drop {
+            /// Send to the void, never to be seen again
+            public static let subtitle = L10n.tr("Localizable", "Scene.Notification.Policy.Action.Drop.Subtitle", fallback: "Send to the void, never to be seen again")
+            /// Ignore
+            public static let title = L10n.tr("Localizable", "Scene.Notification.Policy.Action.Drop.Title", fallback: "Ignore")
+          }
+          public enum Filter {
+            /// Send to filtered notifications inbox
+            public static let subtitle = L10n.tr("Localizable", "Scene.Notification.Policy.Action.Filter.Subtitle", fallback: "Send to filtered notifications inbox")
+            /// Filter
+            public static let title = L10n.tr("Localizable", "Scene.Notification.Policy.Action.Filter.Title", fallback: "Filter")
+          }
+        }
+        public enum ModeratedAccounts {
+          /// Limited by server moderators
+          public static let subtitle = L10n.tr("Localizable", "Scene.Notification.Policy.ModeratedAccounts.Subtitle", fallback: "Limited by server moderators")
+          /// Moderated accounts
+          public static let title = L10n.tr("Localizable", "Scene.Notification.Policy.ModeratedAccounts.Title", fallback: "Moderated accounts")
+        }
         public enum NewAccount {
           /// Created within the past 30 days
           public static let subtitle = L10n.tr("Localizable", "Scene.Notification.Policy.NewAccount.Subtitle", fallback: "Created within the past 30 days")
@@ -1133,6 +1203,12 @@ public enum L10n {
       public static func description(_ p1: Any) -> String {
         return L10n.tr("Localizable", "Scene.Privacy.Description", String(describing: p1), fallback: "Although the Mastodon app does not collect any data, the server you sign up through may have a different policy.\n\nIf you disagree with the policy for **%@**, you can go back and pick a different server.")
       }
+      /// Please review the terms of service for **%@**. If you disagree, you can go back and pick a different server.
+      public static func termsOfServiceDescription(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "Scene.Privacy.TermsOfServiceDescription", String(describing: p1), fallback: "Please review the terms of service for **%@**. If you disagree, you can go back and pick a different server.")
+      }
+      /// Terms of Service
+      public static let termsOfServiceTitle = L10n.tr("Localizable", "Scene.Privacy.TermsOfServiceTitle", fallback: "Terms of Service")
       /// Your Privacy
       public static let title = L10n.tr("Localizable", "Scene.Privacy.Title", fallback: "Your Privacy")
       public enum Button {
@@ -1145,6 +1221,10 @@ public enum L10n {
         /// Privacy Policy - %@
         public static func server(_ p1: Any) -> String {
           return L10n.tr("Localizable", "Scene.Privacy.Policy.Server", String(describing: p1), fallback: "Privacy Policy - %@")
+        }
+        /// Terms of Service - %@
+        public static func termsOfService(_ p1: Any) -> String {
+          return L10n.tr("Localizable", "Scene.Privacy.Policy.TermsOfService", String(describing: p1), fallback: "Terms of Service - %@")
         }
       }
     }
@@ -2106,6 +2186,10 @@ public enum L10n {
       /// Plural format key: "%#@media_count@"
       public static func media(_ p1: Int) -> String {
         return L10n.tr("Localizable", "plural.count.media", p1, fallback: "Plural format key: \"%#@media_count@\"")
+      }
+      /// Plural format key: "%#@count_signups@"
+      public static func newSignups(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "plural.count.new_signups", p1, fallback: "Plural format key: \"%#@count_signups@\"")
       }
       /// Plural format key: "%#@count_of_your_followers@"
       public static func ofYourFollowers(_ p1: Int) -> String {

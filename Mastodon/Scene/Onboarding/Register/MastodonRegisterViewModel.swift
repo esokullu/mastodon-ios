@@ -294,3 +294,60 @@ extension MastodonRegisterViewModel {
         return "@\(username)@\(domain)"
     }
 }
+
+protocol RegistrationInstance {
+    var approvalRequired: Bool? { get }
+    var reasonRequired: Bool { get }
+    var minAge: Int? { get }
+    var isBeyondVersion1: Bool { get }
+    var isOpenToNewRegistrations: Bool? { get }
+    var rules: [Mastodon.Entity.Instance.Rule]? { get }
+    var termsOfService: URL? { get }
+    var privacyPolicy: URL? { get }
+}
+
+extension Mastodon.Entity.Instance: RegistrationInstance {
+    var minAge: Int? { return nil }
+    var isBeyondVersion1: Bool {
+        return version?.majorServerVersion(greaterThanOrEquals: 4) ?? false
+    }
+    var isOpenToNewRegistrations: Bool? { return registrations }
+    var reasonRequired: Bool {
+        return approvalRequired ?? false
+    }
+    
+    var termsOfService: URL? {
+        return nil
+    }
+    
+    var privacyPolicy: URL? {
+        return URL(string: "https://\(uri)/privacy-policy")
+    }
+}
+
+extension Mastodon.Entity.V2.Instance: RegistrationInstance {
+    var minAge: Int? { return registrations?.minAge }
+    var isBeyondVersion1: Bool { return true }
+    var isOpenToNewRegistrations: Bool? { return registrations?.enabled }
+    var approvalRequired: Bool? { return registrations?.approvalRequired }
+    var reasonRequired: Bool {
+        return registrations?.reasonRequired ?? approvalRequired ?? false
+    }
+    
+    var termsOfService: URL? {
+        if let string = configuration?.urls?.termsOfService {
+            return URL(string: string)
+        } else {
+            return nil
+        }
+    }
+    
+    var privacyPolicy: URL? {
+        if let string = configuration?.urls?.privacyPolicy {
+            return URL(string: string)
+        } else {
+            guard let domain else { return nil }
+            return URL(string: "https://\(domain)/privacy-policy")
+        }
+    }
+}

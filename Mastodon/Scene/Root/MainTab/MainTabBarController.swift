@@ -32,7 +32,7 @@ class MainTabBarController: UITabBarController {
     
     @Published var currentTab: Tab = .home
 
-    let homeTimelineViewController: HomeTimelineViewController
+    let homeTimelineViewController: UIViewController
     let searchViewController: SearchViewController
     let composeViewController: UIViewController // placeholder
     let notificationViewController: UIViewController
@@ -51,7 +51,11 @@ class MainTabBarController: UITabBarController {
     ) {
         self.authenticationBox = authenticationBox
 
-        homeTimelineViewController = HomeTimelineViewController()
+        if UserDefaults.standard.testNewHomeTimeline {
+            homeTimelineViewController = HomeTimelineListViewController()
+        } else {
+            homeTimelineViewController = HomeTimelineViewController()
+        }
         homeTimelineViewController.configureTabBarItem(with: .home)
 
         searchViewController = SearchViewController()
@@ -68,10 +72,9 @@ class MainTabBarController: UITabBarController {
         meProfileViewController.configureTabBarItem(with: .me)
 
         if let authenticationBox {
-            if let notificationController = notificationViewController as? NotificationViewController {
-                notificationController.viewModel = NotificationViewModel(context: AppContext.shared, authenticationBox: authenticationBox)
+            if let homeTimelineViewController = homeTimelineViewController as? HomeTimelineViewController {
+                homeTimelineViewController.viewModel = HomeTimelineViewModel(authenticationBox: authenticationBox)
             }
-            homeTimelineViewController.viewModel = HomeTimelineViewModel(authenticationBox: authenticationBox)
             searchViewController.viewModel = SearchViewModel(authenticationBox: authenticationBox)
         }
 
@@ -323,7 +326,7 @@ extension MainTabBarController {
         case .me:
             guard let authenticationBox else { return }
             let accountListViewModel = AccountListViewModel(authenticationBox: authenticationBox)
-            _ = self.sceneCoordinator?.present(scene: .accountList(viewModel: accountListViewModel), from: self, transition: .formSheet)
+            _ = self.sceneCoordinator?.present(scene: .accountList(viewModel: accountListViewModel), from: self, transition: .formSheet(nil))
         default:
             break
         }
@@ -338,6 +341,9 @@ extension MainTabBarController {
             tabBar.isHidden = false
         default:
             tabBar.isHidden = true
+            if #available(iOS 18.0, *), UIDevice.current.userInterfaceIdiom == .pad {
+                self.isTabBarHidden = true
+            }
         }
     }
 

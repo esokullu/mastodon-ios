@@ -82,10 +82,16 @@ extension Mastodon.Entity {
 
 extension Mastodon.Entity.Instance {
     public struct InstanceURL: Codable {
-        public let streamingAPI: String
+        public let streamingAPI: String?
+        public let aboutPage: String?
+        public let privacyPolicy: String?  // added in 4.4.0, default to https://(domain)/privacy_policy if empty
+        public let termsOfService: String? // added in 4.4.0, default to nil if empty
 
         enum CodingKeys: String, CodingKey {
             case streamingAPI = "streaming_api"
+            case aboutPage = "about"
+            case privacyPolicy = "privacy_policy"
+            case termsOfService = "terms_of_service"
         }
     }
 }
