@@ -194,7 +194,7 @@ extension MastodonPickServerViewController {
             self.allowUserToSelectServer(status: false);
         }
         
-        pickAnotherServerAction()
+        setOnboardingNextViewDelegate()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -353,10 +353,18 @@ extension MastodonPickServerViewController: UISearchResultsUpdating {
     }
 }
 
-extension MastodonPickServerViewController {
-    func pickAnotherServerAction() {
-        onboardingNextView.onPickAnotherServerTapped = { [weak self] in
-            self?.allowUserToSelectServer(status: true)
+extension MastodonPickServerViewController: OnboardingNextViewActionProtocol {
+    func setOnboardingNextViewDelegate() {
+        onboardingNextView.delegate = self
+    }
+    
+    func onPickAnotherServerAction() {
+        self.allowUserToSelectServer(status: true)
+    }
+    
+    func onCensorshipAction() {
+        if ConfigureSettings.Introduction.shouldShowDemoIntroKey {
+            _ = self.sceneCoordinator?.present(scene: .demoIntro, from: self, transition: .modal(animated: true, completion: nil ))
         }
     }
 }

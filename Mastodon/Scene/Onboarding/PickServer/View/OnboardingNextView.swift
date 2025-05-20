@@ -10,13 +10,18 @@ import MastodonUI
 import MastodonAsset
 import MastodonLocalization
 
+protocol OnboardingNextViewActionProtocol {
+    func onPickAnotherServerAction()
+    func onCensorshipAction()
+}
+
 final class OnboardingNextView: UIView {
     
     static let buttonHeight: CGFloat = 50
         
-    var onPickAnotherServerTapped: (()-> Void)?
+    var delegate: OnboardingNextViewActionProtocol?
     
-    private let container: UIStackView = {
+    private lazy var container: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
         stackView.spacing = 12
@@ -34,14 +39,36 @@ final class OnboardingNextView: UIView {
         return button
     }()
 
-    let pickDifferentServerButton: UIButton = {
+    private lazy var pickDifferentServerButton: UIButton = {
         let button = UIButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.layer.cornerRadius = 14
+        button.layer.borderWidth = 1
+        button.layer.borderColor = Asset.Colors.Brand.blurple.color.cgColor
         button.setTitle(L10n.Scene.ServerPicker.switchServerToDiffOneHint, for: .normal)
         button.titleLabel?.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 13, weight: .bold))
         button.setTitleColor(Asset.Colors.Brand.blurple.color, for: .normal)
         return button
+    }()
+    
+    private lazy var censorshipButton: UIButton = {
+        let button = UIButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.layer.cornerRadius = 14
+        button.layer.borderWidth = 1
+        button.layer.borderColor = Asset.Colors.Brand.blurple.color.cgColor
+        button.setTitle(L10n.Scene.ServerPicker.censorshipHint, for: .normal)
+        button.titleLabel?.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 13, weight: .bold))
+        button.setTitleColor(Asset.Colors.Brand.blurple.color, for: .normal)
+        button.widthAnchor.constraint(equalToConstant: 60).isActive = true
+        return button
+    }()
+    
+    private lazy var hStack: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.spacing = 12
+        return stackView
     }()
     
     lazy var activityIndicator: UIActivityIndicatorView = {
@@ -65,8 +92,11 @@ final class OnboardingNextView: UIView {
     private func _init() {
         container.translatesAutoresizingMaskIntoConstraints = false
         container.addArrangedSubview(nextButton)
-        container.addArrangedSubview(pickDifferentServerButton)
 
+        hStack.addArrangedSubview(pickDifferentServerButton)
+        hStack.addArrangedSubview(censorshipButton)
+        
+        container.addArrangedSubview(hStack)
         addSubview(container)
 
         NSLayoutConstraint.activate([
@@ -76,7 +106,7 @@ final class OnboardingNextView: UIView {
             safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: 16),
 
             nextButton.widthAnchor.constraint(equalTo: container.widthAnchor),
-            pickDifferentServerButton.widthAnchor.constraint(equalTo: container.widthAnchor),
+            hStack.widthAnchor.constraint(equalTo: container.widthAnchor),
         ])
         
         NSLayoutConstraint.activate([
@@ -84,6 +114,7 @@ final class OnboardingNextView: UIView {
         ])
         
         addTargetForPickDifferentServerButton()
+        addTargetForCensorshipButton()
     }
 
     func showLoading() {
@@ -111,24 +142,19 @@ final class OnboardingNextView: UIView {
     }
     
      func addTargetForPickDifferentServerButton() {
-         pickDifferentServerButton.addTarget(self, action: #selector(onPickDifferentServerButton), for: .touchUpInside)
+         pickDifferentServerButton.addTarget(self, action: #selector(onPickDifferentServerButtonTapped), for: .touchUpInside)
      }
      
-     @objc func onPickDifferentServerButton() {
-         UIView.animate(withDuration: 0.09) { [weak self] in
-             self?.pickDifferentServerButton.backgroundColor = Asset.Colors.Brand.blurple.color.withAlphaComponent(0.04)
-             self?.pickDifferentServerButton.setTitleColor(.white, for: .normal)
-         }
-         DispatchQueue.main.asyncAfter(deadline: .now() + 0.11) { [weak self] in
-             UIView.animate(withDuration: 0.09) {
-                 self?.pickDifferentServerButton.backgroundColor = .clear
-                 self?.pickDifferentServerButton.setTitleColor(Asset.Colors.Brand.blurple.color, for: .normal)
-                 
-                 if let pick = self?.onPickAnotherServerTapped {
-                     pick()
-                 }
-             }
-          
-         }
+     @objc func onPickDifferentServerButtonTapped() {
+         delegate?.onPickAnotherServerAction()
      }
+    
+    func addTargetForCensorshipButton() {
+        censorshipButton.addTarget(self, action: #selector(onCensorshipButtonTapped), for: .touchUpInside)
+    }
+    
+    @objc func onCensorshipButtonTapped() {
+        ConfigureSettings.Introduction.shouldShowDemoIntroKey = true
+        delegate?.onCensorshipAction()
+    }
 }

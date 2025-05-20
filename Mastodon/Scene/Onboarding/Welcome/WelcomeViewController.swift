@@ -186,15 +186,6 @@ extension WelcomeViewController {
         setupIllustrationLayout()
     }
     
-    override func viewDidAppear(_ animated: Bool) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: { [weak self] in
-            guard let self else { return }
-            if ConfigureSettings.Introduction.shouldShowDemoIntroKey {
-                _ = self.sceneCoordinator?.present(scene: .demoIntro, from: self, transition: .modal(animated: true, completion: nil ))
-            }
-        })
-    }
-    
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         

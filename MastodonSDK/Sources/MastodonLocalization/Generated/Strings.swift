@@ -1585,6 +1585,8 @@ public enum L10n {
       public static let noServerSelectedHint = L10n.tr("Localizable", "Scene.ServerPicker.NoServerSelectedHint", fallback: "We’ll pick a server based on your language if you continue without making a selection.")
       //pick another server
       public static let switchServerToDiffOneHint = L10n.tr("Localizable", "Scene.ServerPicker.SwitchServerToDiffOne", fallback: "Switch Server")
+      //censorship hint
+      public static let censorshipHint = L10n.tr("Localizable", "Scene.ServerPicker.censorship", fallback: "Censorship")
       /// Pick Server
       public static let title = L10n.tr("Localizable", "Scene.ServerPicker.Title", fallback: "Pick Server")
       public enum Button {
